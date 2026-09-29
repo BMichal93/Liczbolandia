@@ -42,6 +42,17 @@
       ],
     },
     {
+      // Guinea pig: bounces much higher off enemies, so stomping becomes a
+      // way to reach high coins and stars - a play style no one else has.
+      id: 'guinea', name: 'Świnka Kuleczka', desc: 'Skacząc po przeciwnikach, wybija się wysoko jak z trampoliny!',
+      ability: { stomp: 1.5 }, abilityText: 'Wysokie odbicie', price: 150, unlock: null,
+      variants: [
+        { name: 'Trójkolorowa', pal: { body: '#fffaf2', belly: '#ffffff', accent: '#e8913f', patch2: '#6b4a36', eye: '#2d1d10' } },
+        { name: 'Ruda', pal: { body: '#f2a65a', belly: '#fff3e0', accent: '#c4702a', patch2: '#fffaf2', eye: '#2d1d10' } },
+        { name: 'Czarno-biała', pal: { body: '#ffffff', belly: '#ffffff', accent: '#3a3440', patch2: '#b8b0c0', eye: '#1a1a22' } },
+      ],
+    },
+    {
       id: 'fox', name: 'Lisek Rudek', desc: 'Najszybszy w całej Liczbolandii.',
       ability: { speed: 1.2 }, abilityText: 'Szybki bieg', price: 180, unlock: null,
       variants: [

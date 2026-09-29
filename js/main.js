@@ -13,6 +13,16 @@
     // visible gain on a phone screen.
     dpr = Math.min(2, window.devicePixelRatio || 1);
     cssW = window.innerWidth; cssH = window.innerHeight;
+    // Pixel budget: a tablet (2560x1600) or a laptop at full HD would
+    // otherwise push 4-8 million pixels every frame, which makes cheaper
+    // tablets stutter. ~2.6M keeps it smooth; vector art still looks clean.
+    const MAX_PX = 2.6e6;
+    if (cssW * cssH * dpr * dpr > MAX_PX) dpr = Math.max(1, Math.sqrt(MAX_PX / (cssW * cssH)));
+    // Menus are HTML sized for a phone; on a tablet or laptop scale them up
+    // so buttons aren't tiny islands in the middle of a big screen.
+    const uiZoom = Math.max(1, Math.min(1.7, cssH / 420, cssW / 820));
+    document.documentElement.style.setProperty('--uiz', uiZoom.toFixed(3));
+    document.documentElement.style.setProperty('--hudz', Math.min(1.35, uiZoom).toFixed(3));
     canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssH * dpr);
     canvas.style.width = cssW + 'px'; canvas.style.height = cssH + 'px';
     LZ.Game.resize(cssW, cssH);

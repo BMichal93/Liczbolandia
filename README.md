@@ -10,6 +10,8 @@ Kolorowa platformówka z matematyką dla dzieci. Działa w przeglądarce i insta
 2. Menu ⋮ → „Dodaj do ekranu głównego” / „Zainstaluj aplikację”.
 3. Od teraz gra startuje z ikonki, na pełnym ekranie, także bez internetu.
 
+Działa na telefonie, tablecie i laptopie - widok i menu dopasowują się do ekranu. Na laptopie Chrome/Edge też pozwala zainstalować grę (ikonka w pasku adresu).
+
 ## Co jest w grze
 
 - 6 światów × (3 poziomy + boss), w każdym świecie nowa mechanika: sprężyny, lód, pływanie, grzyby-trampoliny, znikające chmurki i wiatr, czekoladowa lawa i spadające platformy.
@@ -19,7 +21,7 @@ Kolorowa platformówka z matematyką dla dzieci. Działa w przeglądarce i insta
   - **bossowie** - pokonuje się ich dobrymi odpowiedziami,
   - **sklep** - promocje i liczenie reszty.
 - 3 poziomy matematyki (ok. 6-8, 8-10, 11-13 lat) z automatycznym dopasowaniem trudności.
-- 8 postaci o różnych umiejętnościach, kolory, dodatki, ślady, odznaki.
+- 9 postaci o różnych umiejętnościach (w tym Świnka Kuleczka - wysokie odbicie od przeciwników), kolory, dodatki, ślady, odznaki.
 - Osobne profile graczy, automatyczny zapis, kopia zapasowa do pliku lub jako kod.
 
 ## Budowa

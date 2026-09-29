@@ -83,8 +83,9 @@
     ell(ctx, -10, -17, 4.5, 7, asw); fs(ctx, U.shade(armCol, -0.1), oc, lw);
 
     // ---- body ----
-    const bw = ch.id === 'hamster' ? 15 : 13;
+    const bw = ch.id === 'hamster' ? 15 : ch.id === 'guinea' ? 16.5 : 13;
     ell(ctx, 0, -15, bw, 12.5); fs(ctx, ch.id === 'penguin' ? pal.body : pal.body, oc, lw);
+    if (ch.id === 'guinea') { ctx.save(); ell(ctx, 0, -15, bw, 12.5); ctx.clip(); ell(ctx, -11, -18, 10, 9); fs(ctx, pal.accent); ell(ctx, -2, -4, 7, 5); fs(ctx, pal.patch2); ctx.restore(); ell(ctx, 0, -15, bw, 12.5); fs(ctx, null, oc, lw); }
     ell(ctx, 2.5, -13.5, bw - 5.5, 8.5); fs(ctx, pal.belly);
 
     // ---- head ----
@@ -92,6 +93,15 @@
     drawEars(ctx, ch.id, pal, oc, hx, hy, t, lw);
     if (ch.id === 'frog') { ell(ctx, hx, hy + 2, 19, 14); fs(ctx, pal.body, oc, lw); }
     else if (ch.id === 'hamster') { ell(ctx, hx, hy + 1, 17.5, 16); fs(ctx, pal.body, oc, lw); }
+    else if (ch.id === 'guinea') {
+      // guinea pig: wide loaf-shaped head with a coloured patch (tri-colour look)
+      ell(ctx, hx + 1, hy + 3, 19, 15); fs(ctx, pal.body, oc, lw);
+      ctx.save(); ell(ctx, hx + 1, hy + 3, 19, 15); ctx.clip();
+      ell(ctx, hx - 9, hy - 2, 11, 12, 0.3); fs(ctx, pal.accent);
+      ell(ctx, hx + 14, hy - 9, 8, 7); fs(ctx, pal.patch2);
+      ctx.restore();
+      ell(ctx, hx + 1, hy + 3, 19, 15); fs(ctx, null, oc, lw);
+    }
     else { ell(ctx, hx, hy, 16.5, 16); fs(ctx, pal.body, oc, lw); }
     drawFace(ctx, ch.id, pal, oc, hx, hy, t, st, o.blink);
 
@@ -156,6 +166,9 @@
     } else if (id === 'hamster') {
       ell(ctx, hx - 11, hy - 13, 6, 6); fs(ctx, pal.body, oc, lw); ell(ctx, hx - 11, hy - 13, 3.2, 3.2); fs(ctx, '#ffb3c7');
       ell(ctx, hx + 12, hy - 13, 6, 6); fs(ctx, pal.body, oc, lw); ell(ctx, hx + 12, hy - 13, 3.2, 3.2); fs(ctx, '#ffb3c7');
+    } else if (id === 'guinea') {
+      ell(ctx, hx - 15, hy - 5, 5.5, 7.5, -0.9); fs(ctx, '#f6b3a8', oc, lw);
+      ell(ctx, hx + 17, hy - 5, 5.5, 7.5, 0.9); fs(ctx, '#f6b3a8', oc, lw);
     } else if (id === 'panda') {
       ell(ctx, hx - 12, hy - 12, 6.5, 6.5); fs(ctx, pal.accent, U.shade(pal.accent, -0.3), lw);
       ell(ctx, hx + 13, hy - 12, 6.5, 6.5); fs(ctx, pal.accent, U.shade(pal.accent, -0.3), lw);
@@ -218,7 +231,7 @@
 
     // nose / beak / mouth
     if (id === 'penguin') { tri(ctx, hx + 3, hy + 3, hx + 11, hy + 3, hx + 7, hy + 9); fs(ctx, pal.accent, U.shade(pal.accent, -0.3), 1.5); return; }
-    if (id === 'fox' || id === 'cat' || id === 'hamster' || id === 'panda') { ell(ctx, hx + 4, hy + 4, 2, 1.5); fs(ctx, id === 'fox' ? '#2b1a12' : '#ff6f91'); }
+    if (id === 'fox' || id === 'cat' || id === 'hamster' || id === 'panda' || id === 'guinea') { ell(ctx, hx + 4, hy + 4, 2, 1.5); fs(ctx, id === 'fox' ? '#2b1a12' : '#ff6f91'); }
     if (id === 'dragon') { ell(ctx, hx + 8, hy + 3, 1, 1); fs(ctx, oc); ell(ctx, hx + 4, hy + 3, 1, 1); fs(ctx, oc); }
     ctx.strokeStyle = U.shade(pal.eye, 0.1); ctx.lineWidth = 1.8; ctx.lineCap = 'round';
     if (surprised) { ell(ctx, hx + 4, hy + 9.5, 2.3, 2.8); fs(ctx, '#7a2a3a'); }

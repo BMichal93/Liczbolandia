@@ -605,7 +605,7 @@
         const fromAbove = p.vy > 60 && (p.y + PH) - e.y < 22;
         if (fromAbove && e.stompable) {
           killEnemy(e, false, true);
-          p.vy = LZ.In.jump ? -P.stomp * 1.35 : -P.stomp; p.jumps = 1;
+          p.vy = (LZ.In.jump ? -P.stomp * 1.35 : -P.stomp) * (G.ab.stomp || 1); p.jumps = 1;
         } else if (p.invuln <= 0) {
           hurt(e.x + e.w / 2);
         }
@@ -881,6 +881,15 @@
    * RENDER
    * ================================================================= */
   function resize(cssW, cssH) {
+    /*
+     * The camera shows a fixed number of tiles vertically, so how much you
+     * see sideways depends on the screen shape. A 4:3 tablet would only
+     * show ~15 tiles ahead, which feels cramped, so on squarer screens we
+     * show more rows (up to the full level height of 14) to keep at least
+     * ~20 tiles of width. Phones (~2:1) and laptops (16:9) stay at 11.5.
+     */
+    const aspect = cssW / cssH;
+    viewH = U.clamp(Math.max(VIEW_TILES_H, 20 / aspect), VIEW_TILES_H, 14) * T;
     scale = cssH / viewH;
     viewW = cssW / scale;
     LZ.Art.clearCaches();
