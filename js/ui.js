@@ -259,6 +259,7 @@
     if (!LZ.Game.active || LZ.Game.state === 'goal' || document.querySelector('.modal-back.levelend')) return;
     if (paused) return resume();
     paused = true;
+    A.play('pause');
     LZ.In.reset();
     const set = S.data.settings;
     const m = modal([

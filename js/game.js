@@ -339,8 +339,8 @@
       G.grid[tx][ty] = 'U';
       G.bumps[key] = 1;
       const what = G.qc[key] || 'coin';
-      if (what === 'coin') { popCoin(tx * T + T / 2, ty * T); A.play('coin'); }
-      else { G.ents.push({ k: 'power', kind: what, x: tx * T + T / 2, y: ty * T - 18, vy: -200, born: 0.35 }); A.play('block'); }
+      if (what === 'coin') { popCoin(tx * T + T / 2, ty * T); A.play('block'); A.play('coin'); }
+      else { G.ents.push({ k: 'power', kind: what, x: tx * T + T / 2, y: ty * T - 18, vy: -200, born: 0.35 }); A.play('sprout'); }
       // knock enemies standing on the block
       for (const e of G.enemies) if (!e.dead && Math.abs(e.x + e.w / 2 - (tx * T + T / 2)) < T && Math.abs(e.y + e.h - ty * T) < 6) killEnemy(e, true);
     } else { G.bumps[key] = 0.6; A.play('bump'); }
@@ -512,7 +512,7 @@
         case 'checkpoint':
           if (!e.on && Math.abs(pc.x - e.x) < 30 && pc.y > e.y - 120) {
             e.on = true; G.checkpoint = { x: e.x - PW / 2, y: e.y - PH };
-            A.play('power'); toast('Punkt kontrolny!', 1.5); confetti(e.x, e.y - 90, 15);
+            A.play('checkpoint'); toast('Punkt kontrolny!', 1.5); confetti(e.x, e.y - 90, 15);
             S.save();
           }
           if (e.on) e.anim = Math.min(1, e.anim + dt * 2);
@@ -520,7 +520,8 @@
         case 'goal':
           if (G.state === 'play' && pc.x > e.x - 8) {
             G.state = 'goal'; G.goalT = 0; G.goalGround = e.y; p.vx = 0; p.x = e.x - PW / 2 + 4;
-            A.play('win'); confetti(e.x, e.y - 300, 40);
+            A.play('flag'); setTimeout(() => A.play('win'), 900);   // slide-down glissando, then the fanfare
+            confetti(e.x, e.y - 300, 40);
           }
           break;
         case 'gate': {
@@ -569,7 +570,7 @@
   }
   function applyPower(kind) {
     const p = G.player;
-    A.play('power');
+    A.play(kind === 'heart' ? 'heart' : 'power');
     const names = { heart: 'Serduszko!', magnet: 'Magnes na monety!', shield: 'Tarcza!', boots: 'Superskok!', rainbow: 'Tęczowa moc!' };
     toast(names[kind], 1.4);
     if (kind === 'heart') G.hearts = Math.min(G.maxHearts, G.hearts + 1);
@@ -666,7 +667,7 @@
     const p = G.player;
     G.damage = G.damage || {}; G.damage.pit = (G.damage.pit || 0) + 1;
     (G.pitAt = G.pitAt || {})[Math.floor(p.x / T)] = (G.pitAt[Math.floor(p.x / T)] || 0) + 1;   // where falls happen (for tests)
-    G.hearts--; A.play('hurt');
+    G.hearts--; A.play('fall');   // long 'whistle down' for a pit instead of the ouch sound
     if (G.hearts <= 0) { outOfHearts(); return; }
     const s = p.lastSafe || G.checkpoint;
     p.x = s.x; p.y = s.y; p.vx = 0; p.vy = 0; p.invuln = 1.6;
@@ -739,7 +740,7 @@
           } else {
             G.projectiles.push({ kind: 'fireball', x: sx, y: floorY - 20, vx: -300 * rage, vy: 0, g: 0, r: 15, life: 5 });
           }
-          A.play('jump');
+          A.play('throw');
         }
         break;
       }
@@ -1154,7 +1155,9 @@
     U.rr(ctx, b.x + 6, b.y + 5 + oy, T - 16, 5, 3); Art.fs(ctx, 'rgba(255,255,255,0.45)');
     const label = b.bad ? '✗' : b.label;
     let size = 26; ctx.font = '800 ' + size + 'px "Baloo 2", sans-serif';
-    while (ctx.measureText(label).width > T - 8 && size > 12) { size -= 2; ctx.font = '800 ' + size + 'px "Baloo 2", sans-serif'; }
+    // expression answers ('13+5') may spill a little past the block edge - bigger text beats tiny text
+    const maxW = /[+·:-]\d/.test(label) ? T + 14 : T - 8;
+    while (ctx.measureText(label).width > maxW && size > 12) { size -= 2; ctx.font = '800 ' + size + 'px "Baloo 2", sans-serif'; }
     outlinedText(ctx, label, b.x + T / 2, b.y + T / 2 + 2 + oy, size, '#ffffff', dark);
     ctx.restore();
   }
@@ -1228,7 +1231,7 @@
       Art.ell(ctx, 0, 0, 29, 29); Art.fs(ctx, g, '#c4458f', 3);
       ctx.shadowBlur = 0;
       let size = 26; ctx.font = '800 ' + size + 'px "Baloo 2", sans-serif';
-      while (ctx.measureText(o.label).width > 48 && size > 12) { size -= 2; ctx.font = '800 ' + size + 'px "Baloo 2", sans-serif'; }
+      while (ctx.measureText(o.label).width > (/[+·]/.test(o.label) ? 58 : 48) && size > 12) { size -= 2; ctx.font = '800 ' + size + 'px "Baloo 2", sans-serif'; }
       outlinedText(ctx, o.label, 0, 2, size, '#7a1a55', '#fff');
       ctx.restore();
     }

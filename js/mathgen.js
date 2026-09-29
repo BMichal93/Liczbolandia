@@ -168,11 +168,137 @@
     return U.clamp(Math.floor(s), 1, 5);
   }
 
+  /* ------------------------------------------------------------------
+   * Extra short formats, so the same kind of task doesn't keep coming back.
+   * All are pure maths with almost no reading:
+   *   "? + 3 = 7"           missing first number
+   *   "Który znak? 8 ? 3 = 5"   pick the operation (+ - × :)
+   *   "Co jest po 39?"      number neighbours
+   *   "Co jest większe?"    an expression vs a number
+   *   "Która para daje 10?" / "Które daje 24?"  pick the expression
+   * Expression options are written compactly ("3+7", "6·7") so they fit
+   * on the answer blocks.
+   * ------------------------------------------------------------------ */
+  const OPS = { '+': (a, b) => a + b, '-': (a, b) => a - b, '·': (a, b) => a * b, ':': (a, b) => (b && a % b === 0) ? a / b : NaN };
+  // "Który znak?" - only offered when exactly one sign gives the result
+  function whichSign(a, b, ops) {
+    const good = ops.filter(o => OPS[o](a, b) >= 0);
+    const o = pick(good), r = OPS[o](a, b);
+    const valid = ops.filter(x => OPS[x](a, b) === r);
+    if (valid.length !== 1 || r < 0 || r > 100 || !Number.isInteger(r)) return null;
+    return mk('Który znak? ' + a + ' ? ' + b + ' = ' + r, o, o === '+' ? 'add' : o === '-' ? 'sub' : o === '·' ? 'mul' : 'div', { choices: [o].concat(U.shuffle(R, ops.filter(x => x !== o)).slice(0, 2)) });   // max 3 options: gates have 3 blocks
+  }
+  function retry(fn) { for (let i = 0; i < 20; i++) { const q = fn(); if (q) return q; } return null; }
+  // pick-the-expression: one option hits the target, the others miss by a little
+  function whichGives(target, makeRight, makeWrong, sym, topic, title) {
+    const right = makeRight(), wrongs = [];
+    for (let i = 0; i < 40 && wrongs.length < 2; i++) {
+      const w = makeWrong();
+      const v = sym === '+' ? w[0] + w[1] : w[0] * w[1];
+      const lbl = w[0] + sym + w[1];
+      // both parts must be positive whole numbers ('9+-1' must never appear)
+      if (w[0] >= 1 && w[1] >= 1 && v !== target && !wrongs.includes(lbl) && lbl !== right) wrongs.push(lbl);
+    }
+    if (wrongs.length < 2) return null;
+    return mk(title, right, topic, { choices: [right].concat(wrongs) });
+  }
+  const next = (lo, hi) => () => { const n = ri(lo, hi); return R() < 0.5 ? mk('Co jest po ' + n + '?', n + 1, 'count', { extra: [n - 1, n + 10] }) : mk('Co jest przed ' + (n + 1) + '?', n, 'count', { extra: [n + 2, n + 1 - 10] }); };
+  const missingFirst = (max, sym) => () => {
+    if (sym === '+') { const c = ri(Math.min(8, max), max), b = ri(1, c - 1); return mk('? + ' + b + ' = ' + c, c - b, 'add', { extra: [c + b] }); }
+    const b = ri(2, Math.floor(max / 3)), c = ri(1, max - b); return mk('? - ' + b + ' = ' + c, c + b, 'sub', { extra: [c - b >= 0 ? c - b : c + b + 1] });
+  };
+  const bigger = (mkExpr) => () => {
+    const [lbl, v] = mkExpr();
+    let n = v + pick([-2, -1, 1, 2, 3]); if (n < 0) n = v + 2;
+    if (v <= 20 && n > 20) n = v - 2;   // stay within 20 on the easy level
+    return mk('Co jest większe?', v > n ? lbl : String(n), 'compare', { choices: [lbl, String(n)] });
+  };
+  const addExpr = (max) => () => { const a = ri(1, max - 1), b = ri(1, max - a); return [a + '+' + b, a + b]; };
+  const mulExpr = (tables) => () => { const a = pick(tables), b = ri(2, 10); return [a + '·' + b, a * b]; };
+  const pairFor = (target) => whichGives(target, () => { const a = ri(1, target - 1); return a + '+' + (target - a); },
+    () => { const a = ri(1, target - 1); return [a, target - a + pick([-2, -1, 1, 2])]; }, '+', 'add', 'Która para daje ' + target + '?');
+  const productFor = (tables) => { const a = pick(tables), b = ri(2, 10), t = a * b;
+    return whichGives(t, () => a + '·' + b, () => { const x = ri(2, 10); return [x, ri(2, 10)]; }, '·', 'mul', 'Które daje ' + t + '?'); };
+
+  T1.push(
+    [2, missingFirst(10, '+')],
+    [1, () => retry(() => whichSign(ri(2, 9), ri(1, 5), ['+', '-']))],
+    [1, next(1, 18)],
+    [1, bigger(addExpr(10))],
+    [1, () => retry(() => pairFor(pick([5, 6, 7, 8, 9, 10])))],
+  );
+  T2.push(
+    [1, missingFirst(20, '+')],
+    [1, missingFirst(20, '-')],
+    [1, () => retry(() => whichSign(ri(8, 18), ri(2, 9), ['+', '-']))],
+    [1, bigger(addExpr(20))],
+    [1, () => retry(() => pairFor(pick([10, 12, 15, 18, 20])))],
+  );
+  T3.push(
+    [1, next(19, 98)],
+    [1, missingFirst(100, '+')],
+    [1, () => retry(() => whichSign(ri(20, 80), ri(5, 20), ['+', '-']))],
+    [1, () => { const d = ri(1, 9); return mk('Ile dziesiątek ma ' + (10 * d) + '?', d, 'count', { extra: [10 * d, d + 1] }); }],
+    [1, () => retry(() => pairFor(pick([30, 40, 50, 60, 100])))],
+  );
+  T4.push(
+    [2, () => retry(() => whichSign(pick([2, 3, 4, 5, 10]) * ri(2, 5), pick([2, 3, 4, 5]), ['+', '-', '·', ':']))],
+    [1, () => { const b = pick([2, 3, 4, 5, 10]), q = ri(2, 5); return mk('? : ' + b + ' = ' + q, b * q, 'div', { extra: [b + q, b * q + b] }); }],
+    [2, () => retry(() => productFor([2, 3, 4, 5]))],
+    [1, bigger(mulExpr([2, 3, 4, 5]))],
+  );
+  T5.push(
+    [2, () => retry(() => whichSign(ri(2, 10) * ri(2, 9), ri(2, 9), ['+', '-', '·', ':']))],
+    [1, () => { const b = ri(3, 9), q = ri(2, 9); return mk('? : ' + b + ' = ' + q, b * q, 'div', { extra: [b + q, b * q - b] }); }],
+    [2, () => retry(() => productFor([3, 4, 6, 7, 8, 9]))],
+    [1, bigger(mulExpr([6, 7, 8, 9]))],
+  );
+
+  /*
+   * Anti-repetition. The generator remembers recent questions and:
+   *   - never repeats an exact question from the last 40,
+   *   - never gives the same KIND of task twice in a row
+   *     (e.g. two "a + b = ?" in a row),
+   *   - prefers kinds it hasn't used for a while (soft rotation).
+   * Kinds are "tier:index" of the template that made the question.
+   */
+  const hist = { texts: [], kinds: [], tmpl: [] };
+  // What the child perceives as "the same kind of task": the question's shape
+  // with numbers and nouns blanked out, e.g. "# + # = ?", "Masz # X. Dostajesz".
+  // (Two different templates that print "# + # = ?" count as one kind.)
+  const NOUN_FORMS = new RegExp('\\b(' + NOUNS.flat().join('|') + ')\\b', 'g');
+  const kindOf = q => q.q.replace(/\d+/g, '#').replace(NOUN_FORMS, 'X').split(' ').slice(0, 3).join(' ');
+  // exact repeat = same text AND same options (e.g. "Co jest większe?" with other numbers is new)
+  // A question with numbers in it ('6 + 2 = ?') is the same question whatever the wrong
+  // options are; only number-less texts ('Co jest większe?') are told apart by their options.
+  const idOf = q => /\d/.test(q.q) ? q.q : q.q + '|' + q.choices.slice().sort().join(',');
+  function resetHistory() { hist.texts.length = 0; hist.kinds.length = 0; hist.tmpl.length = 0; lastChallenge = null; }
   function question(skill, band) {
-    const t = tierFor(skill, band);
-    const q = U.wpick(R, TIERS[t])();
-    q.tier = t;
-    return q;
+    let best = null;
+    for (let attempt = 0; attempt < 25; attempt++) {
+      const t = tierFor(skill, band);
+      const list = TIERS[t];
+      // weight kinds by how long ago we used them (unused lately = more likely)
+      const weighted = list.map((e, i) => {
+        const ago = hist.tmpl.lastIndexOf(t + ':' + i);
+        const age = ago < 0 ? 12 : hist.tmpl.length - ago;
+        return [e[0] * Math.min(3, 0.4 + age / 4), i];
+      });
+      const i = U.wpick(R, weighted);
+      const q = list[i][1]();
+      if (!q) continue;
+      q.tier = t; q.tmpl = t + ':' + i; q.kind = kindOf(q);
+      if (!best) best = q;
+      const k = hist.kinds;
+      if (k[k.length - 1] === q.kind) continue;                                  // never the same kind twice in a row
+      if (attempt < 15 && k.slice(-4).filter(x => x === q.kind).length >= 2) continue;  // and not more than 2 of the last 5
+      if (hist.texts.includes(idOf(q))) continue;                                 // never an exact repeat of the last 40
+      best = q; break;
+    }
+    hist.texts.push(idOf(best)); if (hist.texts.length > 40) hist.texts.shift();
+    hist.kinds.push(best.kind); if (hist.kinds.length > 40) hist.kinds.shift();
+    hist.tmpl.push(best.tmpl); if (hist.tmpl.length > 40) hist.tmpl.shift();
+    return best;
   }
 
   /*
@@ -183,6 +309,8 @@
    *                  bad bubbles just bounce off with a friendly explanation
    *   kind 'order' - pick bubbles from smallest to biggest
    */
+  let lastChallenge = null;
+  const challengeKey = c => c.kind + (/parzyste/.test(c.title) ? '-parity' : /tabliczki/.test(c.title) ? '-table' : '');
   function challenge(skill, band) {
     const t = tierFor(skill, band);
     const opts = [];
@@ -221,7 +349,10 @@
         return { kind: 'set', title: 'Zbierz liczby z tabliczki × ' + k, labels: U.shuffle(R, labels).map(String), good: v => +v % k === 0, whyBad: v => v + ' nie dzieli się przez ' + k + '.', topic: 'collect' };
       });
     }
-    const c = pick(opts)();
+    // never the same kind of challenge twice in a row
+    let c = pick(opts)();
+    for (let i = 0; i < 10 && lastChallenge && challengeKey(c) === lastChallenge; i++) c = pick(opts)();
+    lastChallenge = challengeKey(c);
     c.tier = t;
     return c;
   }
@@ -233,5 +364,5 @@
     return { off, q: 'Cena ' + price + ', taniej o ' + off + '. Ile zapłacisz?', a: String(price - off), choices: numChoices(price - off, [price + off, price - off + 10]).filter(c => +c >= 0), topic: 'money' };
   }
 
-  LZ.M = { question, challenge, discountQuestion, TOPICS, numChoices };
+  LZ.M = { question, challenge, discountQuestion, TOPICS, numChoices, resetHistory };
 })();
