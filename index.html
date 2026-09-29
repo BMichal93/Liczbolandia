@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport-fit=cover + no user scaling: behaves like a native app, no accidental pinch-zoom mid-jump -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Liczbolandia</title>
+  <meta name="description" content="Kolorowa platformówka z matematyką dla dzieci.">
+  <meta name="theme-color" content="#7a5ce6">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <!-- in-game overlay: pause button + touch controls (shown only on touch devices via CSS) -->
+  <div id="hud" class="hidden">
+    <button id="btn-pause" aria-label="Pauza"><span></span><span></span></button>
+    <div id="controls">
+      <div id="btn-left" class="ctl" aria-label="W lewo"><svg viewBox="0 0 40 40"><path d="M26 8 L12 20 L26 32" /></svg></div>
+      <div id="btn-right" class="ctl" aria-label="W prawo"><svg viewBox="0 0 40 40"><path d="M14 8 L28 20 L14 32" /></svg></div>
+      <div id="btn-jump" class="ctl" aria-label="Skok"><svg viewBox="0 0 40 40"><path d="M8 26 L20 12 L32 26" /></svg><b>Skok</b></div>
+    </div>
+  </div>
+
+  <div id="ui" class="hidden"></div>
+
+  <div id="rotate">
+    <div class="phone"></div>
+    <p>Obróć telefon poziomo</p>
+  </div>
+
+  <div id="loading"><div class="logo small"><span>Liczbo</span><span class="l2">landia</span></div></div>
+
+  <script src="js/util.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/mathgen.js"></script>
+  <script src="js/save.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/art.js"></script>
+  <script src="js/levelgen.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
