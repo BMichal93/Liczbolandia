@@ -2,7 +2,7 @@
 
 Kolorowa platformówka z matematyką dla dzieci. Działa w przeglądarce i instaluje się na Androidzie jako aplikacja z ikonką (PWA).
 
-**Graj:** https://bmichal93.github.io/liczbolandia/
+**Graj:** https://bmichal93.github.io/Liczbolandia/
 
 ## Instalacja na telefonie (Android)
 
@@ -25,3 +25,11 @@ Kolorowa platformówka z matematyką dla dzieci. Działa w przeglądarce i insta
 ## Budowa
 
 Czysty HTML/CSS/JS bez bundlera - pliki w `js/` ładowane jako zwykłe skrypty. Grafika rysowana wektorowo na canvasie, dźwięk syntezowany Web Audio. `sw.js` cache'uje wszystkie pliki (tryb offline); przy każdej zmianie plików podbij `VERSION` w `sw.js`, żeby telefony pobrały nową wersję.
+
+## Publikowanie zmian
+
+Strona jest serwowana z gałęzi `gh-pages` (GitHub włączył Pages automatycznie po jej utworzeniu). Po zmianach w `main`:
+
+```
+git push origin main && git push origin main:gh-pages
+```
