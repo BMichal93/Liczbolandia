@@ -83,7 +83,8 @@
       return mk('Która liczba jest mniejsza?', Math.min(a, b), 'compare', { choices: [a, b] });
     }],
     [2, () => {
-      const step = pick([1, 1, 2, 5, 10]), s = step === 10 ? 10 * ri(0, 3) : step === 5 ? 5 * ri(0, 3) : ri(0, 8);
+      // first-graders count within ~40: keep sequences small
+      const step = pick([1, 1, 2, 5, 10]), s = step === 10 ? 10 * ri(0, 1) : step === 5 ? 5 * ri(0, 2) : ri(0, 8);
       return mk([s, s + step, s + 2 * step].join(', ') + ', ?', s + 3 * step, 'seq', { extra: [s + 3 * step + 1, s + 2 * step + 1] });
     }],
   ];
@@ -96,7 +97,7 @@
     [1, () => { const c = ri(3, 12), b = ri(2, 8); return mk('? - ' + b + ' = ' + c, c + b, 'sub', { extra: [c - b >= 0 ? c - b : c + b + 1] }); }],
     [2, () => { const a = ri(2, 10); return R() < 0.5 ? mk('Dwa razy ' + a + ' to?', 2 * a, 'mul', { extra: [a + 2] }) : mk('Połowa z ' + (2 * a) + ' to?', a, 'div', { extra: [2 * a - 2] }); }],
     [1, () => {
-      const t = ri(1, 9), j = ri(0, 9);
+      const t = ri(1, 3), j = ri(0, 9);   // up to 39 - within reach for klasa 1-2
       return mk(t + ' ' + P(t, 'dziesiątka', 'dziesiątki', 'dziesiątek') + ' i ' + j + ' ' + P(j, 'jedność', 'jedności', 'jedności') + ' to?', 10 * t + j, 'count', { extra: [10 * j + t, t + j] });
     }],
     [3, () => {
@@ -105,7 +106,7 @@
     }],
     [2, () => {
       const n = pick(NAMES), noun = pick(NOUNS), a = ri(8, 20), b = ri(2, a - 2);
-      return mk(n + ' ma ' + nf(a, noun) + '. Oddaje ' + b + ' koleżance. Ile ' + noun[2] + ' zostało?', a - b, 'word', { extra: [a + b] });
+      return mk(n + ' ma ' + nf(a, noun) + '. Oddaje ' + b + ' koleżance. Ile ' + noun[2] + ' zostało?', a - b, 'word', { extra: [a + b <= 20 ? a + b : a - b + 2] });   // 'added instead of subtracted' only while it stays within 20
     }],
     [1, () => {
       const n1 = pick(NAMES); let n2 = pick(NAMES); while (n2 === n1) n2 = pick(NAMES);
@@ -199,7 +200,7 @@
     [4, () => {
       const x = ri(2, 12), a = ri(2, 9), b = ri(1, 20), form = ri(0, 2);
       if (form === 0) return mk(a + 'x + ' + b + ' = ' + (a * x + b) + '.   x = ?', x, 'eq', { extra: [a * x + b - b - a > 0 ? x + 1 : x + 2, (a * x + b) / a | 0] });
-      if (form === 1) return mk(a + 'x - ' + b + ' = ' + (a * x - b) + '.   x = ?', x, 'eq', { extra: [x - 1, x + 2] });
+      if (form === 1) { const bb = ri(1, a * x - 1); return mk(a + 'x - ' + bb + ' = ' + (a * x - bb) + '.   x = ?', x, 'eq', { extra: [x - 1, x + 2] }); }
       return mk('x : ' + a + ' = ' + x + '.   x = ?', a * x, 'eq', { extra: [x + a, a * x + a] });
     }],
     [3, () => {
@@ -286,7 +287,7 @@
     }
     if (t <= 3) {
       opts.push(() => {
-        const labels = []; const max = t === 1 ? 20 : 99;
+        const labels = []; const max = t === 1 ? 20 : t === 2 ? 30 : 99;   // 7-year-olds order numbers within 20-30
         while (labels.length < 5) { const v = ri(0, max); if (!labels.includes(v)) labels.push(v); }
         return { kind: 'order', title: 'Zbieraj od najmniejszej do największej', labels: U.shuffle(R, labels).map(String), sorted: labels.slice().sort((a, b) => a - b).map(String), topic: 'collect' };
       });
@@ -328,7 +329,8 @@
       const off = Math.round(price / 2 / 10) * 10 || 10;
       return { off, q: 'Promocja! ' + price + ' monet, taniej o ' + off + '. Ile zapłacisz?', a: String(price - off), choices: numChoices(price - off, [price + off, price - off - 10]), topic: 'money' };
     }
-    const p = U.pick(R, [10, 20, 25, 50]);
+    // only percentages that give whole coins (25% of 50 would be 12.5)
+    const p = U.pick(R, [10, 20, 25, 50].filter(q => (price * q) % 100 === 0));
     const off = price * p / 100;
     return { off, q: 'Promocja -' + p + '%! Cena ' + price + ' monet. Ile zapłacisz?', a: String(price - off), choices: numChoices(price - off, [off, price - p]), topic: 'pct' };
   }
