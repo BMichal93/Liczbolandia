@@ -126,6 +126,8 @@
     { id: 'crown', name: 'Korona', price: 0, badge: 'boss1' },
     { id: 'tiara', name: 'Diadem', price: 0, badge: 'stars30' },
     { id: 'pirate', name: 'Kapelusz pirata', price: 190 },
+    { id: 'gearcap', name: 'Czapka mechanika', price: 0, badge: 'boss7' },
+    { id: 'astro', name: 'Hełm kosmonautki', price: 0, badge: 'boss8' },
   ];
 
   /* Particle trails left while running. */
@@ -182,8 +184,24 @@
       features: ['lava', 'falling'], enemies: ['firejelly', 'hedgehog', 'slime'], music: 67,
       boss: { id: 'chocodragon', name: 'Smok Czekoladowy', color: '#8b5a3c', attack: 'fire' },
     },
+    {
+      // new mechanic: conveyor belts that carry you (and wind-up robots)
+      id: 7, name: 'Zabawkowa Fabryka', sub: 'Ruchome taśmy i nakręcane roboty',
+      pal: { skyTop: '#9fd8ff', skyBot: '#fff0d6', far: '#c9b8ff', mid: '#ffc9e0', grass: '#7ad3c8', grassDark: '#4aa89c', dirt: '#b8a0e0', dirtDark: '#9580c8', block: '#ffb84d', blockDark: '#e08a1c', plank: '#ffd6e8', accent: '#ff6fae' },
+      features: ['conveyor', 'moving'], enemies: ['robot', 'slime', 'bee'], music: 79,
+      boss: { id: 'gearbot', name: 'Robot Zębatek', color: '#9aa3b5', attack: 'throw' },
+    },
+    {
+      // new mechanic: low gravity - floaty, high jumps
+      id: 8, name: 'Kosmiczna Galaktyka', sub: 'Skaczesz jak na Księżycu!',
+      pal: { skyTop: '#0b0930', skyBot: '#3a2a7a', far: '#2a2060', mid: '#4a3a8a', grass: '#c9b8ff', grassDark: '#9d7bff', dirt: '#6a5aa0', dirtDark: '#524288', block: '#5ccfff', blockDark: '#2a9fd6', plank: '#e0d8ff', accent: '#ffe066' },
+      features: ['lowgrav', 'moving', 'falling'], enemies: ['alien', 'ufo'], music: 83,
+      boss: { id: 'comet', name: 'Królowa Komet', color: '#8fd3ff', attack: 'rain' },
+    },
   ];
-  const LEVELS_PER_WORLD = 4; // levels 1-3 normal, level 4 is the boss
+  // levels 1-5 normal, level 6 is the boss (was 3 + boss before; saves are migrated in save.js)
+  const LEVELS_PER_WORLD = 6;
+  const BONUS_ID = 99;   // the star-shop bonus level lives outside the world list
 
   /*
    * Badges (odznaki). Each check() looks at the profile. Some reward a hat
@@ -201,7 +219,9 @@
     { id: 'stars30', name: 'Gwiazda Liczbolandii', desc: 'Zbierz 30 gwiazdek', check: p => countStars(p) >= 30, reward: 'Diadem' },
     { id: 'stomp50', name: 'Hop, hop!', desc: 'Podskocz na 50 przeciwnikach', check: p => p.stats.stomps >= 50 },
     { id: 'shopper', name: 'Zakupy!', desc: 'Kup coś w sklepie', check: p => p.stats.purchases >= 1 },
-    { id: 'allbosses', name: 'Bohaterka', desc: 'Pokonaj wszystkich bossów', check: p => (p.bossWins || []).length >= 6 },
+    { id: 'allbosses', name: 'Bohaterka', desc: 'Pokonaj wszystkich bossów', check: p => (p.bossWins || []).length >= WORLDS.length },
+    { id: 'boss7', name: 'Mechaniczka', desc: 'Pokonaj Robota Zębatka', check: p => (p.bossWins || []).includes(7), reward: 'Czapka mechanika' },
+    { id: 'boss8', name: 'Kosmonautka', desc: 'Pokonaj Królową Komet', check: p => (p.bossWins || []).includes(8), reward: 'Hełm kosmonautki' },
     { id: 'stickers12', name: 'Pół albumu', desc: 'Zbierz 12 naklejek', check: p => (p.stickers || []).length >= 12 },
     { id: 'stickersAll', name: 'Kolekcjonerka', desc: 'Zbierz wszystkie naklejki', check: p => (p.stickers || []).length >= STICKERS.length },
     { id: 'firstPet', name: 'Mam pupila!', desc: 'Kup pupila za gwiazdki', check: p => (p.starItems || []).some(i => i.startsWith('pet_')) },
@@ -210,10 +230,10 @@
 
   /*
    * STAR SHOP. Stars are the rare currency: each level hides 3 and a boss
-   * gives 3, so the whole game holds exactly 72. The star items below cost
-   * 72 in total - getting everything means finishing every level AND
-   * finding every hidden star. Each item changes how the game plays or
-   * looks, so it's worth saving for.
+   * gives 3, so the whole game holds exactly 8 worlds x 6 x 3 = 144. The
+   * star items below cost 144 in total - getting everything means finishing
+   * every level AND finding every hidden star (one per level waits in the
+   * secret room). Each item changes how the game plays or looks.
    */
   const STAR_ITEMS = [
     { id: 'pet_butterfly', type: 'pet', name: 'Motylek', desc: 'Leci za tobą i łapie monety obok.', stars: 5 },
@@ -223,9 +243,13 @@
     { id: 'perk_heart', type: 'perk', name: 'Dodatkowe serduszko', desc: 'Na każdym poziomie masz o 1 serduszko więcej.', stars: 12 },
     { id: 'gold', type: 'skin', name: 'Złota postać', desc: 'Każda postać może być złota i błyszcząca!', stars: 12 },
     { id: 'pet_dragon', type: 'pet', name: 'Mini-smoczek', desc: 'Najlepszy pupil: zbiera monety z największej odległości.', stars: 15 },
+    { id: 'pet_robot', type: 'pet', name: 'Robocik', desc: 'Mały latający robot. Zbiera monety.', stars: 14 },
+    { id: 'pet_ufo', type: 'pet', name: 'Mini-UFO', desc: 'Wciąga monety promieniem z daleka!', stars: 18 },
+    { id: 'perk_shield', type: 'perk', name: 'Tarcza na start', desc: 'Każdy poziom zaczynasz z tarczą.', stars: 20 },
+    { id: 'perk_heart2', type: 'perk', name: 'Drugie serduszko', desc: 'Jeszcze jedno serduszko więcej na każdym poziomie.', stars: 20 },
   ];
   // how far (in tiles) each pet reaches for coins
-  const PETS = { pet_butterfly: { reach: 1.8 }, pet_fish: { reach: 2.3 }, pet_firefly: { reach: 3 }, pet_dragon: { reach: 3.8 } };
+  const PETS = { pet_butterfly: { reach: 1.8 }, pet_fish: { reach: 2.3 }, pet_firefly: { reach: 3 }, pet_robot: { reach: 3.2 }, pet_dragon: { reach: 3.8 }, pet_ufo: { reach: 4.4 } };
 
   /*
    * STICKER ALBUM - a long-term coin sink. Every pack gives a sticker you
@@ -237,8 +261,10 @@
     { id: 'urchin', name: 'Jeżowiec', kind: 'enemy' }, { id: 'shroom', name: 'Grzybek', kind: 'enemy' }, { id: 'bat', name: 'Nietoperek', kind: 'enemy' },
     { id: 'cloudy', name: 'Chmurek', kind: 'enemy' }, { id: 'firejelly', name: 'Ognik', kind: 'enemy' },
     { id: 'plant', name: 'Kłapacz', kind: 'enemy' }, { id: 'ball', name: 'Kulka z armatki', kind: 'enemy' },
+    { id: 'robot', name: 'Nakręcany robot', kind: 'enemy' }, { id: 'alien', name: 'Kosmitek', kind: 'enemy' }, { id: 'ufo', name: 'Latający talerz', kind: 'enemy' },
     { id: 'slimeking', name: 'Król Glutek', kind: 'boss' }, { id: 'snowman', name: 'Bałwan Bubu', kind: 'boss' }, { id: 'octopus', name: 'Ośmiornica Ola', kind: 'boss' },
     { id: 'shroomlord', name: 'Grzybolord', kind: 'boss' }, { id: 'storm', name: 'Burzynka', kind: 'boss' }, { id: 'chocodragon', name: 'Smok Czekoladowy', kind: 'boss' },
+    { id: 'gearbot', name: 'Robot Zębatek', kind: 'boss' }, { id: 'comet', name: 'Królowa Komet', kind: 'boss' },
     { id: 'heart', name: 'Serduszko', kind: 'power' }, { id: 'magnet', name: 'Magnes', kind: 'power' }, { id: 'shield', name: 'Tarcza', kind: 'power' },
     { id: 'boots', name: 'Superskok', kind: 'power' }, { id: 'rainbow', name: 'Tęczowa gwiazda', kind: 'power' },
     { id: 'coin', name: 'Złota moneta', kind: 'item' }, { id: 'star', name: 'Gwiazdka', kind: 'item' },
@@ -247,7 +273,7 @@
 
   // Bonus world bought with stars: one replayable level full of coins.
   const BONUS_WORLD = {
-    id: 7, name: 'Kraina Monet', sub: 'Tajny poziom - same skarby!',
+    id: 99, name: 'Kraina Monet', sub: 'Tajny poziom - same skarby!',
     pal: { skyTop: '#ffcf5a', skyBot: '#fff4c2', far: '#ffe08a', mid: '#ffd166', grass: '#ffe680', grassDark: '#e8b820', dirt: '#c98a3a', dirtDark: '#a86c20', block: '#ffcf3f', blockDark: '#d99a00', plank: '#fff1b0', accent: '#ff9f1c' },
     features: ['spring'], enemies: ['slime'], music: 77, bonus: true,
     boss: { id: 'slimeking', name: 'Król Glutek', color: '#8fe36b', attack: 'shock' },
@@ -283,5 +309,5 @@
     { id: 4, name: 'Mistrzowski', icon: '👑', desc: 'Cała tabliczka mnożenia i dzielenie do 100', note: '', min: 4.6, max: 5.99, start: 4.8, reward: 3 },
   ];
 
-  LZ.D = { CHARACTERS, VARIANT_PRICES, HATS, TRAILS, WORLDS, LEVELS_PER_WORLD, BADGES, MATH_LEVELS, countStars, countCompleted, starBalance, STAR_ITEMS, PETS, STICKERS, STICKER_PACK_PRICE, BONUS_WORLD };
+  LZ.D = { CHARACTERS, VARIANT_PRICES, HATS, TRAILS, WORLDS, LEVELS_PER_WORLD, BADGES, MATH_LEVELS, countStars, countCompleted, starBalance, STAR_ITEMS, PETS, STICKERS, STICKER_PACK_PRICE, BONUS_WORLD, BONUS_ID };
 })();

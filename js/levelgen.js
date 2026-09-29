@@ -16,6 +16,7 @@
  *   T  hollow tree stump (solid; drawn by its entity, may hide a snapping plant)
  *   C  cannon (solid; drawn by its entity, fires slow cannonballs)
  *   U  used block / underground wall
+ *   >  <  conveyor belt (solid; carries you right / left) - toy factory
  *
  * Every level also gets a THEME (Las pniaków, Ceglane miasteczko...) that
  * changes which chunks dominate, so levels in one world feel different.
@@ -39,8 +40,9 @@
   /* Which theme a level gets: world 1 introduces them one by one; later
      worlds get a seeded mix of 3 different ones (the cannon fort from world 2). */
   function themeFor(wi, li) {
-    if (wi === 7) return 'meadow';
-    if (wi === 1) return ['meadow', 'stumps', 'bricks'][li - 1];
+    if (wi === D.BONUS_ID) return 'meadow';
+    // world 1 introduces the themes one at a time, easiest first
+    if (wi === 1) return ['meadow', 'stumps', 'bricks', 'heights', 'meadow'][li - 1];
     const r = U.rng(wi * 7717 + 3);
     const opts = U.shuffle(r, ['stumps', 'bricks', 'heights', 'fort', 'meadow']);
     return opts[li - 1];
@@ -48,14 +50,14 @@
 
   function generate(wi, li) {
     // world 7 is the star-shop bonus level "Kraina Monet": one replayable level
-    const bonus = wi === 7;
+    const bonus = wi === D.BONUS_ID;
     const world = bonus ? D.BONUS_WORLD : D.WORLDS[wi - 1];
     if (!bonus && li === D.LEVELS_PER_WORLD) return bossArena(world);
 
     const r = bonus ? U.rng(Date.now() & 0xffff) : U.rng(wi * 1009 + li * 37 + 5);   // bonus level is different on every visit
     const has = f => world.features.includes(f);
     const water = has('water');
-    const diff = (wi - 1) * 0.55 + (li - 1) * 0.4;       // 0 .. ~3.6
+    const diff = bonus ? 0.5 : (wi - 1) * 0.45 + (li - 1) * 0.25;   // 0 .. ~4.15
     const theme = themeFor(wi, li);
     const cols = [];
     const ents = [];
@@ -75,14 +77,14 @@
     };
     const coin = (cx, cy) => ents.push({ t: 'coin', x: cx, y: cy });
     const arc = (x0, w, y0) => { for (let i = 0; i <= w; i++) coin(x0 + i, y0 - Math.round(Math.sin((i / w) * Math.PI) * 2)); };
-    const walkers = world.enemies.filter(e => ['slime', 'hedgehog', 'shroom', 'snowball'].includes(e));
-    const flyers = world.enemies.filter(e => ['bee', 'bat', 'cloudy', 'fish', 'jelly'].includes(e));
+    const walkers = world.enemies.filter(e => ['slime', 'hedgehog', 'shroom', 'snowball', 'robot', 'alien'].includes(e));
+    const flyers = world.enemies.filter(e => ['bee', 'bat', 'cloudy', 'fish', 'jelly', 'ufo'].includes(e));
     const enemy = (cx, cy) => {
       let type;
       if (water) type = U.pick(r, ['fish', 'fish', 'jelly']);
       else if (flyers.length && r() < 0.3) type = U.pick(r, flyers);
       else type = U.pick(r, walkers.length ? walkers : ['slime']);
-      const fly = ['bee', 'bat', 'cloudy', 'fish', 'jelly'].includes(type);
+      const fly = ['bee', 'bat', 'cloudy', 'fish', 'jelly', 'ufo'].includes(type);
       ents.push({ t: 'enemy', type, x: cx, y: fly ? cy - 2 - Math.floor(r() * 2) : cy });
     };
     const maybeEnemy = (cx) => { if (r() < (bonus ? 0.12 : 0.35 + diff * 0.12)) enemy(cx, gh); };
@@ -275,6 +277,26 @@
         x += n;
       },
 
+      /* ---- toy factory: conveyor belts ---- */
+      // a long belt on the ground - sometimes helping, sometimes pushing back
+      conveyor() {
+        const n = U.ri(r, 10, 14), dirc = r() < 0.5 ? '>' : '<';
+        ground(x, gh); ground(x + 1, gh);
+        for (let i = 2; i < n - 2; i++) { ground(x + i, gh); set(x + i, gh, dirc); if (i % 2 === 0) coin(x + i, gh - 2); }
+        ground(x + n - 2, gh); ground(x + n - 1, gh);
+        ents.push({ t: 'enemy', type: walker(), x: x + Math.floor(n / 2), y: gh });
+        x += n;
+      },
+      // a belt bridge over a pit that carries you across
+      beltBridge() {
+        ground(x, gh); ground(x + 1, gh); ground(x + 2, gh);
+        const w = U.ri(r, 5, 7), by = gh - 2;
+        for (let i = 0; i < w; i++) { pit(x + 3 + i); set(x + 3 + i, by, '>'); coin(x + 3 + i, by - 2); }
+        starSpots.push({ x: x + 3 + Math.floor(w / 2), y: Math.max(1, by - 4) });
+        x += 3 + w;
+        ground(x, gh); ground(x + 1, gh); ground(x + 2, gh); x += 3;
+      },
+
       /* ---- Mario-style terrain ---- */
       // a row of hollow stumps of different heights; some hide a snapping plant
       stumps() {
@@ -440,7 +462,7 @@
     x = 8;
     ents.push({ t: 'sign', x: 5, y: gh });
     // longer levels than before (about 1.4x), with two checkpoints
-    const length = bonus ? 130 : 215 + wi * 16 + li * 12;
+    const length = bonus ? 130 : 215 + wi * 15 + li * 9;
     const pool = Object.entries(THEMES[theme].w).map(([k, v]) => [v, k]);
     if (diff > 0.5 && !THEMES[theme].w.thorns) pool.push([0.8, 'thorns']);
     if (!THEMES[theme].w.parade) pool.push([0.8, 'parade']);
@@ -451,6 +473,8 @@
     if (has('cloud')) pool.push([3, 'clouds']);
     if (has('wind')) pool.push([2, 'wind']);
     if (has('falling')) pool.push([3, 'falling']);
+    if (has('conveyor')) { pool.push([3.5, 'conveyor']); pool.push([2.5, 'beltBridge']); }
+    if (has('lowgrav')) pool.forEach(p => { if (['floating', 'gap', 'pyramid'].includes(p[1])) p[0] *= 1.6; });   // floaty jumps: more air time
     if (water) { pool.push([3, 'reef']); pool.forEach(p => { if (['spring', 'thorns', 'elevator'].includes(p[1])) p[0] = 0; }); }
     if (!has('moving') && wi >= 2) pool.push([1, 'moving']);
 

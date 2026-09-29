@@ -25,7 +25,7 @@
   let viewW = 800, viewH = VIEW_TILES_H * T, scale = 1;
 
   // T = tree stump, B = brick, C = cannon (all solid)
-  const isSolid = c => c === '#' || c === 'I' || c === '=' || c === '?' || c === 'U' || c === 'T' || c === 'B' || c === 'C';
+  const isSolid = c => c === '#' || c === 'I' || c === '=' || c === '?' || c === 'U' || c === 'T' || c === 'B' || c === 'C' || c === '>' || c === '<';
 
   /* =================================================================
    * LEVEL START
@@ -35,7 +35,8 @@
     const lvl = LZ.Gen.generate(wi, li);
     const ch = D.CHARACTERS.find(c => c.id === prof.equip.char) || D.CHARACTERS[0];
     const ab = ch.ability || {};
-    const maxHearts = (ab.hearts || 3) + ((prof.starItems || []).includes('perk_heart') ? 1 : 0);   // star-shop perk
+    const si = prof.starItems || [];
+    const maxHearts = (ab.hearts || 3) + (si.includes('perk_heart') ? 1 : 0) + (si.includes('perk_heart2') ? 1 : 0);   // star-shop perks
     G = {
       lvl, prof, ch, ab, wi, li, t: 0, state: 'play',
       rew: (S.mathBand(prof).reward || 1),   // difficulty reward multiplier
@@ -60,13 +61,16 @@
     const petId = prof.equip.pet;
     G.pet = petId && petId !== 'none' && (prof.starItems || []).includes(petId) ? { id: petId, x: G.player.x - 40, y: G.player.y - 30, reach: D.PETS[petId].reach * T } : null;
     G.gold = !!prof.equip.gold && (prof.starItems || []).includes('gold');
+    if (si.includes('perk_shield')) G.player.shield = true;   // star-shop perk: start with a shield
+    // world mechanics
+    G.lowgrav = lvl.world.features.includes('lowgrav');
     computeMasks();
     buildEntities();
     if (lvl.boss) setupBoss();
     G.cam.x = G.player.x - viewW * 0.35; G.cam.y = (G.H * T - viewH);
     clampCam(true);
     A.playMusic(lvl.world.music + (lvl.boss ? 100 : 0));
-    toast(lvl.boss ? lvl.boss.name + '!' : lvl.themeName && wi !== 7 ? wi + '-' + li + ': ' + lvl.themeName : lvl.world.name + ' ' + wi + '-' + li, 2.2);
+    toast(lvl.boss ? lvl.boss.name + '!' : lvl.themeName && wi !== D.BONUS_ID ? wi + '-' + li + ': ' + lvl.themeName : lvl.world.name + ' ' + wi + '-' + li, 2.2);
     // secret room bounds in world units (the room sits past the castle)
     G.room = lvl.room ? { x0: lvl.room.x0 * T, x1: lvl.room.x1 * T, spawn: { x: lvl.room.spawn.x * T, y: lvl.room.spawn.y * T } } : null;
     G.secret = lvl.secret || null;
@@ -81,7 +85,7 @@
       for (let y = 0; y < H; y++) {
         const c = grid[x][y];
         if (c !== '#' && c !== 'I') { col.push(0); continue; }
-        const g = (xx, yy) => xx < 0 || xx >= W || yy >= H ? true : yy < 0 ? false : (grid[xx][yy] === '#' || grid[xx][yy] === 'I');
+        const g = (xx, yy) => xx < 0 || xx >= W || yy >= H ? true : yy < 0 ? false : (grid[xx][yy] === '#' || grid[xx][yy] === 'I' || grid[xx][yy] === '>' || grid[xx][yy] === '<');
         col.push((g(x, y - 1) ? 0 : 1) | (g(x + 1, y) ? 0 : 2) | (g(x, y + 1) ? 0 : 4) | (g(x - 1, y) ? 0 : 8));
       }
       G.mask.push(col);
@@ -129,7 +133,7 @@
   }
 
   function spawnEnemy(type, px, py) {
-    const size = { slime: [36, 26], bee: [32, 30], hedgehog: [36, 26], snowball: [34, 34], fish: [36, 26], jelly: [30, 34], urchin: [30, 30], shroom: [36, 34], bat: [34, 28], cloudy: [40, 30], firejelly: [30, 34], plant: [34, 46], ball: [30, 30] }[type] || [32, 30];
+    const size = { slime: [36, 26], bee: [32, 30], hedgehog: [36, 26], snowball: [34, 34], fish: [36, 26], jelly: [30, 34], urchin: [30, 30], shroom: [36, 34], bat: [34, 28], cloudy: [40, 30], firejelly: [30, 34], plant: [34, 46], ball: [30, 30], robot: [34, 38], alien: [34, 32], ufo: [46, 30] }[type] || [32, 30];
     const e = {
       type, x: px + (T - size[0]) / 2, y: py - size[1], w: size[0], h: size[1], vx: 0, vy: 0, dir: -1,
       ox: px, oy: py - size[1], dead: false, deadT: 0, seed: Math.random() * 10, grounded: false, t: 0, roll: 0,
@@ -228,11 +232,11 @@
     if (water) {
       if (p.buffer > 0) { p.vy = -P.wSwim * (ab.jump || 1); p.buffer = 0; A.play('splash'); p.squash = -0.3; }
     } else if (p.buffer > 0 && (p.coyote > 0)) {
-      p.vy = -P.jump * jumpMul; p.buffer = 0; p.coyote = 0; p.grounded = false; p.on = null;
+      p.vy = -P.jump * jumpMul * (G.lowgrav ? 0.78 : 1); p.buffer = 0; p.coyote = 0; p.grounded = false; p.on = null;
       p.jumps = 1; p.squash = -0.35; A.play('jump'); G.prof.stats.jumps++;
       dust(p.x + PW / 2, p.y + PH, 5);
     } else if (p.buffer > 0 && !p.grounded && ab.doubleJump && p.jumps < 2) {
-      p.vy = -P.jump * jumpMul * 0.92; p.buffer = 0; p.jumps = 2; p.squash = -0.3; A.play('djump');
+      p.vy = -P.jump * jumpMul * 0.92 * (G.lowgrav ? 0.78 : 1); p.buffer = 0; p.jumps = 2; p.squash = -0.3; A.play('djump');
       for (let i = 0; i < 10; i++) G.particles.push({ x: p.x + PW / 2, y: p.y + PH, vx: (Math.random() - 0.5) * 200, vy: Math.random() * 80, life: 0.5, max: 0.5, size: 4, kind: 'rainbow', ci: i, grav: 0 });
     }
     // variable jump height: letting go early cuts the jump short
@@ -241,22 +245,28 @@
     if (p.padLaunch && (p.vy >= 0 || p.grounded)) p.padLaunch = false;
     if (!water && !In.jump && p.vy < -300 && !p.padLaunch) p.vy += 3200 * dt;
 
-    const grav = water ? P.wGrav : P.grav;
+    // space: gravity x0.55 with a softer jump = about 10% higher and much floatier
+    const grav = water ? P.wGrav : P.grav * (G.lowgrav ? 0.55 : 1);
     p.vy += grav * dt;
     p.glide = false;
     if (!water && ab.glide && In.jump && p.vy > 110 && !p.grounded) { p.vy = 110; p.glide = true; }
     // wind updrafts
     for (const e of G.ents) if (e.k === 'wind' && U.overlap(p, e)) { p.vy -= 3400 * dt; if (p.vy < -560) p.vy = -560; }
-    p.vy = Math.min(p.vy, water ? P.wMaxFall : P.maxFall);
+    p.vy = Math.min(p.vy, water ? P.wMaxFall : P.maxFall * (G.lowgrav ? 0.6 : 1));
 
     // ride moving platforms: apply the platform's movement first
     if (p.on && p.on.k === 'plat') { p.x += p.on.dx; p.y += p.on.dy; }
 
     const prevBottom = p.y + PH;
-    moveX(p, p.vx * dt);
+    // space: a floaty jump stays in the air ~40% longer, which carried players
+    // past planks and ledges laid out for normal jumps. Slowing sideways drift
+    // in the air keeps the jump's footprint the same while it still feels floaty.
+    moveX(p, p.vx * dt * (G.lowgrav && !p.grounded ? 0.72 : 1));
     const wasGrounded = p.grounded;
     p.grounded = false; p.on = null;
     moveY(p, p.vy * dt, prevBottom);
+    // conveyor belt: carries whoever stands on it
+    if (p.grounded && (p.groundTile === '>' || p.groundTile === '<')) moveX(p, (p.groundTile === '>' ? 1 : -1) * 105 * dt);
     // invisible ceiling at the top of the level: no swimming or flying over a maths gate
     if (p.y < 0) { p.y = 0; if (p.vy < 0) p.vy = 0; }
     if (p.grounded && !wasGrounded) { p.squash = 0.35; p.jumps = 0; if (!water) dust(p.x + PW / 2, p.y + PH, 3); }
@@ -399,9 +409,11 @@
       b.good = true;
       confetti(b.x + T / 2, b.y, 30);
       floatText(b.x + T / 2, b.y - 20, U.pick(Math.random, ['Brawo!', 'Super!', 'Świetnie!', 'Ekstra!', 'Tak jest!']), '#2fb34a', 30);
-      if (gate.first) mathResult(gate.problem.topic, true);
-      // coin shower for a correct answer - bigger on harder difficulty levels
-      for (let i = 0; i < Math.round(5 * G.rew); i++) setTimeout(() => G && popCoin(b.x + T / 2, b.y), i * 70);
+      if (gate.first) {
+        mathResult(gate.problem.topic, true);
+        // coin shower only for a first-try answer - bigger on harder difficulty levels
+        for (let i = 0; i < Math.round(5 * G.rew); i++) setTimeout(() => G && popCoin(b.x + T / 2, b.y), i * 70);
+      } else floatText(b.x + T / 2, b.y - 50, 'Brama otwarta (bez monet)', '#7a6a9a', 18);
       setTimeout(() => A.play('gate'), 300);
       G.shake = 0.3;
     } else {
@@ -480,11 +492,12 @@
     z.state = 'done'; z.doneT = 0;
     A.play('correct'); confetti(z.chest.x + 22, z.chest.y, 40);
     mathResult(z.c.topic, !z.mistake);
-    toast('Brawo! Skrzynia otwarta!', 1.8);
+    toast(z.mistake ? 'Skrzynia otwarta! (monety tylko bez pomyłek)' : 'Brawo! Skrzynia otwarta!', 1.8);
     z.chest.open = 0.01;
     setTimeout(() => {
       if (!G) return;
-      for (let i = 0; i < Math.round(10 * G.rew); i++) popCoin(z.chest.x + 22, z.chest.y, true);
+      // coins only if there was no mistake; the star is always given for finishing it
+      if (!z.mistake) for (let i = 0; i < Math.round(10 * G.rew); i++) popCoin(z.chest.x + 22, z.chest.y, true);
       if (!G.stars[1]) G.ents.push({ k: 'star', x: z.chest.x + 22, y: z.chest.y - 30, idx: 1, vy: -420, fly: true });
     }, 350);
   }
@@ -672,8 +685,8 @@
       const young = G.prof.mathLevel <= 2;   // gentler enemies/bosses on the easier levels
       const spd = young ? 0.8 : 1;
       switch (e.type) {
-        case 'slime': case 'shroom': case 'hedgehog': case 'snowball': {
-          const sp = (e.type === 'snowball' ? 115 : e.type === 'hedgehog' ? 55 : 65) * spd;
+        case 'slime': case 'shroom': case 'hedgehog': case 'snowball': case 'robot': case 'alien': {
+          const sp = (e.type === 'snowball' ? 115 : e.type === 'hedgehog' ? 55 : e.type === 'robot' ? 80 : 65) * spd;
           e.vx = e.dir * sp;
           e.vy = Math.min(e.vy + P.grav * dt, P.maxFall);
           e.hitWall = 0;
@@ -692,7 +705,7 @@
           if (e.y > G.H * T + 100) e.dead = true;
           break;
         }
-        case 'bee': case 'cloudy': case 'fish': case 'bat': {
+        case 'bee': case 'cloudy': case 'fish': case 'bat': case 'ufo': {
           const range = e.type === 'fish' ? 4 * T : 3 * T;
           const sp = (e.type === 'bat' ? 95 : 70) * spd;
           e.x += e.dir * sp * dt;
@@ -799,7 +812,7 @@
     const b = G.lvl.boss;
     const young = G.prof.mathLevel <= 2;   // gentler enemies/bosses on the easier levels
     const hp = Math.max(3, 3 + Math.floor(G.wi / 2) - (young ? 1 : 0));
-    const size = { slimeking: [130, 110], snowman: [120, 150], octopus: [130, 120], shroomlord: [140, 120], storm: [150, 100], chocodragon: [150, 150] }[b.kind];
+    const size = { slimeking: [130, 110], snowman: [120, 150], octopus: [130, 120], shroomlord: [140, 120], storm: [150, 100], chocodragon: [150, 150], gearbot: [140, 150], comet: [140, 130] }[b.kind];
     G.boss = {
       kind: b.kind, name: b.name, attack: b.attack, x: 19 * T, y: 11 * T - size[1], w: size[0], h: size[1],
       vx: 0, vy: 0, dir: -1, hp, maxHp: hp, phase: 'intro', phaseT: 0, flash: 0, atkT: 1, grounded: true,
@@ -843,7 +856,7 @@
           if (b.attack === 'throw' || Math.random() < 0.5) {
             const tx = p.x + PW / 2 + p.vx * 0.5, ty = p.y + PH / 2, ft = 1.15;
             const g = 900;
-            G.projectiles.push({ kind: b.attack === 'fire' ? 'fireball' : 'snowball', x: sx, y: sy, vx: (tx - sx) / ft, vy: (ty - sy - 0.5 * g * ft * ft) / ft, g, r: 14, life: 4 });
+            G.projectiles.push({ kind: b.attack === 'fire' ? 'fireball' : b.kind === 'gearbot' ? 'gear' : 'snowball', x: sx, y: sy, vx: (tx - sx) / ft, vy: (ty - sy - 0.5 * g * ft * ft) / ft, g, r: 14, life: 4 });
           } else {
             G.projectiles.push({ kind: 'fireball', x: sx, y: floorY - 20, vx: -300 * rage, vy: 0, g: 0, r: 15, life: 5 });
           }
@@ -863,7 +876,7 @@
         if (b.atkT <= 0) {
           b.atkT = 0.8;
           const x = U.clamp(p.x + (Math.random() - 0.5) * 6 * T, 3 * T, (G.W - 3) * T);
-          G.projectiles.push({ kind: 'spore', x, y: -20, vx: 0, vy: 170, g: 0, r: 13, life: 6 });
+          G.projectiles.push({ kind: b.kind === 'comet' ? 'meteor' : 'spore', x, y: -20, vx: 0, vy: b.kind === 'comet' ? 150 : 170, g: 0, r: 13, life: 6 });
         }
         break;
       }
@@ -896,7 +909,7 @@
             A.play('correct'); if (b.first) mathResult(b.problem.topic, true);
             b.orbs.forEach(x => { x.alive = false; x.pop = 1; });
             G.projectiles.push({ kind: 'magic', x: o.x, y: o.y, vx: 0, vy: 0, g: 0, r: 16, life: 3, target: true });
-            for (let i = 0; i < Math.round(4 * G.rew); i++) setTimeout(() => G && popCoin(o.x, o.y), i * 70);
+            if (b.first) for (let i = 0; i < Math.round(4 * G.rew); i++) setTimeout(() => G && popCoin(o.x, o.y), i * 70);   // coins only for a first-try answer
             b.phase = 'hitwait'; b.phaseT = 0;
             floatText(o.x, o.y - 30, 'Brawo!', '#2fb34a', 30);
           } else {
@@ -948,8 +961,8 @@
       if (q.warn > 0) { q.warn -= dt; continue; }
       if (q.homing) { const dx = p.x + PW / 2 - q.x, dy = p.y + PH / 2 - q.y, d = Math.hypot(dx, dy) || 1; q.vx += dx / d * q.homing * dt; q.vy += dy / d * q.homing * dt; const s = Math.hypot(q.vx, q.vy); if (s > 150) { q.vx *= 150 / s; q.vy *= 150 / s; } }
       q.vy += (q.g || 0) * dt; q.x += q.vx * dt; q.y += q.vy * dt;
-      if (q.kind === 'spore' && q.y > 11 * T - 12) q.life = 0;
-      if ((q.kind === 'snowball' || q.kind === 'fireball') && q.y > 11 * T - q.r) { q.y = 11 * T - q.r; if (q.kind === 'snowball') q.life = Math.min(q.life, 0.05); }
+      if ((q.kind === 'spore' || q.kind === 'meteor') && q.y > 11 * T - 12) q.life = 0;
+      if ((q.kind === 'snowball' || q.kind === 'fireball' || q.kind === 'gear') && q.y > 11 * T - q.r) { q.y = 11 * T - q.r; if (q.kind !== 'fireball') q.life = Math.min(q.life, 0.05); }
       if (q.x < 2 * T - 20 || q.x > (G.W - 2) * T + 20) q.life = 0;
       let hit = false;
       if (q.kind === 'bolt') hit = Math.abs(p.x + PW / 2 - q.x) < q.r && q.life > 0 && q.life < 0.35;
@@ -1113,6 +1126,7 @@
         const c = G.grid[x][y];
         if (c === '.' || c === 'L' || c === 'T' || c === 'C') continue;   // stumps and cannons are drawn as entities
         if (c === '?') { Art.drawQBlock(ctx, x * T, y * T, t + x * 0.3, G.bumps[x + ',' + y] || 0); continue; }
+        if (c === '>' || c === '<') { Art.drawConveyor(ctx, x * T, y * T, c === '>' ? 1 : -1, t, world, tileAt(x - 1, y) !== c, tileAt(x + 1, y) !== c); continue; }
         const bump = G.bumps[x + ',' + y] || 0;
         const img = Art.getTile(world, c, (c === '#' || c === 'I') ? G.mask[x][y] : 0);
         ctx.drawImage(img, x * T - 0.3, y * T - 0.3 - bump * 8, T + 0.6, T + 0.6);
@@ -1423,6 +1437,13 @@
         else if (q.life < 0.35) { ctx.strokeStyle = '#fff6a0'; ctx.lineWidth = 10; ctx.beginPath(); let y = 0, x = q.x; ctx.moveTo(x, y); while (y < 11 * T) { y += 40; x = q.x + (Math.random() - 0.5) * 30; ctx.lineTo(x, y); } ctx.stroke(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4; ctx.stroke(); }
         break;
       case 'magic': Art.drawStar(ctx, q.x, q.y, 16, t * 3, '#ffe066'); break;
+      case 'gear': Art.drawGear(ctx, q.x, q.y, q.r + 2, t * 8, '#b8c0d0'); break;
+      case 'meteor': {
+        for (let i = 1; i <= 4; i++) { Art.ell(ctx, q.x - i * 4, q.y - i * 9, q.r * (1 - i * 0.18), q.r * (1 - i * 0.18)); Art.fs(ctx, 'rgba(255,' + (200 - i * 25) + ',120,' + (0.6 - i * 0.12) + ')'); }
+        Art.ell(ctx, q.x, 11 * T - 4, q.r, 4); Art.fs(ctx, 'rgba(0,0,0,0.2)');
+        Art.ell(ctx, q.x, q.y, q.r, q.r); Art.fs(ctx, '#a08cd0', '#5a3fbf', 2); Art.ell(ctx, q.x - 4, q.y - 3, 3.5, 3.5); Art.fs(ctx, '#7a64b0'); Art.ell(ctx, q.x + 4, q.y + 3, 2.5, 2.5); Art.fs(ctx, '#7a64b0');
+        break;
+      }
     }
   }
 

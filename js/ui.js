@@ -214,7 +214,7 @@
     show(h('div.screen', null, [
       h('div.topbar', null, [h('button.btn.small', { onclick: hub }, '← Wróć'), h('h1', null, 'Mapa świata'), h('span')]),
       h('div.wgrid', null, cards.concat((p.starItems || []).includes('bonus_level') ? [h('div.wcard.bonus', {
-        style: 'background:linear-gradient(160deg,' + D.BONUS_WORLD.pal.skyTop + ',' + D.BONUS_WORLD.pal.skyBot + ')', onclick: () => play(7, 1),
+        style: 'background:linear-gradient(160deg,' + D.BONUS_WORLD.pal.skyTop + ',' + D.BONUS_WORLD.pal.skyBot + ')', onclick: () => play(D.BONUS_ID, 1),
       }, [h('div.wnum', null, 'Tajny poziom'), h('div.wname', null, D.BONUS_WORLD.name), h('div.wsub', null, D.BONUS_WORLD.sub), h('div.wground', { style: 'background:' + D.BONUS_WORLD.pal.grass + ';border-top:6px solid ' + D.BONUS_WORLD.pal.grassDark })])] : [])),
     ]));
   }
@@ -287,7 +287,7 @@
     const p = S.active();
     document.getElementById('hud').classList.add('hidden');
     const next = () => {
-      if (res.wi === 7) return null;   // bonus level: nothing comes after it
+      if (res.wi === D.BONUS_ID) return null;   // bonus level: nothing comes after it
       if (res.li < D.LEVELS_PER_WORLD) return () => play(res.wi, res.li + 1);
       if (res.wi < D.WORLDS.length) return () => play(res.wi + 1, 1);
       return null;
@@ -430,7 +430,7 @@
           };
         } else if (it.type === 'pet') { action = eq.pet === it.id ? 'Założony (zdejmij)' : 'Załóż'; onclick = () => { eq.pet = eq.pet === it.id ? 'none' : it.id; S.save(); wardrobe('stars'); }; }
         else if (it.type === 'skin') { action = eq.gold ? 'Włączone (wyłącz)' : 'Włącz'; onclick = () => { eq.gold = !eq.gold; S.save(); wardrobe('stars'); }; }
-        else if (it.type === 'level') { action = 'Zagraj!'; onclick = () => play(7, 1); }
+        else if (it.type === 'level') { action = 'Zagraj!'; onclick = () => play(D.BONUS_ID, 1); }
         else { action = 'Masz to!'; onclick = () => alertBox(it.name, it.desc); }
         items.push(card({ pic: starItemPic(it), name: it.name, sub: it.desc, equipped: owned && ((it.type === 'pet' && eq.pet === it.id) || (it.type === 'skin' && eq.gold) || it.type === 'perk' || it.type === 'level'), locked: !owned && bal < it.stars, action, onclick }));
       });

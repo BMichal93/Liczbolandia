@@ -34,6 +34,7 @@
       badges: [],
       readAloud: ml.id === 1,   // read questions aloud - default on for the youngest level
       mathV2: true,
+      levelsV2: true,
       stats: { correct: 0, wrong: 0, streak: 0, bestStreak: 0, totalCoins: 0, stomps: 0, jumps: 0, purchases: 0, topics: {} },
       created: Date.now(), lastPlayed: Date.now(),
     };
@@ -69,6 +70,24 @@
       if (p.readAloud === undefined) out.readAloud = out.mathLevel === 1;
       // saves from before the difficulty rework (v1 had 3 age levels with
       // fractions/percent/negatives): map to the new levels and re-seed skill
+      /*
+       * Levels v2 (Sept 2026): worlds went from 3 levels + boss (boss = level 4)
+       * to 5 levels + boss (boss = level 6), and the bonus level moved from
+       * "world 7" to id 99 because world 7 is now a real world. Beaten bosses
+       * keep counting as beaten; the new levels 4-5 open up in each world.
+       */
+      if (!p.levelsV2) {
+        for (const key of ['done', 'stars', 'best']) {
+          const m = out[key] || {}, next = {};
+          for (const k in m) {
+            const [w, l] = k.split('-').map(Number);
+            if (w === 7) { if (key === 'done') next[LZ.D.BONUS_ID + '-1'] = m[k]; continue; }   // old bonus level
+            next[w + '-' + (l === 4 ? 6 : l)] = m[k];
+          }
+          out[key] = next;
+        }
+        out.levelsV2 = true;
+      }
       if (!p.mathV2) {
         out.mathLevel = { 1: 1, 2: 3, 3: 4 }[p.mathLevel || 1] || 1;
         const b = LZ.D.MATH_LEVELS.find(m => m.id === out.mathLevel);
@@ -118,7 +137,7 @@
   /* ---- unlock rules ---- */
   function levelKey(w, l) { return w + '-' + l; }
   function isLevelUnlocked(p, w, l) {
-    if (w === 7) return (p.starItems || []).includes('bonus_level');   // bonus level is bought with stars
+    if (w === LZ.D.BONUS_ID) return (p.starItems || []).includes('bonus_level');   // bonus level is bought with stars
     if (w === 1 && l === 1) return true;
     if (l > 1) return !!p.done[levelKey(w, l - 1)];
     return !!p.done[levelKey(w - 1, D.LEVELS_PER_WORLD)];

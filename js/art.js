@@ -317,6 +317,20 @@
         for (let i = -1; i <= 1; i++) { starPath(ctx, hx + 1 + i * 7, top - (i === 0 ? 6 : 2), i === 0 ? 4.5 : 3, 1.6, 4, 0); fs(ctx, i === 0 ? '#ff85b0' : '#bfefff', '#8a9ab0', 1); }
         break;
       }
+      case 'gearcap': {
+        // mechanic's cap with a little gear badge
+        ctx.beginPath(); ctx.ellipse(hx, hy - 5, 17, 13, 0, Math.PI, 0); ctx.closePath(); fs(ctx, '#5ccfff', '#2a7fb0', 2);
+        U.rr(ctx, hx - 2, hy - 7, 24, 5, 2.5); fs(ctx, '#2a7fb0');
+        drawGear(ctx, hx - 3, hy - 13, 6, t, '#ffd23f');
+        break;
+      }
+      case 'astro': {
+        // astronaut helmet: glass bubble with a rim and antenna
+        ell(ctx, hx, hy + 1, 23, 22); ctx.fillStyle = 'rgba(190,230,255,0.28)'; ctx.fill(); ctx.strokeStyle = '#d9e2f0'; ctx.lineWidth = 3; ctx.stroke();
+        ell(ctx, hx - 9, hy - 10, 5, 3, -0.6); fs(ctx, 'rgba(255,255,255,0.8)');
+        ctx.strokeStyle = '#9aa3c5'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx + 12, hy - 18); ctx.lineTo(hx + 16, hy - 28); ctx.stroke(); ell(ctx, hx + 16, hy - 29, 2.6, 2.6); fs(ctx, '#ff5e7e');
+        break;
+      }
       case 'pirate': {
         ctx.beginPath(); ctx.moveTo(hx - 18, top + 2); ctx.quadraticCurveTo(hx + 1, top - 22, hx + 20, top + 2); ctx.quadraticCurveTo(hx + 1, top - 4, hx - 18, top + 2); fs(ctx, '#2d2a3a', '#111', 1.5);
         ell(ctx, hx + 1, top - 7, 3.2, 3); fs(ctx, '#fff');
@@ -363,6 +377,23 @@
         ell(ctx, 2, -3, 1.3, 1.3); fs(ctx, '#fff');
         break;
       }
+      case 'pet_robot': {
+        const f = Math.sin(t * 20) * 3;
+        ctx.strokeStyle = '#6b7489'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(0, -14); ctx.stroke();
+        ell(ctx, -8 - f, -15, 8, 2); fs(ctx, 'rgba(200,210,230,0.8)'); ell(ctx, 8 + f, -15, 8, 2); fs(ctx, 'rgba(200,210,230,0.8)');
+        U.rr(ctx, -10, -10, 20, 18, 6); fs(ctx, '#5ccfff', '#2a7fb0', 1.8);
+        U.rr(ctx, -6, -6, 12, 8, 3); fs(ctx, '#2d2a3a');
+        ell(ctx, -3, -2, 1.8, 1.8); fs(ctx, '#7be08a'); ell(ctx, 3, -2, 1.8, 1.8); fs(ctx, '#7be08a');
+        break;
+      }
+      case 'pet_ufo': {
+        const gl = 0.25 + 0.2 * Math.sin(t * 6);
+        ctx.beginPath(); ctx.moveTo(-6, 4); ctx.lineTo(6, 4); ctx.lineTo(12, 24); ctx.lineTo(-12, 24); ctx.closePath(); ctx.fillStyle = 'rgba(255,240,140,' + gl + ')'; ctx.fill();
+        ell(ctx, 0, -5, 6, 5.5); fs(ctx, 'rgba(180,230,255,0.75)', '#5a8ab0', 1.2); ell(ctx, 0, -5, 2.5, 2.5); fs(ctx, '#7ed957');
+        ell(ctx, 0, 0, 15, 5); fs(ctx, '#b8c0d0', '#5a6388', 1.8);
+        for (let i = -1; i <= 1; i++) { ell(ctx, i * 7, 1, 1.6, 1.6); fs(ctx, Math.floor(t * 6 + i) % 2 ? '#ffe066' : '#ff5e7e'); }
+        break;
+      }
       case 'pet_dragon': {
         const f = Math.sin(t * 10) * 0.4;
         ctx.save(); ctx.translate(-3, -6); ctx.rotate(-0.5 - f); tri(ctx, 0, 0, -14, -10, -10, 3); fs(ctx, '#9f7aea', '#5a3fbf', 1.5); ctx.restore();
@@ -385,7 +416,7 @@
     ctx.save();
     const world = LZ.D.WORLDS[0];
     if (S.kind === 'enemy') {
-      const sz = { slime: [36, 26], bee: [32, 30], hedgehog: [36, 26], snowball: [34, 34], fish: [36, 26], jelly: [30, 34], urchin: [30, 30], shroom: [36, 34], bat: [34, 28], cloudy: [40, 30], firejelly: [30, 34], plant: [34, 46], ball: [30, 30] }[id];
+      const sz = { slime: [36, 26], bee: [32, 30], hedgehog: [36, 26], snowball: [34, 34], fish: [36, 26], jelly: [30, 34], urchin: [30, 30], shroom: [36, 34], bat: [34, 28], cloudy: [40, 30], firejelly: [30, 34], plant: [34, 46], ball: [30, 30], robot: [34, 38], alien: [34, 32], ufo: [46, 30] }[id];
       const k = size / 60; ctx.scale(k, k);
       drawEnemy(ctx, { type: id, x: -sz[0] / 2, y: 18 - sz[1], w: sz[0], h: sz[1], dir: 1, seed: 1, roll: 0, col: '#8fe36b' }, t, world);
     } else if (S.kind === 'boss') {
@@ -723,6 +754,36 @@
         ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(1, -22); ctx.lineTo(7, -20); ctx.moveTo(13, -22); ctx.lineTo(8, -20); ctx.stroke();
         break;
       }
+      case 'robot': {
+        // wind-up toy robot: boxy body, turning key on its back, stepping feet
+        const step = Math.sin(tt * 12) * 3;
+        U.rr(ctx, -12, -10 + Math.max(0, step) * -0.3, 9, 10, 3); fs(ctx, '#6b7489'); U.rr(ctx, 3, -10 + Math.max(0, -step) * -0.3, 9, 10, 3); fs(ctx, '#6b7489');
+        U.rr(ctx, -15, -34, 30, 26, 7); fs(ctx, '#ff85b0', '#b8467a', 2);
+        U.rr(ctx, -9, -28, 18, 11, 4); fs(ctx, '#2d2a3a');
+        ell(ctx, -4, -22.5, 2.6, 2.6); fs(ctx, '#7be08a'); ell(ctx, 4, -22.5, 2.6, 2.6); fs(ctx, '#7be08a');
+        ctx.strokeStyle = '#6b7489'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(0, -34); ctx.lineTo(0, -40); ctx.stroke(); ell(ctx, 0, -41, 3, 3); fs(ctx, '#ffe066');
+        ctx.save(); ctx.translate(-17, -22); ctx.rotate(tt * 6); ctx.fillStyle = '#ffd23f'; ctx.fillRect(-1.5, -7, 3, 14); ctx.fillRect(-7, -1.5, 14, 3); ctx.restore();
+        break;
+      }
+      case 'alien': {
+        // little green alien with one big eye and wobbly antennae
+        const b2 = Math.sin(tt * 6) * 1.5;
+        ctx.strokeStyle = '#4fb52b'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(-6, -26); ctx.quadraticCurveTo(-10 + b2, -34, -12, -37); ctx.moveTo(6, -26); ctx.quadraticCurveTo(10 - b2, -34, 12, -37); ctx.stroke();
+        ell(ctx, -12, -38, 3, 3); fs(ctx, '#ff85c8'); ell(ctx, 12, -38, 3, 3); fs(ctx, '#ff85c8');
+        ctx.beginPath(); ctx.moveTo(-16, 0); ctx.bezierCurveTo(-18, -30, 18, -30, 16, 0); ctx.closePath(); fs(ctx, '#7ed957', '#3f8a2a', 2);
+        ell(ctx, 2, -15, 8, 8); fs(ctx, '#fff', '#333', 1.2); ell(ctx, 4, -15, 4, 4.5); fs(ctx, '#222'); ell(ctx, 5.5, -17, 1.4, 1.4); fs(ctx, '#fff');
+        ctx.strokeStyle = '#2d3a1a'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(2, -5, 3, 0.2, Math.PI - 0.2); ctx.stroke();
+        break;
+      }
+      case 'ufo': {
+        // flying saucer with a tiny pilot and blinking lights
+        ell(ctx, 0, -18, 10, 9); fs(ctx, 'rgba(180,230,255,0.7)', '#5a8ab0', 1.5);
+        ell(ctx, 0, -18, 4, 4); fs(ctx, '#7ed957'); ell(ctx, 1, -19, 1.3, 1.3); fs(ctx, '#222');
+        ell(ctx, 0, -11, 23, 7); fs(ctx, '#b8c0d0', '#5a6388', 2);
+        for (let i = -2; i <= 2; i++) { ell(ctx, i * 8, -10, 2.2, 2.2); fs(ctx, Math.floor(tt * 6 + i) % 2 ? '#ffe066' : '#ff5e7e'); }
+        break;
+      }
       case 'firejelly': {
         const p = Math.sin(tt * 12) * 3;
         ctx.beginPath(); ctx.moveTo(-14, 0); ctx.quadraticCurveTo(-16, -18, -6, -26 - p); ctx.quadraticCurveTo(0, -38, 4, -28); ctx.quadraticCurveTo(14, -30 + p, 12, -16); ctx.quadraticCurveTo(16, -4, 14, 0); ctx.closePath();
@@ -805,6 +866,31 @@
         ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(-30, -14); ctx.lineTo(-24, -2); ctx.lineTo(-32, 0); ctx.lineTo(-26, 14); ctx.stroke();
         break;
       }
+      case 'gearbot': {
+        // Robot Zębatek: big toy robot with a spinning gear in its chest
+        ctx.fillStyle = '#6b7489'; U.rr(ctx, -40, -26, 26, 26, 6); ctx.fill(); U.rr(ctx, 14, -26, 26, 26, 6); ctx.fill();
+        U.rr(ctx, -50, -100, 100, 78, 14); fs(ctx, '#9aa3b5', '#4a5268', 4);
+        drawGear(ctx, 0, -62, 20, t * 3, '#ffd23f');
+        U.rr(ctx, -34, -150, 68, 48, 12); fs(ctx, '#b8c0d0', '#4a5268', 4);
+        U.rr(ctx, -26, -142, 52, 30, 8); fs(ctx, '#2d2a3a');
+        ctx.strokeStyle = '#4a5268'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0, -150); ctx.lineTo(0, -166); ctx.stroke(); ell(ctx, 0, -168, 6, 6); fs(ctx, Math.floor(t * 4) % 2 ? '#ff5e7e' : '#ffe066');
+        const mood2 = b.flash > 0 ? 'hurt' : b.phase === 'attack' ? 'angry' : 'smug';
+        ell(ctx, -12 + (b.look || 0) * 3, -128, 6, 6); fs(ctx, mood2 === 'angry' ? '#ff5e7e' : '#7be08a'); ell(ctx, 12 + (b.look || 0) * 3, -128, 6, 6); fs(ctx, mood2 === 'angry' ? '#ff5e7e' : '#7be08a');
+        ctx.strokeStyle = '#7be08a'; ctx.lineWidth = 3; ctx.beginPath(); if (mood2 === 'hurt') ctx.arc(0, -114, 5, 0, Math.PI * 2); else ctx.arc(0, -120, 8, 0.3, Math.PI - 0.3); ctx.stroke();
+        ctx.strokeStyle = '#6b7489'; ctx.lineWidth = 9; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-50, -86); ctx.lineTo(-68, -60 + Math.sin(t * 5) * 8); ctx.moveTo(50, -86); ctx.lineTo(70, -70 - Math.sin(t * 5) * 10); ctx.stroke();
+        break;
+      }
+      case 'comet': {
+        // Królowa Komet: a round icy comet with a sparkly tail and a crown
+        for (let i = 6; i >= 1; i--) { ell(ctx, -30 - i * 14, -70 + Math.sin(t * 3 + i) * 4, 34 - i * 4, 30 - i * 4); ctx.fillStyle = 'rgba(143,211,255,' + (0.12 + (6 - i) * 0.05) + ')'; ctx.fill(); }
+        for (let i = 0; i < 6; i++) { starPath(ctx, -40 - i * 16, -70 + Math.sin(t * 4 + i) * 16, 5, 2, 4, t + i); fs(ctx, '#fff6c9'); }
+        ell(ctx, 0, -66, 56, 56); fs(ctx, '#bfe8ff', '#4a8ab8', 4);
+        ell(ctx, -18, -90, 12, 8, -0.5); fs(ctx, 'rgba(255,255,255,0.7)');
+        ell(ctx, 22, -44, 9, 6); fs(ctx, 'rgba(74,138,184,0.25)'); ell(ctx, -26, -40, 6, 4); fs(ctx, 'rgba(74,138,184,0.25)');
+        face(0, -64, mood);
+        ctx.beginPath(); ctx.moveTo(-26, -112); ctx.lineTo(-30, -134); ctx.lineTo(-14, -122); ctx.lineTo(0, -140); ctx.lineTo(14, -122); ctx.lineTo(30, -134); ctx.lineTo(26, -112); ctx.closePath(); fs(ctx, '#ffe066', '#c99a12', 3);
+        break;
+      }
       case 'chocodragon': {
         const f = Math.sin(t * 4) * 0.2;
         ctx.save(); ctx.translate(-20, -80); ctx.rotate(-0.5 - f);
@@ -860,6 +946,32 @@
           g.fillStyle = '#6b3a20'; g.beginPath(); g.moveTo(x - 44, H - h + 4); g.lineTo(x + 44, H - h + 4);
           for (let k = 0; k < 5; k++) g.quadraticCurveTo(x + 44 - k * 22 + 11, H - h + 30 + (k % 2) * 30, x + 44 - (k + 1) * 22 + 4, H - h + 8);
           g.closePath(); g.fill();
+        });
+      }
+      return finish();
+    }
+    if (world.id === 7 && which === 'far') {
+      // toy factory skyline: building-block towers with chimneys puffing candy smoke
+      const cols7 = ['#ffb3d9', '#b3e0ff', '#ffe8a3', '#c9b8ff'];
+      for (let i = 0; i < 10; i++) {
+        const cx = i * BG_W / 10 + r() * 60, w = 110 + r() * 70, h = 110 + r() * 110;
+        [cx, cx - BG_W, cx + BG_W].forEach(x => {
+          g.fillStyle = cols7[i % 4]; U.rr(g, x, H - h, w, h + 10, 10); g.fill();
+          g.fillStyle = 'rgba(255,255,255,0.45)';
+          for (let wy = H - h + 18; wy < H - 30; wy += 34) for (let wx = x + 14; wx < x + w - 20; wx += 30) { U.rr(g, wx, wy, 16, 18, 4); g.fill(); }
+          if (i % 2 === 0) { g.fillStyle = U.shade(cols7[i % 4], -0.15); g.fillRect(x + w * 0.6, H - h - 50, 22, 52); for (let k = 0; k < 3; k++) { ell(g, x + w * 0.6 + 11 + k * 14, H - h - 62 - k * 18, 14 + k * 4, 11 + k * 3); g.fillStyle = 'rgba(255,255,255,0.8)'; g.fill(); } }
+        });
+      }
+      return finish();
+    }
+    if (world.id === 8 && which === 'far') {
+      // distant moons and small planets
+      for (let i = 0; i < 6; i++) {
+        const cx = i * BG_W / 6 + r() * 150, cy = H * 0.3 + r() * H * 0.3, rad = 18 + r() * 34;
+        [cx, cx - BG_W, cx + BG_W].forEach(x => {
+          ell(g, x, cy, rad, rad); g.fillStyle = ['#5a4aa0', '#3a6aa0', '#7a4a8a'][i % 3]; g.fill();
+          ell(g, x - rad * 0.3, cy - rad * 0.2, rad * 0.25, rad * 0.2); g.fillStyle = 'rgba(0,0,0,0.18)'; g.fill();
+          ell(g, x + rad * 0.3, cy + rad * 0.35, rad * 0.18, rad * 0.14); g.fillStyle = 'rgba(0,0,0,0.18)'; g.fill();
         });
       }
       return finish();
@@ -936,6 +1048,14 @@
       g.fillStyle = 'rgba(255,255,200,0.9)'; ell(g, x - 10, y - h - 8, 4, 3); g.fill(); ell(g, x + 9, y - h - 12, 3, 2.5); g.fill();
     } else if (id === 5) {
       for (let k = 0; k < 3; k++) { ell(g, x + k * 22, y - 10 - (k % 2) * 10, 26, 20); g.fillStyle = '#ffffff'; g.fill(); }
+    } else if (id === 7) {
+      // stacks of toy building blocks with letters/numbers
+      const n = 2 + Math.floor(r() * 3), cols7 = ['#ff6fae', '#5ccfff', '#ffd23f', '#7be08a', '#9d7bff'];
+      for (let k = 0; k < n; k++) { const c = cols7[(k + Math.floor(r() * 5)) % 5]; U.rr(g, x - 16 + (k % 2) * 6, y - 30 - k * 30, 32, 30, 5); g.fillStyle = c; g.fill(); g.fillStyle = 'rgba(255,255,255,0.85)'; g.font = '800 18px "Baloo 2", sans-serif'; g.textAlign = 'center'; g.fillText(String(1 + Math.floor(r() * 9)), x + (k % 2) * 6, y - 9 - k * 30); }
+    } else if (id === 8) {
+      // glowing crystals and a little antenna
+      if (r() < 0.6) { for (let k = 0; k < 3; k++) { const hh = 22 + k * 10; g.beginPath(); g.moveTo(x + k * 10 - 6, y); g.lineTo(x + k * 10, y - hh); g.lineTo(x + k * 10 + 6, y); g.closePath(); g.fillStyle = ['#5ccfff', '#ff85c8', '#ffe066'][k]; g.fill(); } }
+      else { g.strokeStyle = '#c9b8ff'; g.lineWidth = 3; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - 46); g.stroke(); ell(g, x, y - 50, 6, 6); g.fillStyle = '#ff5e7e'; g.fill(); }
     } else if (id === 6) {
       g.strokeStyle = '#fff'; g.lineWidth = 8; g.lineCap = 'round';
       g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - 50); g.arc(x + 12, y - 50, 12, Math.PI, 0); g.stroke();
@@ -961,11 +1081,13 @@
       4: { body: '#6b4e3a', dark: '#46321f', rim: '#8a6a50' },
       5: { body: '#f3eaff', dark: '#c9b8f0', rim: '#ffffff' },
       6: { body: '#7a4a2e', dark: '#4a2a18', rim: '#9a6040' },
-      7: { body: '#ffcf3f', dark: '#c99a00', rim: '#ffe680' },
+      7: { body: '#ff5e7e', dark: '#b8234f', rim: '#ffd23f' },
+      8: { body: '#9aa3c5', dark: '#5a6388', rim: '#d9e2f0' },
+      99: { body: '#ffcf3f', dark: '#c99a00', rim: '#ffe680' },
     }[id] || { body: '#c98a5a', dark: '#8a5a32', rim: '#e0a878' };
     ctx.save();
     // roots at the base
-    if (id !== 5 && id !== 3) { [[-1, 0.18], [1, 0.82]].forEach(([d, f]) => { ell(ctx, x + w * f + d * 8, b - 5, 13, 7, d * 0.4); fs(ctx, style.body, style.dark, 2.5); }); }
+    if (id !== 5 && id !== 3 && id !== 7 && id !== 8) { [[-1, 0.18], [1, 0.82]].forEach(([d, f]) => { ell(ctx, x + w * f + d * 8, b - 5, 13, 7, d * 0.4); fs(ctx, style.body, style.dark, 2.5); }); }
     // trunk (slightly narrower than the rim)
     U.rr(ctx, x + 6, rimY, w - 12, b - rimY, 6); fs(ctx, style.body, style.dark, 3);
     // body texture
@@ -1020,7 +1142,17 @@
     } else if (id === 6) {      // chocolate chimney with pink icing drips
       for (let i = 0; i < 4; i++) { U.rr(ctx, x + 12 + i * 22, rimY + 4, 8, 14 + (i % 2) * 10, 4); fs(ctx, '#ff9ecf'); }
       ell(ctx, cx, rimY, w / 2, 12); ctx.strokeStyle = '#ff9ecf'; ctx.lineWidth = 4; ctx.stroke();
-    } else if (id === 7) {
+    } else if (id === 7) {      // toy drum: white zig-zag band and gold studs
+      ctx.save(); U.rr(ctx, x + 6, rimY, w - 12, b - rimY, 6); ctx.clip();
+      ctx.beginPath(); const zy = rimY + (b - rimY) * 0.45; ctx.moveTo(x, zy);
+      for (let i = 0; i <= 8; i++) ctx.lineTo(x + 6 + i * (w - 12) / 8, zy + (i % 2 ? -14 : 14));
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 5; ctx.stroke(); ctx.restore();
+      for (let i = 0; i < 4; i++) { ell(ctx, x + 16 + i * 21, rimY + 16, 3.5, 3.5); fs(ctx, '#ffe066'); }
+    } else if (id === 8) {      // space tube: glowing light strip
+      const gl = 0.5 + 0.5 * Math.sin(t * 3);
+      U.rr(ctx, cx - 4, rimY + 14, 8, b - rimY - 22, 4); fs(ctx, 'rgba(92,207,255,' + (0.5 + gl * 0.5) + ')');
+      for (let yy = rimY + 20; yy < b - 10; yy += 22) { ell(ctx, x + 14, yy, 3, 3); fs(ctx, '#5a6388'); ell(ctx, x + w - 14, yy, 3, 3); fs(ctx, '#5a6388'); }
+    } else if (id === 99) {
       ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fillRect(x + 14, rimY + 14, 5, b - rimY - 22);
     }
     ctx.restore();
@@ -1040,6 +1172,28 @@
     ell(ctx, -5, -3.5, 1.5, 2); fs(ctx, '#222'); ell(ctx, 3, -3.5, 1.5, 2); fs(ctx, '#222');
     ctx.restore();
     ell(ctx, cx - 10, y + 30, 7, 7); fs(ctx, '#5a5370', '#1f1b2e', 2);
+  }
+
+  /* A toothed gear (toy factory decoration, boss projectile). */
+  function drawGear(ctx, x, y, r, rot, col) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.beginPath();
+    for (let i = 0; i < 16; i++) { const a = (i / 16) * TAU, rr2 = i % 2 ? r * 0.78 : r; ctx.lineTo(Math.cos(a) * rr2, Math.sin(a) * rr2); ctx.lineTo(Math.cos(a + TAU / 32) * rr2, Math.sin(a + TAU / 32) * rr2); }
+    ctx.closePath(); fs(ctx, col, U.shade(col, -0.4), Math.max(1.5, r * 0.08));
+    ell(ctx, 0, 0, r * 0.35, r * 0.35); fs(ctx, U.shade(col, -0.3));
+    ctx.restore();
+  }
+  /* Conveyor belt tile: rollers inside, moving chevrons on top. */
+  function drawConveyor(ctx, x, y, dir, t, world, leftEnd, rightEnd) {
+    U.rr(ctx, x - (leftEnd ? 0 : 1), y, T + (leftEnd ? 0 : 1) + (rightEnd ? 0 : 1), T, leftEnd || rightEnd ? 10 : 0); fs(ctx, '#4a4560');
+    ctx.fillStyle = '#6b7489'; ctx.fillRect(x, y + 2, T, 12);
+    // chevrons slide along the belt surface
+    ctx.save(); ctx.beginPath(); ctx.rect(x, y, T, 14); ctx.clip();
+    const off = ((t * 105 * dir) % 24 + 24) % 24;
+    ctx.fillStyle = '#ffd23f';
+    for (let k = -1; k < 3; k++) { const cx = x + k * 24 + off; ctx.beginPath(); if (dir > 0) { ctx.moveTo(cx, y + 3); ctx.lineTo(cx + 8, y + 8); ctx.lineTo(cx, y + 13); ctx.lineTo(cx + 5, y + 8); } else { ctx.moveTo(cx + 8, y + 3); ctx.lineTo(cx, y + 8); ctx.lineTo(cx + 8, y + 13); ctx.lineTo(cx + 3, y + 8); } ctx.closePath(); ctx.fill(); }
+    ctx.restore();
+    for (const rx of [x + 12, x + 36]) { ell(ctx, rx, y + 30, 9, 9); fs(ctx, '#9aa3b5', '#2d2a3a', 2); ctx.save(); ctx.translate(rx, y + 30); ctx.rotate(t * 6 * dir); ctx.fillStyle = '#4a4560'; ctx.fillRect(-1.5, -7, 3, 14); ctx.restore(); }
   }
 
   /* Underground secret room background: dark cave with glowing crystals. */
@@ -1069,7 +1223,15 @@
     ctx.clearRect(0, 0, vw, vh);
     const id = world.id;
     // sun / moon
-    if (id === 4) {
+    if (id === 8) {
+      // space: starfield and a ringed planet
+      for (let i = 0; i < 70; i++) { const sx = ((i * 173 - camX * 0.04) % vw + vw) % vw, sy = (i * 97) % (vh * 0.75); ctx.globalAlpha = 0.45 + 0.55 * Math.sin(t * 2 + i * 1.3); ell(ctx, sx, sy, i % 7 === 0 ? 2.4 : 1.4, i % 7 === 0 ? 2.4 : 1.4); fs(ctx, i % 5 === 0 ? '#ffe066' : '#fff'); }
+      ctx.globalAlpha = 1;
+      const px = vw * 0.78, py = vh * 0.2;
+      ell(ctx, px, py, 42, 42); fs(ctx, '#ff9ecf'); ell(ctx, px - 10, py - 12, 14, 9, -0.4); fs(ctx, 'rgba(255,255,255,0.35)');
+      ctx.save(); ctx.translate(px, py); ctx.rotate(-0.35); ell(ctx, 0, 0, 72, 13); ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 5; ctx.stroke(); ctx.restore();
+      ell(ctx, vw * 0.18, vh * 0.12, 14, 14); fs(ctx, '#7be08a'); ell(ctx, vw * 0.18 - 4, vh * 0.12 - 4, 4, 3); fs(ctx, 'rgba(255,255,255,0.4)');
+    } else if (id === 4) {
       for (let i = 0; i < 40; i++) { const sx = (i * 173) % vw, sy = (i * 97) % (vh * 0.6); ctx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 2 + i); ell(ctx, sx, sy, 1.6, 1.6); fs(ctx, '#fff'); }
       ctx.globalAlpha = 1; ell(ctx, vw * 0.8, vh * 0.18, 34, 34); fs(ctx, '#fff6c9'); ell(ctx, vw * 0.8 + 12, vh * 0.18 - 6, 28, 28); fs(ctx, p.skyTop);
     } else if (id !== 3) {
@@ -1083,7 +1245,7 @@
       ctx.restore();
     }
     // drifting clouds (not underwater / at night)
-    if (id !== 3 && id !== 4) {
+    if (id !== 3 && id !== 4 && id !== 8) {
       for (let i = 0; i < 6; i++) {
         const cw = 900 + vw;
         const x = ((i * 380 - camX * 0.08 - t * (8 + i * 2)) % cw + cw) % cw - 200, y = 40 + (i * 53) % (vh * 0.35);
@@ -1112,6 +1274,18 @@
         ell(ctx, x, y, 3 + (i % 4), 3 + (i % 4)); ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.5; ctx.stroke();
       }
     }
+    if (id === 7) {
+      // toy factory: big slowly turning gears floating in the back
+      for (let i = 0; i < 5; i++) {
+        const x = ((i * 347 - camX * 0.25) % (vw + 200) + vw + 200) % (vw + 200) - 100, y = vh * 0.2 + (i * 61) % (vh * 0.35);
+        ctx.globalAlpha = 0.35; drawGear(ctx, x, y, 26 + (i % 3) * 10, t * (i % 2 ? 0.6 : -0.6), ['#ff85c8', '#5ccfff', '#ffd23f'][i % 3]); ctx.globalAlpha = 1;
+      }
+    }
+    if (id === 8) {
+      // shooting star now and then
+      const k = (t * 0.25) % 1, sx = vw * (1.1 - k * 1.2), sy = vh * (0.05 + k * 0.3);
+      if (k < 0.5) { ctx.strokeStyle = 'rgba(255,255,255,' + (0.8 - k) + ')'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + 60, sy - 16); ctx.stroke(); }
+    }
     if (id === 4) {
       for (let i = 0; i < 18; i++) {
         const x = ((i * 211 - camX * 0.6) % vw + vw) % vw + Math.sin(t * 0.7 + i) * 30;
@@ -1131,6 +1305,6 @@
 
   LZ.Art = {
     drawCharacter, drawHat, drawTrailParticle, drawCoin, drawStar, drawHeart, drawPowerup, getTile, drawQBlock, drawLava,
-    drawEnemy, drawBoss, drawBackground, clearCaches, drawPet, drawSticker, drawStump, drawCannon, drawCave, starPath, heartPath, ell, fs, tri, RAINBOW,
+    drawEnemy, drawBoss, drawBackground, clearCaches, drawPet, drawSticker, drawStump, drawCannon, drawCave, drawGear, drawConveyor, starPath, heartPath, ell, fs, tri, RAINBOW,
   };
 })();
