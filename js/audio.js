@@ -143,3 +143,50 @@
 
   LZ.A = { unlock, play, playMusic, stopMusic, applyVolumes };
 })();
+
+/*
+ * Read-aloud for maths questions (Web Speech API, Polish voice).
+ * A 7-year-old reads slowly; hearing "siedem plus jeden, ile to jest?"
+ * keeps the game about maths rather than about reading. On by default for
+ * Poziom 1 profiles, switchable in Ustawienia. Silently does nothing if the
+ * device has no speech engine.
+ */
+(function () {
+  const synth = window.speechSynthesis;
+  let voice = null;
+  function pickVoice() {
+    if (!synth) return;
+    const vs = synth.getVoices();
+    voice = vs.find(v => /^pl/i.test(v.lang) && /google/i.test(v.name)) || vs.find(v => /^pl/i.test(v.lang)) || null;
+  }
+  if (synth) { pickVoice(); synth.onvoiceschanged = pickVoice; }
+
+  // Turn maths notation into words a speech engine pronounces correctly.
+  function toSpeech(t) {
+    return t
+      .replace(/\(-(\d+)\)/g, 'minus $1')
+      .replace(/(\d)x/g, '$1 iks').replace(/\bx\b/g, 'iks')
+      .replace(/√(\d+)/g, 'pierwiastek z $1')
+      .replace(/(\d+)²/g, '$1 do kwadratu').replace(/(\d+)³/g, '$1 do sześcianu')
+      .replace(/(\d+)\/(\d+)/g, '$1 przez $2')
+      .replace(/%/g, ' procent')
+      .replace(/ · /g, ' razy ').replace(/ : /g, ' podzielić przez ')
+      .replace(/ \+ /g, ' plus ').replace(/ - /g, ' minus ').replace(/^-(\d)/, 'minus $1')
+      .replace(/ ?= \?/g, ', ile to jest?').replace(/ = /g, ' równa się ')
+      .replace(/\?\s*$/, '?');
+  }
+  function say(text) {
+    const p = LZ.S.active();
+    if (!synth || !p || !p.readAloud || !text) return;
+    try {
+      synth.cancel();
+      const u = new SpeechSynthesisUtterance(toSpeech(text));
+      u.lang = 'pl-PL'; if (voice) u.voice = voice;
+      u.rate = 0.92; u.pitch = 1.1;
+      u.volume = Math.max(0.3, LZ.S.data.settings.sfx);
+      synth.speak(u);
+    } catch (e) { /* no speech on this device - fine */ }
+  }
+  function stop() { try { synth && synth.cancel(); } catch (e) {} }
+  LZ.Speech = { say, stop, toSpeech, available: !!synth };
+})();

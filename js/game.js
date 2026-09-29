@@ -95,6 +95,7 @@
         case 'checkpoint': G.ents.push({ k: 'checkpoint', x: px + T / 2, y: py, on: false, anim: 0 }); break;
         case 'goal': G.ents.push({ k: 'goal', x: px + T / 2, y: py, flagY: 0 }); G.goalX = px; break;
         case 'castle': G.ents.push({ k: 'castle', x: px, y: py }); break;
+        case 'sign': G.ents.push({ k: 'sign', x: px + T / 2, y: py }); break;
         case 'gate': {
           const gate = { k: 'gate', x: e.x * T + 4, y: 0, w: T - 8, h: e.gh * T, baseH: e.gh * T, open: 0, state: 'closed', zone: [e.zone[0] * T, e.zone[1] * T], blocks: [], problem: null, wrong: 0, first: true };
           e.blocks.forEach(bx => {
@@ -174,8 +175,16 @@
     const acc = p.grounded ? (onIce ? P.iceAcc : P.accG) : P.accA;
     const fric = p.grounded ? (onIce ? P.iceFric : P.fric) : P.accA * 0.35;
     if (want !== 0 && p.hurtT <= 0) {
-      p.vx += want * acc * dt;
-      if (Math.abs(p.vx) > speed) p.vx = Math.sign(p.vx) * Math.max(speed, Math.abs(p.vx) - fric * dt);
+      if (Math.sign(p.vx) === want && Math.abs(p.vx) >= speed) {
+        // already at/above top speed in this direction (e.g. after a knockback
+        // or a speed power-up ending): only let the extra speed fade out
+        p.vx = want * Math.max(speed, Math.abs(p.vx) - fric * dt);
+      } else {
+        // accelerate, but never past top speed - without this cap the player
+        // kept speeding up in mid-air and long jumps flew out of control
+        p.vx += want * acc * dt;
+        if (Math.sign(p.vx) === want && Math.abs(p.vx) > speed) p.vx = want * speed;
+      }
       p.facing = want;
     } else {
       const s = Math.sign(p.vx), m = Math.max(0, Math.abs(p.vx) - fric * dt);
@@ -201,7 +210,10 @@
       for (let i = 0; i < 10; i++) G.particles.push({ x: p.x + PW / 2, y: p.y + PH, vx: (Math.random() - 0.5) * 200, vy: Math.random() * 80, life: 0.5, max: 0.5, size: 4, kind: 'rainbow', ci: i, grav: 0 });
     }
     // variable jump height: letting go early cuts the jump short
-    if (!water && !In.jump && p.vy < -300) p.vy += 3200 * dt;
+    // (but never for spring/mushroom launches: those must always go full height,
+    //  otherwise a child who doesn't hold the button can't reach what's above)
+    if (p.padLaunch && (p.vy >= 0 || p.grounded)) p.padLaunch = false;
+    if (!water && !In.jump && p.vy < -300 && !p.padLaunch) p.vy += 3200 * dt;
 
     const grav = water ? P.wGrav : P.grav;
     p.vy += grav * dt;
@@ -249,7 +261,7 @@
     const x0 = Math.floor(p.x / T), x1 = Math.floor((p.x + PW - 1) / T), y0 = Math.floor(p.y / T), y1 = Math.floor((p.y + PH - 1) / T);
     for (let tx = x0; tx <= x1; tx++) for (let ty = y0; ty <= y1; ty++) {
       const c = tileAt(tx, ty);
-      if (c === 'S' && p.y + PH > ty * T + 22) { hurt(); p.vy = -620; }
+      if (c === 'S' && p.y + PH > ty * T + 22) { hurt(null, 'thorns'); p.vy = -620; }
       if (c === 'L' && p.y + PH > ty * T + 14) { fallOut(); return; }
     }
     if (p.y > G.H * T + 80) fallOut();
@@ -269,7 +281,11 @@
     if (o === G.player) for (const e of G.ents) {
       if ((e.k === 'gate' && e.state !== 'open') || e.k === 'ans') {
         const r = e.k === 'gate' ? { x: e.x, y: e.y + (e.baseH - e.h), w: e.w, h: e.h } : e;
-        if (U.overlap(o, r)) { if (dx > 0) o.x = r.x - o.w - 0.01; else if (dx < 0) o.x = r.x + r.w + 0.01; o.vx = 0; }
+        if (U.overlap(o, r)) {
+          if (dx > 0) o.x = r.x - o.w - 0.01; else if (dx < 0) o.x = r.x + r.w + 0.01; o.vx = 0;
+          // underwater, bonking from below is fiddly while floating - any touch answers
+          if (e.k === 'ans' && G.lvl.water && dx !== 0) hitAnswer(e);
+        }
       }
     }
   }
@@ -300,17 +316,17 @@
         if (o.vy >= 0 && prevBottom <= e.y + 2 && o.y + o.h >= e.y && o.x + o.w > e.x + 2 && o.x < e.x + e.w - 2) {
           o.y = e.y - o.h; o.vy = 0; o.grounded = true; o.on = e; o.groundTile = '-';
           if (e.sub === 'cloud' && e.timer < 0) e.timer = 0.75;
-          if (e.sub === 'falling' && e.timer < 0) e.timer = 0.5;
+          if (e.sub === 'falling' && e.timer < 0) e.timer = 0.9;   // long enough to shake visibly and step off
         }
       } else if (e.k === 'spring' || e.k === 'mushroom') {
         if (o.vy >= 0 && prevBottom <= e.y + 6 && o.y + o.h >= e.y && o.x + o.w > e.x && o.x < e.x + e.w) {
           o.y = e.y - o.h; o.vy = -(e.k === 'spring' ? P.spring : P.mushroom) * (LZ.In.jump ? 1.06 : 1);
-          e.comp = 1; o.jumps = 1; o.squash = -0.45; A.play('spring');
+          e.comp = 1; o.jumps = 1; o.squash = -0.45; o.padLaunch = true; A.play('spring');
         }
       } else if (e.k === 'ans' || (e.k === 'gate' && e.state !== 'open')) {
         const r = e.k === 'gate' ? { x: e.x, y: e.y + (e.baseH - e.h), w: e.w, h: e.h } : e;
         if (!U.overlap(o, r)) continue;
-        if (dy > 0) { o.y = r.y - o.h; o.vy = 0; o.grounded = true; o.groundTile = '='; }
+        if (dy > 0) { o.y = r.y - o.h; o.vy = 0; o.grounded = true; o.groundTile = '='; if (e.k === 'ans' && G.lvl.water) hitAnswer(e); }
         else if (dy < 0) { o.y = r.y + r.h; o.vy = 0; if (e.k === 'ans') hitAnswer(e); }
       }
     }
@@ -331,6 +347,7 @@
 
   /* ---------------- maths: answer blocks & gates ---------------- */
   function hitAnswer(b) {
+    if (b.bump > 0.3) return;   // ignore repeat touches in the same moment (side-touch underwater fires every frame)
     b.bump = 1;
     const gate = b.gate;
     if (!gate.problem || gate.state !== 'closed' || b.bad || !b.active) { A.play('bump'); return; }
@@ -364,6 +381,7 @@
     const slots = ch.length === 2 ? [gate.blocks[0], gate.blocks[2]] : gate.blocks;
     gate.blocks.forEach(b => { b.active = false; b.label = ''; });
     slots.forEach((b, i) => { b.active = true; b.label = ch[i]; b.correct = ch[i] === gate.problem.a; });
+    LZ.Speech.say(gate.problem.q);
   }
 
   /* ---------------- number challenges ---------------- */
@@ -378,6 +396,7 @@
     while (used.length < n) { for (let i = 0; i < z.spots.length && used.length < n; i++) if (!used.includes(i)) used.push(i); }
     z.bubbles = c.labels.map((label, i) => { const s = z.spots[used[i]]; return { x: s[0], y: s[1], ox: s[0], oy: s[1], label, alive: true, cool: 0, seed: i * 1.7, pop: 0 }; });
     z.goodLeft = c.kind === 'set' ? c.labels.filter(l => c.good(l)).length : 0;
+    LZ.Speech.say(c.title);
     A.play('power');
   }
   function collectBubble(z, b) {
@@ -441,7 +460,7 @@
       } else if (e.sub === 'falling') {
         if (e.timer >= 0 && !e.falling) { e.timer -= dt; e.shake = 1; if (e.timer < 0) e.falling = true; }
         if (e.falling) { e.vy += 1600 * dt; e.y += e.vy * dt; if (e.y > G.H * T + 300) { e.respawn = (e.respawn || 0) + dt; } }
-        if (e.respawn > 2.5) { e.y = e.oy; e.vy = 0; e.falling = false; e.timer = -1; e.respawn = 0; e.shake = 0; }
+        if (e.respawn > 1.2) { e.y = e.oy; e.vy = 0; e.falling = false; e.timer = -1; e.respawn = 0; e.shake = 0; }
       }
       e.dx = e.x - ox; e.dy = e.y - oy;
     }
@@ -476,7 +495,18 @@
           if (Math.abs(pc.x - e.x) < PW / 2 + 16 && Math.abs(pc.y - e.y) < PH / 2 + 16) { applyPower(e.kind); G.ents.splice(i, 1); }
           break;
         }
-        case 'spring': case 'mushroom': e.comp = Math.max(0, e.comp - dt * 4); break;
+        case 'spring': case 'mushroom': {
+          e.comp = Math.max(0, e.comp - dt * 4);
+          // Launch even when the player just walks onto the pad. Kids (and
+          // Mario habits) expect to run into a spring, not to jump on it
+          // precisely; a pad that only works when landed on reads as broken.
+          const feet = p.y + PH;
+          if (p.vy >= 0 && pc.x > e.x + 4 && pc.x < e.x + e.w - 4 && feet >= e.y - 2 && feet <= e.y + e.h + 2 && e.comp < 0.5) {
+            p.y = e.y - PH; p.vy = -(e.k === 'spring' ? P.spring : P.mushroom) * (LZ.In.jump ? 1.06 : 1);
+            p.grounded = false; p.on = null; e.comp = 1; p.jumps = 1; p.squash = -0.45; p.padLaunch = true; A.play('spring');
+          }
+          break;
+        }
         case 'checkpoint':
           if (!e.on && Math.abs(pc.x - e.x) < 30 && pc.y > e.y - 120) {
             e.on = true; G.checkpoint = { x: e.x - PW / 2, y: e.y - PH };
@@ -605,9 +635,9 @@
         const fromAbove = p.vy > 60 && (p.y + PH) - e.y < 22;
         if (fromAbove && e.stompable) {
           killEnemy(e, false, true);
-          p.vy = (LZ.In.jump ? -P.stomp * 1.35 : -P.stomp) * (G.ab.stomp || 1); p.jumps = 1;
+          p.vy = (LZ.In.jump ? -P.stomp * 1.35 : -P.stomp) * (G.ab.stomp || 1); p.jumps = 1; if (G.ab.stomp) p.padLaunch = true;
         } else if (p.invuln <= 0) {
-          hurt(e.x + e.w / 2);
+          hurt(e.x + e.w / 2, e.type);
         }
       }
     }
@@ -621,9 +651,10 @@
     popCoin(e.x + e.w / 2, e.y);
   }
 
-  function hurt(fromX) {
+  function hurt(fromX, cause) {
     const p = G.player;
     if (p.invuln > 0 || G.state !== 'play') return;
+    G.damage = G.damage || {}; G.damage[cause || '?'] = (G.damage[cause || '?'] || 0) + 1;
     if (p.shield) { p.shield = false; p.invuln = 1.2; A.play('pop'); toast('Tarcza cię obroniła!', 1.2); return; }
     G.hearts--; A.play('hurt'); p.invuln = 1.6; p.hurtT = 0.25; G.shake = 0.25;
     p.vy = -420; p.vx = fromX != null ? (p.x + PW / 2 < fromX ? -260 : 260) : 0;
@@ -631,6 +662,8 @@
   }
   function fallOut() {
     const p = G.player;
+    G.damage = G.damage || {}; G.damage.pit = (G.damage.pit || 0) + 1;
+    (G.pitAt = G.pitAt || {})[Math.floor(p.x / T)] = (G.pitAt[Math.floor(p.x / T)] || 0) + 1;   // where falls happen (for tests)
     G.hearts--; A.play('hurt');
     if (G.hearts <= 0) { outOfHearts(); return; }
     const s = p.lastSafe || G.checkpoint;
@@ -741,6 +774,7 @@
       const ch = b.problem.choices;
       const spots = ch.length === 2 ? [G.lvl.boss.orbs[0], G.lvl.boss.orbs[2]] : G.lvl.boss.orbs;
       b.orbs = ch.map((label, i) => ({ x: spots[i][0] * T, y: spots[i][1] * T, label, correct: label === b.problem.a, alive: true, hint: false, pop: 0 }));
+      LZ.Speech.say(b.problem.q);
       A.play('power');
     }
     if (b.phase === 'question') {
@@ -768,7 +802,7 @@
       const hb = { x: b.x + 12, y: b.y + 14, w: b.w - 24, h: b.h - 14 };
       if (U.overlap(p, hb)) {
         if (p.vy > 50 && p.y + PH - hb.y < 30) { p.vy = -700; floatText(p.x, p.y - 20, 'Hi hi, łaskocze!', '#7a5ce6', 20); A.play('spring'); }
-        else if (p.invuln <= 0) hurt(b.x + b.w / 2);
+        else if (p.invuln <= 0) hurt(b.x + b.w / 2, 'boss');
       }
     }
   }
@@ -809,7 +843,11 @@
       let hit = false;
       if (q.kind === 'bolt') hit = Math.abs(p.x + PW / 2 - q.x) < q.r && q.life > 0 && q.life < 0.35;
       else hit = Math.abs(p.x + PW / 2 - q.x) < PW / 2 + q.r * 0.7 && Math.abs(p.y + PH / 2 - q.y) < PH / 2 + q.r * 0.7;
-      if (hit && G.state === 'play' && p.invuln <= 0) { hurt(q.x); if (q.kind !== 'bolt' && q.kind !== 'wave') q.life = 0; }
+      if (hit && G.state === 'play' && p.invuln <= 0) {
+        const list = G.projectiles;
+        hurt(q.x, 'shot-' + q.kind); if (q.kind !== 'bolt' && q.kind !== 'wave') q.life = 0;
+        if (G.projectiles !== list) return;   // running out of hearts clears the list - stop iterating it
+      }
       if (q.life <= 0) G.projectiles.splice(i, 1);
     }
   }
@@ -835,7 +873,7 @@
     setTimeout(() => LZ.UI.levelComplete(res), 300);
   }
 
-  function quit() { if (G) { S.save(); } G = null; }
+  function quit() { if (G) { S.save(); } G = null; LZ.Speech.stop(); }
   function restart() { if (G) start(G.wi, G.li); }
 
   /* =================================================================
@@ -1044,7 +1082,15 @@
         U.rr(ctx, e.x - 16, e.y - 16, 32, 16, 4); Art.fs(ctx, world.pal.block, world.pal.blockDark, 2);
         break;
       }
-      case 'gate': drawGate(ctx, e, t); break;
+      case 'gate': drawGate(ctx, e, t); drawBlockHints(ctx, e, t); break;
+      case 'sign': {
+        // wooden signpost with a big arrow: "go this way", no reading needed
+        ctx.fillStyle = '#9a6a3a'; ctx.fillRect(e.x - 4, e.y - 70, 8, 70);
+        U.rr(ctx, e.x - 34, e.y - 96, 68, 40, 8); Art.fs(ctx, '#d9a066', '#8a5a2a', 2.5);
+        ctx.beginPath(); ctx.moveTo(e.x - 20, e.y - 82); ctx.lineTo(e.x + 6, e.y - 82); ctx.lineTo(e.x + 6, e.y - 90); ctx.lineTo(e.x + 22, e.y - 76); ctx.lineTo(e.x + 6, e.y - 62); ctx.lineTo(e.x + 6, e.y - 70); ctx.lineTo(e.x - 20, e.y - 70); ctx.closePath();
+        Art.fs(ctx, '#ffffff', '#5a3a1a', 2);
+        break;
+      }
       case 'ans': if (e.active || e.label) drawAnswerBlock(ctx, e, t); else { U.rr(ctx, e.x + 1, e.y + 1, T - 2, T - 2, 9); Art.fs(ctx, '#d6d0e8', '#9a92b5', 2); } break;
       case 'challenge': drawChallenge(ctx, e, t); break;
     }
@@ -1070,6 +1116,24 @@
       outlinedText(ctx, '?', e.x + e.w / 2, y + h - 2 * T + 12, 30, '#7a5ce6', '#fff');
     }
     ctx.restore();
+  }
+  /*
+   * Bouncing up-arrows under the answer blocks: shows "jump into this from
+   * below" without any reading. Always shown in world 1 and for Poziom 1
+   * players; older players only see them after a first mistake.
+   */
+  function drawBlockHints(ctx, gate, t) {
+    if (gate.state !== 'closed' || !gate.problem) return;
+    if (!(G.prof.mathLevel === 1 || G.wi === 1 || gate.wrong > 0)) return;
+    const bob = Math.abs(Math.sin(t * 5)) * 8;
+    for (const b of gate.blocks) {
+      if (!b.active || b.bad) continue;
+      const x = b.x + T / 2, y = b.y + T + 22 + bob;
+      ctx.globalAlpha = 0.85;
+      ctx.beginPath(); ctx.moveTo(x, y - 20); ctx.lineTo(x + 18, y); ctx.lineTo(x + 7, y); ctx.lineTo(x + 7, y + 18); ctx.lineTo(x - 7, y + 18); ctx.lineTo(x - 7, y); ctx.lineTo(x - 18, y); ctx.closePath();
+      Art.fs(ctx, '#ffffff', '#7a5ce6', 2.5);
+      ctx.globalAlpha = 1;
+    }
   }
   function drawAnswerBlock(ctx, b, t) {
     const oy = -b.bump * 10;
@@ -1261,8 +1325,8 @@
     lines.forEach((l, i) => ctx.fillText(l, viewW / 2, y + 16 + size * 0.55 + i * size * 1.1));
     let vy = y + 16 + lines.length * size * 1.1;
     if (visual) { drawVisual(ctx, visual, viewW / 2, vy + 20); vy += visH; }
-    ctx.font = '700 17px "Baloo 2", sans-serif'; ctx.fillStyle = '#7a6a9a';
-    ctx.fillText(sub, viewW / 2, vy + 12);
+    ctx.font = '700 20px "Baloo 2", sans-serif'; ctx.fillStyle = '#6a5a8a';
+    ctx.fillText(sub, viewW / 2, vy + 13);
   }
   /* Dot pictures for the youngest players: 3 + 4 shows as 3 pink and 4 blue dots. */
   function drawVisual(ctx, v, cx, cy) {

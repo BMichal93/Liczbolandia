@@ -29,6 +29,7 @@
       owned: { chars: ['cat'], variants: { cat: [0] }, hats: ['none'], trails: ['none'] },
       equip: { char: 'cat', variant: 0, hat: 'none', trail: 'none' },
       badges: [],
+      readAloud: ml.id === 1,   // read questions aloud - default on for the youngest level
       stats: { correct: 0, wrong: 0, streak: 0, bestStreak: 0, totalCoins: 0, stomps: 0, jumps: 0, purchases: 0, topics: {} },
       created: Date.now(), lastPlayed: Date.now(),
     };
@@ -61,6 +62,7 @@
       out.equip = Object.assign(fresh.equip, p.equip || {});
       out.stats = Object.assign(fresh.stats, p.stats || {});
       out.stats.topics = out.stats.topics || {};
+      if (p.readAloud === undefined) out.readAloud = out.mathLevel === 1;
       return out;
     });
     return d;

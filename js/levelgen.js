@@ -87,6 +87,16 @@
       floating() {
         ground(x, gh); x++;
         const top = gh;
+        if (diff < 0.8) {
+          // gentle version for the first levels: two low planks that touch,
+          // so it's one small hop up and a walk across - no precise jumps
+          for (let i = 0; i < 7; i++) pit(x + i);
+          for (let i = 0; i <= 3; i++) { set(x + i, top - 1, '-'); coin(x + i, top - 2); }
+          for (let i = 4; i <= 6; i++) { set(x + i, top - 2, '-'); coin(x + i, top - 3); }
+          starSpots.push({ x: x + 5, y: Math.max(1, top - 5) });
+          x += 7; ground(x, gh); ground(x + 1, gh); x += 2;
+          return;
+        }
         for (let i = 0; i < 8; i++) pit(x + i);
         for (let i = 1; i <= 3; i++) set(x + i, top - 2, '-');
         for (let i = 5; i <= 7; i++) set(x + i, top - 3, '-');
@@ -197,11 +207,12 @@
       },
       falling() {
         ground(x, gh); x++;
-        const pw = 9;
+        // two roomy 3-tile platforms with a 1-tile gap: still exciting
+        // (they drop!) but doable by a 7-year-old
+        const pw = 8;
         for (let i = 0; i < pw; i++) pit(x + i);
-        ents.push({ t: 'falling', x: x + 1, y: gh - 1, w: 2 });
-        ents.push({ t: 'falling', x: x + 4, y: gh - 2, w: 2 });
-        ents.push({ t: 'falling', x: x + 7, y: gh - 1, w: 2 });
+        ents.push({ t: 'falling', x: x + 1, y: gh - 1, w: 3 });
+        ents.push({ t: 'falling', x: x + 5, y: gh - 1, w: 3 });
         for (let i = 1; i < pw; i += 2) coin(x + i, gh - 3);
         x += pw;
         ground(x, gh); ground(x + 1, gh); x += 2;
@@ -245,9 +256,11 @@
     /* ---- assemble ---- */
     for (let i = 0; i < 8; i++) ground(i, gh);
     x = 8;
+    ents.push({ t: 'sign', x: 5, y: gh });
     const length = 150 + wi * 14 + li * 10;
     const pool = [[3, 'flat'], [3, 'gap'], [2, 'steps'], [2, 'floating'], [2.5, 'blocks'], [1.5, 'pillars'], [1.5, 'spring'], [1.5, 'parade']];
     if (diff > 0.5) pool.push([1, 'thorns']);
+    if (wi === 1 && li === 1) pool.forEach(p => { if (p[1] === 'pillars' || p[1] === 'parade') p[0] = 0.5; });
     if (has('moving')) pool.push([2, 'moving']);
     if (has('ice')) pool.push([3, 'ice']);
     if (has('mushroom')) pool.push([3, 'mushroom']);

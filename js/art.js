@@ -778,7 +778,18 @@
     }
     return finish();
 
-    function finish() { bgCache.set(key, c); return c; }
+    function finish() {
+      // Crop away the fully transparent sky part at the top of the layer so
+      // each frame blits only real pixels (roughly half the area).
+      const data = g.getImageData(0, 0, c.width, c.height).data;
+      let top = 0;
+      outer: for (let y = 0; y < c.height; y++) { for (let x = 3; x < c.width * 4; x += 16) if (data[y * c.width * 4 + x] > 0) { top = y; break outer; } }
+      top = Math.max(0, top - 2);
+      const cropped = document.createElement('canvas'); cropped.width = c.width; cropped.height = Math.max(1, c.height - top);
+      cropped.getContext('2d').drawImage(c, 0, -top);
+      cropped.top = top / res;
+      bgCache.set(key, cropped); return cropped;
+    }
   }
   function decor(g, world, x, y, r) {
     const id = world.id;
@@ -814,9 +825,13 @@
   /* Sky + parallax + live effects (clouds, bubbles, fireflies, snow...). */
   function drawBackground(ctx, world, camX, camY, vw, vh, t) {
     const p = world.pal;
-    const gr = ctx.createLinearGradient(0, 0, 0, vh);
-    gr.addColorStop(0, p.skyTop); gr.addColorStop(1, p.skyBot);
-    ctx.fillStyle = gr; ctx.fillRect(0, 0, vw, vh);
+    // The sky gradient is a CSS background on the canvas element: the
+    // browser's compositor paints it on the GPU for free, while repainting a
+    // full-screen gradient in the canvas every frame was the single biggest
+    // cost on slow tablets. The canvas itself is just cleared.
+    const cv = ctx.canvas;
+    if (cv && cv.__sky !== world.id) { cv.__sky = world.id; cv.style.background = 'linear-gradient(' + p.skyTop + ',' + p.skyBot + ')'; }
+    ctx.clearRect(0, 0, vw, vh);
     const id = world.id;
     // sun / moon
     if (id === 4) {
@@ -873,9 +888,9 @@
     }
   }
   function drawWrap(ctx, img, off, vw, y, vh) {
-    const w = BG_W;
+    const w = BG_W, top = img.top || 0, h = vh - top;
     let x = -((off % w) + w) % w;
-    for (; x < vw; x += w) ctx.drawImage(img, x, y, w, vh);
+    for (; x < vw; x += w) ctx.drawImage(img, x, y + top, w, h);
   }
   function clearCaches() { bgCache.clear(); }
 

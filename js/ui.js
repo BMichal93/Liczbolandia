@@ -497,7 +497,11 @@
         slider('Muzyka', 'music'), slider('Efekty', 'sfx'),
         p ? h('h3', null, 'Matematyka dla: ' + p.name) : null,
         p ? h('div.levels', null, D.MATH_LEVELS.map(m => h('div.lvlcard' + (p.mathLevel === m.id ? '.sel' : ''), { onclick: () => { if (m.id !== p.mathLevel) confirmBox('Zmienić poziom?', 'Zadania będą od teraz: ' + m.desc.toLowerCase() + '.', () => { S.setMathLevel(p, m.id); settings(); }); } }, [h('div.lvlname', null, m.name), h('div.lvlage', null, m.age), h('div.lvldesc', null, m.desc)]))) : null,
-        h('h3', null, 'Zapis gry'),
+        p && LZ.Speech.available ? h('h3', null, 'Czytanie na głos') : null,
+        p && LZ.Speech.available ? h('div.row.wrap', null, [
+          h('button.btn.mid' + (p.readAloud ? '.on' : ''), { onclick: () => { p.readAloud = !p.readAloud; S.save(); if (p.readAloud) LZ.Speech.say('Będę czytać zadania na głos.'); settings(); } }, p.readAloud ? 'Czytam zadania: TAK' : 'Czytam zadania: NIE'),
+        ]) : null,
+                h('h3', null, 'Zapis gry'),
         h('p.note', null, 'Gra zapisuje się sama po każdym poziomie i zakupie. Poniżej możesz zrobić kopię zapasową (np. przed zmianą telefonu) i ją potem wczytać.'),
         h('div.row.wrap', null, [
           h('button.btn.mid.blue', { onclick: () => { S.save(); S.exportFile(); } }, 'Zapisz do pliku'),

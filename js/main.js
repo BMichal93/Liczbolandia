@@ -7,6 +7,9 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   let dpr = 1, cssW = 0, cssH = 0;
+  // Render-resolution multiplier, lowered automatically on slow devices
+  // (see watchFps). 1 = full quality.
+  let quality = 1;
 
   function resize() {
     // Cap the pixel ratio at 2: sharper than that costs battery for no
@@ -18,6 +21,7 @@
     // tablets stutter. ~2.6M keeps it smooth; vector art still looks clean.
     const MAX_PX = 2.6e6;
     if (cssW * cssH * dpr * dpr > MAX_PX) dpr = Math.max(1, Math.sqrt(MAX_PX / (cssW * cssH)));
+    dpr *= quality;
     // Menus are HTML sized for a phone; on a tablet or laptop scale them up
     // so buttons aren't tiny islands in the middle of a big screen.
     const uiZoom = Math.max(1, Math.min(1.7, cssH / 420, cssW / 820));
@@ -74,6 +78,23 @@
     }
   }
 
+  /*
+   * Adaptive quality: during gameplay, if the frame rate stays under ~40 fps
+   * for 2 seconds, render at 80% resolution (down to 55%). A slightly softer
+   * picture is far better for a child than a stuttering, laggy jump.
+   * It only ever steps down, so it can't flicker between settings.
+   */
+  let fpsFrames = 0, fpsStart = 0;
+  function watchFps(now) {
+    if (!LZ.Game.active || LZ.UI.isPaused()) { fpsFrames = 0; fpsStart = now; return; }
+    fpsFrames++;
+    if (now - fpsStart > 2000) {
+      const fps = fpsFrames * 1000 / (now - fpsStart);
+      if (fps < 40 && quality > 0.56) { quality = Math.max(0.55, quality * 0.8); resize(); }
+      fpsFrames = 0; fpsStart = now;
+    }
+  }
+
   /* Fixed-step main loop. */
   let last = performance.now(), acc = 0;
   const STEP = 1 / 120;
@@ -90,6 +111,7 @@
       drawMenuScene(dt);
     }
     drawPreviews(now / 1000);
+    watchFps(now);
     requestAnimationFrame(frame);
   }
 
