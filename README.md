@@ -33,6 +33,9 @@ Działa na telefonie, tablecie i laptopie - widok i menu dopasowują się do ekr
   - **Mistrzowski** (×3) - cała tabliczka mnożenia i dzielenie do 100.
   W ramach poziomu gra sama dopasowuje zadania do dziecka.
 - 9 postaci o różnych umiejętnościach (w tym Świnka Kuleczka - wysokie odbicie od przeciwników), kolory, dodatki, ślady, odznaki.
+- **Sklep za gwiazdki** - gwiazdki to rzadka waluta (w całej grze jest ich 72, tyle kosztuje wszystko w tym sklepie): pupile zbierające monety (Motylek, Rybka w bańce, Świetlik, Mini-smoczek), dodatkowe serduszko, złota postać i tajny poziom **Kraina Monet**.
+- **Album naklejek** - 24 naklejki ze stworkami, bossami i przedmiotami z gry; paczka kosztuje 80 monet i zawsze daje nową naklejkę.
+- Muzyka i dźwięki w stylu 8-bit (chiptune), generowane na żywo.
 - Osobne profile graczy, automatyczny zapis, kopia zapasowa do pliku lub jako kod.
 
 ## Budowa

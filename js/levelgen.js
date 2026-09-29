@@ -19,10 +19,12 @@
   const MAX_GAP = 4;     // widest gap a normal jump clears comfortably
 
   function generate(wi, li) {
-    const world = D.WORLDS[wi - 1];
-    if (li === D.LEVELS_PER_WORLD) return bossArena(world);
+    // world 7 is the star-shop bonus level "Kraina Monet": one replayable level
+    const bonus = wi === 7;
+    const world = bonus ? D.BONUS_WORLD : D.WORLDS[wi - 1];
+    if (!bonus && li === D.LEVELS_PER_WORLD) return bossArena(world);
 
-    const r = U.rng(wi * 1009 + li * 37 + 5);
+    const r = bonus ? U.rng(Date.now() & 0xffff) : U.rng(wi * 1009 + li * 37 + 5);   // bonus level is different on every visit
     const has = f => world.features.includes(f);
     const water = has('water');
     const diff = (wi - 1) * 0.55 + (li - 1) * 0.4;       // 0 .. ~3.6
@@ -54,14 +56,14 @@
       const fly = ['bee', 'bat', 'cloudy', 'fish', 'jelly'].includes(type);
       ents.push({ t: 'enemy', type, x: cx, y: fly ? cy - 2 - Math.floor(r() * 2) : cy });
     };
-    const maybeEnemy = (cx) => { if (r() < 0.35 + diff * 0.12) enemy(cx, gh); };
+    const maybeEnemy = (cx) => { if (r() < (bonus ? 0.12 : 0.35 + diff * 0.12)) enemy(cx, gh); };
 
     /* ---------------- chunk library ---------------- */
     const C = {
       flat() {
         const n = U.ri(r, 5, 9);
         for (let i = 0; i < n; i++) ground(x + i, gh, has('ice') && r() < 0.3 ? 'I' : '#');
-        if (r() < 0.55) for (let i = 1; i < n - 1; i++) coin(x + i, gh - 2);
+        if (bonus || r() < 0.55) for (let i = 1; i < n - 1; i++) { coin(x + i, gh - 2); if (bonus) coin(x + i, gh - 3); }
         if (n > 6) maybeEnemy(x + n - 2);
         x += n;
       },
@@ -114,7 +116,7 @@
         const bx = x + 2, by = gh - 3;
         for (let i = 0; i < pat.length; i++) {
           set(bx + i, by, pat[i]);
-          if (pat[i] === '?') qc[(bx + i) + ',' + by] = r() < 0.3 ? U.wpick(r, [[3, 'heart'], [2, 'magnet'], [2, 'shield'], [2, 'boots'], [1.2, 'rainbow']]) : 'coin';
+          if (pat[i] === '?') qc[(bx + i) + ',' + by] = r() < (bonus ? 0.15 : 0.3) ? U.wpick(r, [[3, 'heart'], [2, 'magnet'], [2, 'shield'], [2, 'boots'], [1.2, 'rainbow']]) : 'coin';
         }
         for (let i = 0; i < pat.length; i++) coin(bx + i, by - 1);
         if (r() < 0.5) starSpots.push({ x: bx + Math.floor(pat.length / 2), y: Math.max(1, by - 3) });
@@ -257,7 +259,7 @@
     for (let i = 0; i < 8; i++) ground(i, gh);
     x = 8;
     ents.push({ t: 'sign', x: 5, y: gh });
-    const length = 150 + wi * 14 + li * 10;
+    const length = bonus ? 130 : 150 + wi * 14 + li * 10;
     const pool = [[3, 'flat'], [3, 'gap'], [2, 'steps'], [2, 'floating'], [2.5, 'blocks'], [1.5, 'pillars'], [1.5, 'spring'], [1.5, 'parade']];
     if (diff > 0.5) pool.push([1, 'thorns']);
     if (wi === 1 && li === 1) pool.forEach(p => { if (p[1] === 'pillars' || p[1] === 'parade') p[0] = 0.5; });
@@ -270,6 +272,7 @@
     if (water) { pool.push([3, 'reef']); pool.forEach(p => { if (p[1] === 'spring' || p[1] === 'thorns') p[0] = 0; }); }
     if (!has('moving') && wi >= 2) pool.push([1, 'moving']);
 
+    if (bonus) pool.forEach(p => { if (['blocks', 'spring', 'floating'].includes(p[1])) p[0] *= 2.5; if (['parade', 'thorns', 'gap'].includes(p[1])) p[0] *= 0.3; });
     const specials = [
       { at: 0.28, fn: gateChunk },
       { at: 0.5, fn: checkpoint },
@@ -304,8 +307,20 @@
     const above = (cx) => { let y = 0; while (y < H && cols[cx][y] === '.') y++; return { x: cx, y: Math.max(1, y - 3) }; };
     const s0 = early.length ? U.pick(r, early) : above(20);
     const s2 = late.length ? U.pick(r, late) : above(W - 30);
-    ents.push({ t: 'star', x: s0.x, y: s0.y, idx: 0 });
-    ents.push({ t: 'star', x: s2.x, y: s2.y, idx: 2 });
+    // Kraina Monet: a double line of coins follows the ground along the whole level
+    if (bonus) {
+      const have = new Set(ents.filter(e => e.t === 'coin').map(e => e.x + ',' + e.y));
+      for (let cx = 6; cx < W - 20; cx++) {
+        let top = 0; while (top < H && cols[cx][top] === '.') top++;
+        if (top >= H || top < 4) continue;
+        for (const dy of [2, 3]) {
+          const cy = top - dy;
+          if (cols[cx][cy] === '.' && cols[cx][cy + 1] === '.' && !have.has(cx + ',' + cy) && (dy === 2 || cx % 2 === 0)) { coin(cx, cy); have.add(cx + ',' + cy); }
+        }
+      }
+    }
+    // the bonus level has no stars - stars stay a fixed, earned currency
+    if (!bonus) { ents.push({ t: 'star', x: s0.x, y: s0.y, idx: 0 }); ents.push({ t: 'star', x: s2.x, y: s2.y, idx: 2 }); }
     // star idx 1 lives in the challenge chest (see game.js)
 
     return { world, wi, li, H, W, cols, ents, qc, start: { x: 2, y: 9 }, water, boss: null };

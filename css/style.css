@@ -50,6 +50,15 @@ canvas#game { position: fixed; inset: 0; display: block; }
 .btn.primary:active { box-shadow: 0 2px 0 #d98a0b; }
 .btn.pink { background: linear-gradient(#ff8fc3, var(--pink)); color: #fff; box-shadow: 0 6px 0 var(--pink-d); text-shadow: 0 2px 0 rgba(0,0,0,.15); }
 .btn.blue { background: linear-gradient(#6cc6f5, var(--blue)); color: #fff; box-shadow: 0 5px 0 var(--blue-d); }
+.btn.gold { background: linear-gradient(#ffe680, #ffc93f); color: #6b3a00; box-shadow: 0 5px 0 #d99a00; }
+.price.star { background: #fff0b3; color: #8a5a00; }
+.album { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; width: 100%; max-width: 1000px; margin-top: 10px; }
+.sticker { background: rgba(255,255,255,.55); border: 3px dashed #c9b8ff; border-radius: 16px; padding: 6px; text-align: center; min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.sticker.got { background: #fffaf3; border: 3px solid #ffd23f; box-shadow: 0 4px 0 rgba(90,60,180,.2); }
+.qmark { font-size: 44px; font-weight: 800; color: #c9b8ff; line-height: 75px; }
+.sname { font-size: 13px; font-weight: 800; }
+.reveal { animation: pop .5s cubic-bezier(.3,1.8,.5,1); }
+.wcard.bonus { box-shadow: 0 0 0 4px #ffd23f, 0 6px 0 rgba(60,30,120,.3); }
 .btn.green { background: linear-gradient(#7fdc93, var(--green)); color: #fff; box-shadow: 0 5px 0 var(--green-d); }
 .btn.ghost { background: rgba(255,255,255,.75); box-shadow: none; }
 .btn.on { background: linear-gradient(#7fdc93, var(--green)); color: #fff; box-shadow: 0 4px 0 var(--green-d); }

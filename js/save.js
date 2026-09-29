@@ -27,7 +27,10 @@
       best: {},          // 'w-l' -> best coin count
       bossWins: [],      // world numbers whose boss was beaten
       owned: { chars: ['cat'], variants: { cat: [0] }, hats: ['none'], trails: ['none'] },
-      equip: { char: 'cat', variant: 0, hat: 'none', trail: 'none' },
+      equip: { char: 'cat', variant: 0, hat: 'none', trail: 'none', pet: 'none', gold: false },
+      starsSpent: 0,      // stars are earned per level and can be spent in the star shop
+      starItems: [],      // ids of STAR_ITEMS bought
+      stickers: [],       // sticker album
       badges: [],
       readAloud: ml.id === 1,   // read questions aloud - default on for the youngest level
       mathV2: true,
@@ -115,6 +118,7 @@
   /* ---- unlock rules ---- */
   function levelKey(w, l) { return w + '-' + l; }
   function isLevelUnlocked(p, w, l) {
+    if (w === 7) return (p.starItems || []).includes('bonus_level');   // bonus level is bought with stars
     if (w === 1 && l === 1) return true;
     if (l > 1) return !!p.done[levelKey(w, l - 1)];
     return !!p.done[levelKey(w - 1, D.LEVELS_PER_WORLD)];

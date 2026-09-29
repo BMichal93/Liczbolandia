@@ -62,12 +62,29 @@
       const s = c.width / 100;
       g.setTransform(s, 0, 0, s, 0, 0);
       if (pv.trailOnly) { drawTrailPreview(g, pv.trailOnly, t); continue; }
+      if (pv.sticker) { g.translate(50, 56); LZ.Art.drawSticker(g, pv.sticker, 110, t); continue; }
+      if (pv.starItem) { drawStarItem(g, pv.starItem, t); continue; }
       const o = pv.opts;
       const walk = o.walk;
       if (walk && o.trail && o.trail !== 'none') drawTrailPreview(g, o.trail, t, true);
       // soft shadow
       g.fillStyle = 'rgba(40,20,70,0.15)'; g.beginPath(); g.ellipse(50, 90, 22, 5, 0, 0, Math.PI * 2); g.fill();
-      LZ.Art.drawCharacter(g, 50, 89, { id: o.id, variant: o.variant, hat: o.hat, facing: 1, t: t + (o.id.length), state: walk ? 'run' : 'idle', phase: t * 9, scale: 1.45 });
+      LZ.Art.drawCharacter(g, 50, 89, { id: o.id, variant: o.variant, hat: o.hat, gold: o.gold, facing: 1, t: t + (o.id.length), state: walk ? 'run' : 'idle', phase: t * 9, scale: 1.45 });
+      if (o.pet) LZ.Art.drawPet(g, o.pet, 18, 30 + Math.sin(t * 3) * 4, t, 1);
+    }
+  }
+  /* Pictures for the star-shop cards. */
+  function drawStarItem(g, it, t) {
+    if (it.type === 'pet') { g.translate(50, 52); g.scale(2.4, 2.4); LZ.Art.drawPet(g, it.id, 0, Math.sin(t * 3) * 2, t, 1); return; }
+    if (it.type === 'perk') { LZ.Art.drawHeart(g, 50, 55, 26, true); g.fillStyle = '#fff'; g.font = '800 26px "Baloo 2", sans-serif'; g.textAlign = 'center'; g.fillText('+1', 50, 62); return; }
+    if (it.type === 'level') {
+      LZ.Art.drawCoin(g, 30, 62, t, 14); LZ.Art.drawCoin(g, 52, 48, t + 1, 14); LZ.Art.drawCoin(g, 72, 64, t + 2, 14);
+      LZ.Art.starPath(g, 50, 24, 12, 5, 5, 0); LZ.Art.fs(g, '#ffd23f', '#d98a0b', 2); return;
+    }
+    if (it.type === 'skin') {
+      const p = LZ.S.active();
+      LZ.Art.drawCharacter(g, 50, 89, { id: p ? p.equip.char : 'cat', gold: true, facing: 1, t, state: 'idle', scale: 1.45 });
+      for (let i = 0; i < 4; i++) { const a = t * 2 + i * 1.6; LZ.Art.starPath(g, 50 + Math.cos(a) * 36, 50 + Math.sin(a) * 30, 5, 1.5, 4, a); LZ.Art.fs(g, '#fff6c9'); }
     }
   }
   function drawTrailPreview(g, kind, t, behind) {

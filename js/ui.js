@@ -183,7 +183,8 @@
           h('button.btn.big.pink', { onclick: () => wardrobe('chars') }, 'Garderoba i sklep'),
           h('div.row', null, [
             h('button.btn.mid.blue', { onclick: badges }, 'Odznaki'),
-            h('button.btn.mid.green', { onclick: stats }, 'Moje wyniki'),
+            h('button.btn.mid.gold', { onclick: album }, 'Album'),
+            h('button.btn.mid.green', { onclick: stats }, 'Wyniki'),
           ]),
           h('button.btn.small.ghost', { onclick: shareGame }, 'Udostępnij grę (kod QR)'),
         ]),
@@ -212,7 +213,9 @@
     });
     show(h('div.screen', null, [
       h('div.topbar', null, [h('button.btn.small', { onclick: hub }, '← Wróć'), h('h1', null, 'Mapa świata'), h('span')]),
-      h('div.wgrid', null, cards),
+      h('div.wgrid', null, cards.concat((p.starItems || []).includes('bonus_level') ? [h('div.wcard.bonus', {
+        style: 'background:linear-gradient(160deg,' + D.BONUS_WORLD.pal.skyTop + ',' + D.BONUS_WORLD.pal.skyBot + ')', onclick: () => play(7, 1),
+      }, [h('div.wnum', null, 'Tajny poziom'), h('div.wname', null, D.BONUS_WORLD.name), h('div.wsub', null, D.BONUS_WORLD.sub), h('div.wground', { style: 'background:' + D.BONUS_WORLD.pal.grass + ';border-top:6px solid ' + D.BONUS_WORLD.pal.grassDark })])] : [])),
     ]));
   }
   function levels(wi) {
@@ -283,6 +286,7 @@
     const p = S.active();
     document.getElementById('hud').classList.add('hidden');
     const next = () => {
+      if (res.wi === 7) return null;   // bonus level: nothing comes after it
       if (res.li < D.LEVELS_PER_WORLD) return () => play(res.wi, res.li + 1);
       if (res.wi < D.WORLDS.length) return () => play(res.wi + 1, 1);
       return null;
@@ -311,11 +315,12 @@
     m.box.parentNode.classList.add('levelend');
   }
 
+  // badges are shown one after another (closing one opens the next), never stacked
   function celebrateBadges(list) {
-    list.forEach(b => {
-      const m = modal([h('div.badge-big', null, '🏅'), h('h2', null, 'Nowa odznaka!'), h('p', null, [h('b', null, b.name), ' - ' + b.desc]), b.reward ? h('p', null, 'Nagroda: ' + b.reward) : null, h('button.btn.primary', { onclick: () => m.close() }, 'Super!')]);
-      A.play('star');
-    });
+    if (!list.length) return;
+    const b = list[0];
+    const m = modal([h('div.badge-big', null, '🏅'), h('h2', null, 'Nowa odznaka!'), h('p', null, [h('b', null, b.name), ' - ' + b.desc]), b.reward ? h('p', null, 'Nagroda: ' + b.reward) : null, h('button.btn.primary', { onclick: () => m.close() }, 'Super!')], { onclose: () => celebrateBadges(list.slice(1)) });
+    A.play('star');
   }
 
   /* ================= WARDROBE & SHOP ================= */
@@ -332,7 +337,7 @@
   function wardrobe(tab) {
     const p = S.active();
     if (!promos) rollPromos(p);
-    const tabs = [['chars', 'Postacie'], ['colors', 'Kolory'], ['hats', 'Dodatki'], ['trails', 'Ślady']];
+    const tabs = [['chars', 'Postacie'], ['colors', 'Kolory'], ['hats', 'Dodatki'], ['trails', 'Ślady'], ['stars', '⭐ Za gwiazdki']];
     const eq = p.equip;
     const items = [];
     const card = (opts) => h('div.item' + (opts.equipped ? '.eq' : '') + (opts.locked ? '.locked' : '') + (opts.promo ? '.promo' : ''), { onclick: opts.onclick }, [
@@ -400,16 +405,84 @@
           },
         }));
       });
+    } else if (tab === 'stars') {
+      /*
+       * Star shop: stars are the rare currency (72 in the whole game), and
+       * these items together cost exactly 72 - so getting all of them means
+       * finishing the whole game and finding every hidden star.
+       */
+      const bal = D.starBalance(p);
+      D.STAR_ITEMS.forEach(it => {
+        const owned = (p.starItems || []).includes(it.id);
+        let action, onclick;
+        if (!owned) {
+          action = h('span.price.star', null, [starIcon(), ' ' + it.stars]);
+          onclick = () => {
+            if (bal < it.stars) { alertBox(it.name, it.desc + ' Masz ' + bal + ' ' + LZ.U.plural(bal, 'gwiazdkę', 'gwiazdki', 'gwiazdek') + ', a to kosztuje ' + it.stars + '. Brakuje ' + (it.stars - bal) + ' - szukaj gwiazdek na poziomach!'); return; }
+            confirmBox(it.name, it.desc + ' Kupić za ' + it.stars + ' ' + LZ.U.plural(it.stars, 'gwiazdkę', 'gwiazdki', 'gwiazdek') + '? Zostanie ci ' + (bal - it.stars) + '.', () => {
+              p.starsSpent = (p.starsSpent || 0) + it.stars; (p.starItems = p.starItems || []).push(it.id);
+              if (it.type === 'pet') eq.pet = it.id;
+              if (it.type === 'skin') eq.gold = true;
+              const nb = S.checkBadges(p); S.save(); A.play('star'); wardrobe('stars');
+              alertBox('Masz to!', it.type === 'level' ? 'Tajny poziom czeka na mapie świata!' : it.type === 'pet' ? 'Twój pupil będzie z tobą na każdym poziomie.' : it.type === 'perk' ? 'Od teraz masz dodatkowe serduszko.' : 'Twoja postać świeci złotem!', () => { if (nb.length) celebrateBadges(nb); });
+            });
+          };
+        } else if (it.type === 'pet') { action = eq.pet === it.id ? 'Założony (zdejmij)' : 'Załóż'; onclick = () => { eq.pet = eq.pet === it.id ? 'none' : it.id; S.save(); wardrobe('stars'); }; }
+        else if (it.type === 'skin') { action = eq.gold ? 'Włączone (wyłącz)' : 'Włącz'; onclick = () => { eq.gold = !eq.gold; S.save(); wardrobe('stars'); }; }
+        else if (it.type === 'level') { action = 'Zagraj!'; onclick = () => play(7, 1); }
+        else { action = 'Masz to!'; onclick = () => alertBox(it.name, it.desc); }
+        items.push(card({ pic: starItemPic(it), name: it.name, sub: it.desc, equipped: owned && ((it.type === 'pet' && eq.pet === it.id) || (it.type === 'skin' && eq.gold) || it.type === 'perk' || it.type === 'level'), locked: !owned && bal < it.stars, action, onclick }));
+      });
     }
     show(h('div.screen.shop', null, [
-      h('div.topbar', null, [h('button.btn.small', { onclick: () => { promos = null; hub(); } }, '← Wróć'), h('h1', null, 'Garderoba i sklep'), h('div.wallet', null, [coinIcon(), ' ' + p.coins])]),
+      h('div.topbar', null, [h('button.btn.small', { onclick: () => { promos = null; hub(); } }, '← Wróć'), h('h1', null, 'Garderoba i sklep'), h('div.wallet', null, [coinIcon(), ' ' + p.coins, '  ', starIcon(), ' ' + D.starBalance(p)])]),
       h('div.tabs', null, tabs.map(([k, n]) => h('button.tab' + (k === tab ? '.on' : ''), { onclick: () => wardrobe(k) }, n))),
       h('div.shopbody', null, [
-        h('div.bigpreview', null, [preview({ id: eq.char, variant: eq.variant, hat: eq.hat, walk: true, trail: eq.trail }, 170), h('div.cname', null, (D.CHARACTERS.find(c => c.id === eq.char) || {}).name)]),
+        h('div.bigpreview', null, [preview({ id: eq.char, variant: eq.variant, hat: eq.hat, walk: true, trail: eq.trail, gold: eq.gold && (p.starItems || []).includes('gold'), pet: (p.starItems || []).includes(eq.pet) ? eq.pet : null }, 170), h('div.cname', null, (D.CHARACTERS.find(c => c.id === eq.char) || {}).name)]),
         h('div.igrid', null, items),
       ]),
     ]));
   }
+  function starItemPic(it) {
+    const c = h('canvas.preview', { width: 168, height: 168, style: 'width:84px;height:84px' });
+    previews.push({ canvas: c, starItem: it, size: 84 });
+    return c;
+  }
+
+  /* ================= STICKER ALBUM ================= */
+  function album() {
+    const p = S.active(); const have = p.stickers || [];
+    const slots = D.STICKERS.map(st => {
+      const got = have.includes(st.id);
+      const c = h('canvas.preview', { width: 150, height: 150, style: 'width:75px;height:75px' });
+      if (got) previews.push({ canvas: c, sticker: st.id, size: 75 });
+      return h('div.sticker' + (got ? '.got' : ''), null, [got ? c : h('div.qmark', null, '?'), h('div.sname', null, got ? st.name : '???')]);
+    });
+    const done = have.length >= D.STICKERS.length;
+    show(h('div.screen', null, [
+      h('div.topbar', null, [h('button.btn.small', { onclick: hub }, '← Wróć'), h('h1', null, 'Album naklejek'), h('div.wallet', null, [coinIcon(), ' ' + p.coins])]),
+      h('p.note.center', null, 'Masz ' + have.length + ' z ' + D.STICKERS.length + ' naklejek. Każda paczka to nowa naklejka!'),
+      h('button.btn.mid.primary', { onclick: () => buyPack(), disabled: done }, done ? 'Masz wszystkie!' : ['Kup paczkę naklejek  ', coinIcon(), ' ' + D.STICKER_PACK_PRICE]),
+      h('div.album', null, slots),
+    ]));
+  }
+  function buyPack() {
+    const p = S.active(); p.stickers = p.stickers || [];
+    const missing = D.STICKERS.filter(st => !p.stickers.includes(st.id));
+    if (!missing.length) return;
+    if (p.coins < D.STICKER_PACK_PRICE) { alertBox('Za mało monet', 'Paczka kosztuje ' + D.STICKER_PACK_PRICE + ', masz ' + p.coins + '. Brakuje ' + (D.STICKER_PACK_PRICE - p.coins) + '.'); return; }
+    p.coins -= D.STICKER_PACK_PRICE; p.stats.purchases++;
+    const st = U.pick(Math.random, missing); p.stickers.push(st.id);
+    const nb = S.checkBadges(p); S.save(); A.play('power');
+    album();
+    // the reveal: the new sticker pops out big
+    const c = h('canvas.preview.reveal', { width: 320, height: 320, style: 'width:160px;height:160px' });
+    previews.push({ canvas: c, sticker: st.id, size: 160 });
+    // badges earned by this pack are shown only after the sticker reveal is closed
+    const m = modal([h('h2', null, 'Nowa naklejka!'), c, h('p.q', null, st.name), h('p.note', null, (p.stickers.length) + ' z ' + D.STICKERS.length + ' w albumie'), h('button.btn.primary', { onclick: () => m.close() }, 'Super!')], { onclose: () => { if (nb.length) celebrateBadges(nb); } });
+    setTimeout(() => A.play('star'), 350);
+  }
+
   function trailPic(id) {
     const c = h('canvas.preview', { width: 168, height: 168, style: 'width:84px;height:84px' });
     previews.push({ canvas: c, trailOnly: id, size: 84 });
@@ -572,6 +645,7 @@
   }
 
   LZ.UI = {
+    album,
     title, profiles, hub, worlds, levels, play, levelComplete, togglePause,
     isPaused: () => paused || !!document.querySelector('.modal-back'),
     previews,

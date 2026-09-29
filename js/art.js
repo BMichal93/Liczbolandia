@@ -46,7 +46,9 @@
    * ===================================================================== */
   function drawCharacter(ctx, x, y, o) {
     const ch = LZ.D.CHARACTERS.find(c => c.id === o.id) || LZ.D.CHARACTERS[0];
-    const pal = (ch.variants[o.variant || 0] || ch.variants[0]).pal;
+    let pal = (ch.variants[o.variant || 0] || ch.variants[0]).pal;
+    // star-shop "Złota postać": any character in shiny gold (keeps its own eye colour)
+    if (o.gold) pal = { body: '#ffd84a', belly: '#fff3b0', accent: '#e0a000', patch2: '#ffe680', eye: pal.eye };
     const out = U.shade(pal.id === 'panda' ? '#555' : pal.body, -0.5);
     const st = o.state || 'idle';
     const t = o.t || 0;
@@ -321,6 +323,78 @@
         break;
       }
     }
+    ctx.restore();
+  }
+
+  /* =====================================================================
+   * PETS (star shop) - small companions drawn around their centre
+   * ===================================================================== */
+  function drawPet(ctx, id, x, y, t, facing) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(facing || 1, 1);
+    switch (id) {
+      case 'pet_butterfly': {
+        const f = Math.abs(Math.sin(t * 14));
+        // upper and lower wings on both sides, flapping by squashing their width
+        const ww = 0.35 + 0.65 * f;
+        ell(ctx, -6, -5, 9 * ww, 7, -0.5); fs(ctx, '#ff85c8', '#b8467a', 1.5);
+        ell(ctx, 6, -5, 9 * ww, 7, 0.5); fs(ctx, '#ff85c8', '#b8467a', 1.5);
+        ell(ctx, -5, 4, 6 * ww, 5, 0.4); fs(ctx, '#c9b8ff', '#6a4fcf', 1.5);
+        ell(ctx, 5, 4, 6 * ww, 5, -0.4); fs(ctx, '#c9b8ff', '#6a4fcf', 1.5);
+        ell(ctx, 0, 0, 2.5, 9); fs(ctx, '#3b2a6b');
+        ctx.strokeStyle = '#3b2a6b'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(0, -8); ctx.quadraticCurveTo(3, -14, 6, -15); ctx.moveTo(0, -8); ctx.quadraticCurveTo(-3, -14, -6, -15); ctx.stroke();
+        break;
+      }
+      case 'pet_fish': {
+        ell(ctx, 0, 0, 17, 17); ctx.fillStyle = 'rgba(180,230,255,0.35)'; ctx.fill(); ctx.strokeStyle = 'rgba(120,200,255,0.9)'; ctx.lineWidth = 2; ctx.stroke();
+        const w = Math.sin(t * 8) * 0.3;
+        ctx.save(); ctx.translate(-8, 1); ctx.rotate(w); tri(ctx, 0, 0, -7, -6, -7, 6); fs(ctx, '#ff8a3d'); ctx.restore();
+        ell(ctx, 1, 1, 9, 6.5); fs(ctx, '#ffa94d', '#c4621c', 1.5);
+        ell(ctx, 5, -1, 2, 2); fs(ctx, '#222');
+        ell(ctx, -6, -8, 3, 2, -0.6); fs(ctx, 'rgba(255,255,255,0.8)');
+        break;
+      }
+      case 'pet_firefly': {
+        const glow = 0.55 + 0.45 * Math.sin(t * 5);
+        const g = ctx.createRadialGradient(0, 4, 1, 0, 4, 26); g.addColorStop(0, 'rgba(255,250,150,' + glow + ')'); g.addColorStop(1, 'rgba(255,250,150,0)');
+        ctx.fillStyle = g; ctx.fillRect(-26, -22, 52, 52);
+        const f = Math.sin(t * 30) * 0.5;
+        ell(ctx, -4, -6, 6, 3.5, -0.8 + f); fs(ctx, 'rgba(230,245,255,0.85)'); ell(ctx, 4, -6, 6, 3.5, 0.8 - f); fs(ctx, 'rgba(230,245,255,0.85)');
+        ell(ctx, 0, -2, 5, 5); fs(ctx, '#6b4e8f'); ell(ctx, 0, 5, 5.5, 6); fs(ctx, 'rgb(255,' + Math.round(220 + 30 * glow) + ',90)');
+        ell(ctx, 2, -3, 1.3, 1.3); fs(ctx, '#fff');
+        break;
+      }
+      case 'pet_dragon': {
+        const f = Math.sin(t * 10) * 0.4;
+        ctx.save(); ctx.translate(-3, -6); ctx.rotate(-0.5 - f); tri(ctx, 0, 0, -14, -10, -10, 3); fs(ctx, '#9f7aea', '#5a3fbf', 1.5); ctx.restore();
+        ell(ctx, 0, 2, 10, 8); fs(ctx, '#4fd1c5', '#2a8a80', 1.8);
+        ell(ctx, 7, -5, 7.5, 6.5); fs(ctx, '#4fd1c5', '#2a8a80', 1.8);
+        tri(ctx, 4, -10, 6, -16, 8, -10); fs(ctx, '#ffd84a'); tri(ctx, 8, -10, 11, -15, 11, -9); fs(ctx, '#ffd84a');
+        ell(ctx, 10, -6, 1.6, 2); fs(ctx, '#222'); ell(ctx, 10.5, -6.8, 0.6, 0.6); fs(ctx, '#fff');
+        ell(ctx, 1, 4, 5, 4); fs(ctx, '#fff6c9');
+        ctx.beginPath(); ctx.moveTo(-9, 4); ctx.quadraticCurveTo(-17, 6, -18, 0); ctx.strokeStyle = '#4fd1c5'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
+        if (Math.sin(t * 2) > 0.95) { ell(ctx, 18, -4, 3, 2); fs(ctx, 'rgba(255,160,60,0.8)'); }
+        break;
+      }
+    }
+    ctx.restore();
+  }
+
+  /* Sticker art for the album: reuses the game's own creatures and items. */
+  function drawSticker(ctx, id, size, t) {
+    const S = LZ.D.STICKERS.find(s => s.id === id); if (!S) return;
+    ctx.save();
+    const world = LZ.D.WORLDS[0];
+    if (S.kind === 'enemy') {
+      const sz = { slime: [36, 26], bee: [32, 30], hedgehog: [36, 26], snowball: [34, 34], fish: [36, 26], jelly: [30, 34], urchin: [30, 30], shroom: [36, 34], bat: [34, 28], cloudy: [40, 30], firejelly: [30, 34] }[id];
+      const k = size / 60; ctx.scale(k, k);
+      drawEnemy(ctx, { type: id, x: -sz[0] / 2, y: 18 - sz[1], w: sz[0], h: sz[1], dir: 1, seed: 1, roll: 0, col: '#8fe36b' }, t, world);
+    } else if (S.kind === 'boss') {
+      const k = size / 200; ctx.scale(k, k); ctx.translate(0, -8);   // bosses are tall: a bit smaller so nothing is cut off
+      drawBoss(ctx, { kind: id, x: -55, y: 70 - 150, w: 110, h: 150, dir: 1, flash: 0, phase: 'intro', look: 0 }, t);
+    } else if (S.kind === 'power') {
+      const k = size / 40; ctx.scale(k, k); drawPowerup(ctx, id, 0, 0, t);
+    } else if (id === 'coin') { const k = size / 34; ctx.scale(k, k); drawCoin(ctx, 0, 0, 0.2, 13); }
+    else { const k = size / 44; ctx.scale(k, k); drawStar(ctx, 0, 0, 18, t); }
     ctx.restore();
   }
 
@@ -896,6 +970,6 @@
 
   LZ.Art = {
     drawCharacter, drawHat, drawTrailParticle, drawCoin, drawStar, drawHeart, drawPowerup, getTile, drawQBlock, drawLava,
-    drawEnemy, drawBoss, drawBackground, clearCaches, starPath, heartPath, ell, fs, tri, RAINBOW,
+    drawEnemy, drawBoss, drawBackground, clearCaches, drawPet, drawSticker, starPath, heartPath, ell, fs, tri, RAINBOW,
   };
 })();

@@ -34,7 +34,7 @@
     },
     {
       id: 'hamster', name: 'Chomik Pączek', desc: 'Monety same do niego lecą!',
-      ability: { magnet: 3.2 }, abilityText: 'Magnes na monety', price: 120, unlock: null,
+      ability: { magnet: 3.2 }, abilityText: 'Magnes na monety', price: 180, unlock: null,
       variants: [
         { name: 'Miodowy', pal: { body: '#f6c177', belly: '#fff5dd', accent: '#e39b3f', eye: '#2d1d10' } },
         { name: 'Czekoladowy', pal: { body: '#b98463', belly: '#f3e1d2', accent: '#8b5a3c', eye: '#2d1d10' } },
@@ -45,7 +45,7 @@
       // Guinea pig: bounces much higher off enemies, so stomping becomes a
       // way to reach high coins and stars - a play style no one else has.
       id: 'guinea', name: 'Świnka Kuleczka', desc: 'Skacząc po przeciwnikach, wybija się wysoko jak z trampoliny!',
-      ability: { stomp: 1.5 }, abilityText: 'Wysokie odbicie', price: 150, unlock: null,
+      ability: { stomp: 1.5 }, abilityText: 'Wysokie odbicie', price: 220, unlock: null,
       variants: [
         { name: 'Trójkolorowa', pal: { body: '#fffaf2', belly: '#ffffff', accent: '#e8913f', patch2: '#6b4a36', eye: '#2d1d10' } },
         { name: 'Ruda', pal: { body: '#f2a65a', belly: '#fff3e0', accent: '#c4702a', patch2: '#fffaf2', eye: '#2d1d10' } },
@@ -54,7 +54,7 @@
     },
     {
       id: 'fox', name: 'Lisek Rudek', desc: 'Najszybszy w całej Liczbolandii.',
-      ability: { speed: 1.2 }, abilityText: 'Szybki bieg', price: 180, unlock: null,
+      ability: { speed: 1.2 }, abilityText: 'Szybki bieg', price: 270, unlock: null,
       variants: [
         { name: 'Rudy', pal: { body: '#ff8a3d', belly: '#fff4ea', accent: '#d9621c', eye: '#2b1a12' } },
         { name: 'Polarny', pal: { body: '#e6f3ff', belly: '#ffffff', accent: '#a9cdee', eye: '#1c2a3a' } },
@@ -63,7 +63,7 @@
     },
     {
       id: 'frog', name: 'Żabka Skoczka', desc: 'Skacze wyżej niż wszyscy.',
-      ability: { jump: 1.16 }, abilityText: 'Wysoki skok', price: 220, unlock: null,
+      ability: { jump: 1.16 }, abilityText: 'Wysoki skok', price: 330, unlock: null,
       variants: [
         { name: 'Zielona', pal: { body: '#7ed957', belly: '#e9ffd6', accent: '#4fb52b', eye: '#1b2a12' } },
         { name: 'Niebieska', pal: { body: '#5ccfff', belly: '#e0f7ff', accent: '#2a9fd6', eye: '#10212b' } },
@@ -72,7 +72,7 @@
     },
     {
       id: 'panda', name: 'Panda Bambi', desc: 'Wytrzymała - ma dodatkowe serduszko.',
-      ability: { hearts: 4 }, abilityText: '4 serduszka', price: 260, unlock: null,
+      ability: { hearts: 4 }, abilityText: '4 serduszka', price: 390, unlock: null,
       variants: [
         { name: 'Klasyczna', pal: { body: '#ffffff', belly: '#ffffff', accent: '#2f2f3a', eye: '#1a1a22' } },
         { name: 'Czerwona', pal: { body: '#ffe7d6', belly: '#ffffff', accent: '#c4552a', eye: '#1a1a22' } },
@@ -81,7 +81,7 @@
     },
     {
       id: 'penguin', name: 'Pingwinka Fifi', desc: 'Trzymaj skok w powietrzu, a będzie szybować.',
-      ability: { glide: true }, abilityText: 'Szybowanie', price: 320, unlock: null,
+      ability: { glide: true }, abilityText: 'Szybowanie', price: 480, unlock: null,
       variants: [
         { name: 'Granatowa', pal: { body: '#34426b', belly: '#ffffff', accent: '#ffa62b', eye: '#10131f' } },
         { name: 'Różowa', pal: { body: '#d9559c', belly: '#ffffff', accent: '#ffa62b', eye: '#10131f' } },
@@ -108,32 +108,33 @@
     },
   ];
   // Price of the 2nd and 3rd colour variant of every character.
-  const VARIANT_PRICES = [0, 60, 90];
+  // coins are earned faster on harder levels, so prices are set to last a while
+  const VARIANT_PRICES = [0, 90, 140];
 
   /* Hats and accessories. `badge` means it is a reward for that badge
      rather than something you buy. */
   const HATS = [
     { id: 'none', name: 'Bez dodatków', price: 0 },
-    { id: 'bow', name: 'Kokarda', price: 40 },
-    { id: 'flowers', name: 'Wianek z kwiatów', price: 70 },
-    { id: 'beanie', name: 'Czapka z pomponem', price: 80 },
-    { id: 'glasses', name: 'Okulary przeciwsłoneczne', price: 90 },
-    { id: 'headphones', name: 'Słuchawki', price: 110 },
+    { id: 'bow', name: 'Kokarda', price: 60 },
+    { id: 'flowers', name: 'Wianek z kwiatów', price: 100 },
+    { id: 'beanie', name: 'Czapka z pomponem', price: 120 },
+    { id: 'glasses', name: 'Okulary przeciwsłoneczne', price: 130 },
+    { id: 'headphones', name: 'Słuchawki', price: 160 },
     { id: 'party', name: 'Czapeczka urodzinowa', price: 0, badge: 'first_level' },
     { id: 'wizard', name: 'Kapelusz czarodziejki', price: 0, badge: 'math50' },
-    { id: 'tophat', name: 'Cylinder', price: 150 },
+    { id: 'tophat', name: 'Cylinder', price: 220 },
     { id: 'crown', name: 'Korona', price: 0, badge: 'boss1' },
     { id: 'tiara', name: 'Diadem', price: 0, badge: 'stars30' },
-    { id: 'pirate', name: 'Kapelusz pirata', price: 130 },
+    { id: 'pirate', name: 'Kapelusz pirata', price: 190 },
   ];
 
   /* Particle trails left while running. */
   const TRAILS = [
     { id: 'none', name: 'Bez śladu', price: 0 },
-    { id: 'stars', name: 'Gwiazdki', price: 50 },
-    { id: 'hearts', name: 'Serduszka', price: 70 },
-    { id: 'bubbles', name: 'Bańki', price: 70 },
-    { id: 'notes', name: 'Nutki', price: 90 },
+    { id: 'stars', name: 'Gwiazdki', price: 70 },
+    { id: 'hearts', name: 'Serduszka', price: 100 },
+    { id: 'bubbles', name: 'Bańki', price: 100 },
+    { id: 'notes', name: 'Nutki', price: 130 },
     { id: 'rainbow', name: 'Tęcza', price: 0, badge: 'streak10' },
     { id: 'sparkle', name: 'Iskierki', price: 0, badge: 'coins1000' },
   ];
@@ -201,9 +202,58 @@
     { id: 'stomp50', name: 'Hop, hop!', desc: 'Podskocz na 50 przeciwnikach', check: p => p.stats.stomps >= 50 },
     { id: 'shopper', name: 'Zakupy!', desc: 'Kup coś w sklepie', check: p => p.stats.purchases >= 1 },
     { id: 'allbosses', name: 'Bohaterka', desc: 'Pokonaj wszystkich bossów', check: p => (p.bossWins || []).length >= 6 },
+    { id: 'stickers12', name: 'Pół albumu', desc: 'Zbierz 12 naklejek', check: p => (p.stickers || []).length >= 12 },
+    { id: 'stickersAll', name: 'Kolekcjonerka', desc: 'Zbierz wszystkie naklejki', check: p => (p.stickers || []).length >= 24 },
+    { id: 'firstPet', name: 'Mam pupila!', desc: 'Kup pupila za gwiazdki', check: p => (p.starItems || []).some(i => i.startsWith('pet_')) },
+    { id: 'starShopAll', name: 'Gwiezdna kolekcja', desc: 'Kup wszystko w sklepie za gwiazdki', check: p => (p.starItems || []).length >= 7 },
   ];
 
+  /*
+   * STAR SHOP. Stars are the rare currency: each level hides 3 and a boss
+   * gives 3, so the whole game holds exactly 72. The star items below cost
+   * 72 in total - getting everything means finishing every level AND
+   * finding every hidden star. Each item changes how the game plays or
+   * looks, so it's worth saving for.
+   */
+  const STAR_ITEMS = [
+    { id: 'pet_butterfly', type: 'pet', name: 'Motylek', desc: 'Leci za tobą i łapie monety obok.', stars: 5 },
+    { id: 'pet_fish', type: 'pet', name: 'Rybka w bańce', desc: 'Pływa w powietrzu i zbiera monety.', stars: 8 },
+    { id: 'bonus_level', type: 'level', name: 'Kraina Monet', desc: 'Tajny poziom pełen monet i ?-klocków. Można grać ile razy chcesz!', stars: 8 },
+    { id: 'pet_firefly', type: 'pet', name: 'Świetlik', desc: 'Świeci i zbiera monety z daleka.', stars: 12 },
+    { id: 'perk_heart', type: 'perk', name: 'Dodatkowe serduszko', desc: 'Na każdym poziomie masz o 1 serduszko więcej.', stars: 12 },
+    { id: 'gold', type: 'skin', name: 'Złota postać', desc: 'Każda postać może być złota i błyszcząca!', stars: 12 },
+    { id: 'pet_dragon', type: 'pet', name: 'Mini-smoczek', desc: 'Najlepszy pupil: zbiera monety z największej odległości.', stars: 15 },
+  ];
+  // how far (in tiles) each pet reaches for coins
+  const PETS = { pet_butterfly: { reach: 1.8 }, pet_fish: { reach: 2.3 }, pet_firefly: { reach: 3 }, pet_dragon: { reach: 3.8 } };
+
+  /*
+   * STICKER ALBUM - a long-term coin sink. Every pack gives a sticker you
+   * don't have yet; each sticker is a creature or item from the game.
+   */
+  const STICKERS = [
+    { id: 'slime', name: 'Glutek', kind: 'enemy' }, { id: 'bee', name: 'Bzyczek', kind: 'enemy' }, { id: 'hedgehog', name: 'Kolczak', kind: 'enemy' },
+    { id: 'snowball', name: 'Śnieżynek', kind: 'enemy' }, { id: 'fish', name: 'Rybka', kind: 'enemy' }, { id: 'jelly', name: 'Meduza', kind: 'enemy' },
+    { id: 'urchin', name: 'Jeżowiec', kind: 'enemy' }, { id: 'shroom', name: 'Grzybek', kind: 'enemy' }, { id: 'bat', name: 'Nietoperek', kind: 'enemy' },
+    { id: 'cloudy', name: 'Chmurek', kind: 'enemy' }, { id: 'firejelly', name: 'Ognik', kind: 'enemy' },
+    { id: 'slimeking', name: 'Król Glutek', kind: 'boss' }, { id: 'snowman', name: 'Bałwan Bubu', kind: 'boss' }, { id: 'octopus', name: 'Ośmiornica Ola', kind: 'boss' },
+    { id: 'shroomlord', name: 'Grzybolord', kind: 'boss' }, { id: 'storm', name: 'Burzynka', kind: 'boss' }, { id: 'chocodragon', name: 'Smok Czekoladowy', kind: 'boss' },
+    { id: 'heart', name: 'Serduszko', kind: 'power' }, { id: 'magnet', name: 'Magnes', kind: 'power' }, { id: 'shield', name: 'Tarcza', kind: 'power' },
+    { id: 'boots', name: 'Superskok', kind: 'power' }, { id: 'rainbow', name: 'Tęczowa gwiazda', kind: 'power' },
+    { id: 'coin', name: 'Złota moneta', kind: 'item' }, { id: 'star', name: 'Gwiazdka', kind: 'item' },
+  ];
+  const STICKER_PACK_PRICE = 80;
+
+  // Bonus world bought with stars: one replayable level full of coins.
+  const BONUS_WORLD = {
+    id: 7, name: 'Kraina Monet', sub: 'Tajny poziom - same skarby!',
+    pal: { skyTop: '#ffcf5a', skyBot: '#fff4c2', far: '#ffe08a', mid: '#ffd166', grass: '#ffe680', grassDark: '#e8b820', dirt: '#c98a3a', dirtDark: '#a86c20', block: '#ffcf3f', blockDark: '#d99a00', plank: '#fff1b0', accent: '#ff9f1c' },
+    features: ['spring'], enemies: ['slime'], music: 77, bonus: true,
+    boss: { id: 'slimeking', name: 'Król Glutek', color: '#8fe36b', attack: 'shock' },
+  };
+
   function countCompleted(p) { return Object.keys(p.done || {}).length; }
+  function starBalance(p) { return countStars(p) - (p.starsSpent || 0); }
   function countStars(p) {
     let n = 0;
     for (const k in p.stars || {}) n += (p.stars[k] || []).filter(Boolean).length;
@@ -232,5 +282,5 @@
     { id: 4, name: 'Mistrzowski', icon: '👑', desc: 'Cała tabliczka mnożenia i dzielenie do 100', note: '', min: 4.6, max: 5.99, start: 4.8, reward: 3 },
   ];
 
-  LZ.D = { CHARACTERS, VARIANT_PRICES, HATS, TRAILS, WORLDS, LEVELS_PER_WORLD, BADGES, MATH_LEVELS, countStars, countCompleted };
+  LZ.D = { CHARACTERS, VARIANT_PRICES, HATS, TRAILS, WORLDS, LEVELS_PER_WORLD, BADGES, MATH_LEVELS, countStars, countCompleted, starBalance, STAR_ITEMS, PETS, STICKERS, STICKER_PACK_PRICE, BONUS_WORLD };
 })();

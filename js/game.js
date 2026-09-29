@@ -34,7 +34,7 @@
     const lvl = LZ.Gen.generate(wi, li);
     const ch = D.CHARACTERS.find(c => c.id === prof.equip.char) || D.CHARACTERS[0];
     const ab = ch.ability || {};
-    const maxHearts = ab.hearts || 3;
+    const maxHearts = (ab.hearts || 3) + ((prof.starItems || []).includes('perk_heart') ? 1 : 0);   // star-shop perk
     G = {
       lvl, prof, ch, ab, wi, li, t: 0, state: 'play',
       rew: (S.mathBand(prof).reward || 1),   // difficulty reward multiplier
@@ -55,6 +55,10 @@
       squash: 0, phase: 0, state: 'idle', on: null, lastSafe: null, trailT: 0,
       magnetT: 0, bootsT: 0, rainbowT: 0, shield: false, hurtT: 0, glide: false,
     };
+    // pet bought in the star shop: follows the player and collects nearby coins
+    const petId = prof.equip.pet;
+    G.pet = petId && petId !== 'none' && (prof.starItems || []).includes(petId) ? { id: petId, x: G.player.x - 40, y: G.player.y - 30, reach: D.PETS[petId].reach * T } : null;
+    G.gold = !!prof.equip.gold && (prof.starItems || []).includes('gold');
     computeMasks();
     buildEntities();
     if (lvl.boss) setupBoss();
@@ -157,6 +161,13 @@
       G.respawnT -= dt;
       if (G.respawnT <= 0) G.state = 'play';
     }
+    if (G.pet) {
+      // float behind the player's back with a gentle bob; lag makes it feel alive
+      const p2 = G.player, tx = p2.x + PW / 2 - p2.facing * 44, ty = p2.y - 18 + Math.sin(G.t * 3) * 8;
+      G.pet.x += (tx - G.pet.x) * Math.min(1, dt * 5); G.pet.y += (ty - G.pet.y) * Math.min(1, dt * 5);
+      G.pet.facing = p2.facing;
+    }
+    if (G.gold && Math.random() < dt * 14) G.particles.push({ x: G.player.x + Math.random() * PW, y: G.player.y + Math.random() * PH, vx: 0, vy: -25, life: 0.6, max: 0.6, size: 4, kind: 'sparkle', rot: Math.random() * 3, grav: 0 });
     updateParticles(dt);
     updateCamera(dt);
   }
@@ -481,6 +492,10 @@
           if (e.vy !== undefined) { e.vy += 1400 * dt; e.y += e.vy * dt; e.x += (e.vx || 0) * dt; e.life -= dt; if (e.life <= 0) { G.ents.splice(i, 1); break; } if (e.vy > 0 && e.life < 0.9 && !e.stay) { collectCoin(i, e); break; } }
           const dx = pc.x - e.x, dy = pc.y - e.y, d = Math.hypot(dx, dy);
           if (magnetR && d < magnetR && d > 1) { e.x += dx / d * 520 * dt; e.y += dy / d * 520 * dt; }
+          else if (G.pet) {
+            const pdx = G.pet.x - e.x, pdy = G.pet.y - e.y, pd = Math.hypot(pdx, pdy);
+            if (pd < G.pet.reach) { if (pd < 16) { collectCoin(i, e); break; } e.x += pdx / pd * 480 * dt; e.y += pdy / pd * 480 * dt; }
+          }
           if (Math.abs(dx) < PW / 2 + e.r && Math.abs(dy) < PH / 2 + e.r) collectCoin(i, e);
           break;
         }
@@ -980,13 +995,14 @@
       ctx.restore();
     }
     if (G.boss) drawBossAll(ctx, t);
+    if (G.pet) Art.drawPet(ctx, G.pet.id, G.pet.x, G.pet.y, t, G.pet.facing || 1);
 
     // player (blinks while invulnerable)
     const p = G.player;
     if (!(p.invuln > 0 && Math.floor(t * 14) % 2 === 0)) {
       const eq = G.prof.equip;
       if (p.rainbowT > 0) { ctx.save(); ctx.shadowColor = 'hsl(' + (t * 400 % 360) + ',100%,60%)'; ctx.shadowBlur = 18; }
-      Art.drawCharacter(ctx, p.x + PW / 2, p.y + PH + 1, { id: eq.char, variant: eq.variant, hat: eq.hat, facing: p.facing, t, state: p.hurtT > 0 ? 'hurt' : p.state, phase: p.phase, squash: p.squash, glide: p.glide });
+      Art.drawCharacter(ctx, p.x + PW / 2, p.y + PH + 1, { id: eq.char, variant: eq.variant, hat: eq.hat, gold: G.gold, facing: p.facing, t, state: p.hurtT > 0 ? 'hurt' : p.state, phase: p.phase, squash: p.squash, glide: p.glide });
       if (p.rainbowT > 0) ctx.restore();
       if (p.shield) { Art.ell(ctx, p.x + PW / 2, p.y + PH / 2 - 4, 34, 36); ctx.fillStyle = 'rgba(140,220,255,0.22)'; ctx.fill(); ctx.strokeStyle = 'rgba(90,190,255,0.8)'; ctx.lineWidth = 2.5; ctx.stroke(); }
     }
