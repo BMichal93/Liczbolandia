@@ -88,6 +88,17 @@
     alertBox('Jak dodać grę na ekran?', 'W Chrome na Androidzie: dotknij menu ⋮ w prawym górnym rogu i wybierz „Dodaj do ekranu głównego” (lub „Zainstaluj aplikację”). Potem gra otwiera się z ikonki, bez przeglądarki.');
   }
 
+  /* Contents of a difficulty card: name, what maths it has, and the reward
+     multiplier - shown big so choosing the harder level feels worth it. */
+  function lvlBody(m) {
+    return [
+      h('div.lvlname', null, [m.icon + ' ', m.name]),
+      h('div.lvldesc', null, m.desc),
+      m.note ? h('div.lvlnote', null, m.note) : null,
+      h('div.lvlrew', null, ['Nagrody ', h('b', null, '×' + String(m.reward).replace('.', ','))]),
+    ];
+  }
+
   /* ================= PROFILES ================= */
   function profiles() {
     const data = S.data;
@@ -109,17 +120,16 @@
     input.addEventListener('input', () => { name = input.value.trim(); });
     const levels = h('div.levels', null, D.MATH_LEVELS.map(m => {
       const el = h('div.lvlcard' + (m.id === 1 ? '.sel' : ''), { onclick: () => { level = m.id; levels.querySelectorAll('.lvlcard').forEach(x => x.classList.remove('sel')); el.classList.add('sel'); } }, [
-        h('div.lvlname', null, m.name), h('div.lvlage', null, m.age), h('div.lvldesc', null, m.desc),
-      ]);
+      ].concat(lvlBody(m)));
       return el;
     }));
     show(h('div.screen', null, [
       h('div.topbar', null, [h('button.btn.small', { onclick: profiles }, '← Wróć'), h('h1', null, 'Nowy gracz'), h('span')]),
       h('div.panel', null, [
         h('label', null, 'Jak masz na imię?'), input,
-        h('label', null, 'Jaka matematyka?'),
+        h('label', null, 'Jak trudna matematyka?'),
         levels,
-        h('p.note', null, 'Gra sama dopasuje trudność: po dobrych odpowiedziach zadania są trudniejsze, po błędach łatwiejsze. Poziom można zmienić w ustawieniach.'),
+        h('p.note', null, 'Trudniejszy poziom = więcej monet za dobre odpowiedzi. W ramach poziomu gra sama dopasowuje zadania: po dobrych odpowiedziach trochę trudniejsze, po błędach łatwiejsze. Poziom można zmienić w ustawieniach.'),
         h('button.btn.big.primary', { onclick: () => {
           if (!name) { input.classList.add('shake'); setTimeout(() => input.classList.remove('shake'), 500); input.focus(); return; }
           const p = S.addProfile(name, level); S.setActive(p.id); A.play('buy'); hub();
@@ -259,6 +269,7 @@
       starsRow,
       h('div.results', null, [
         h('div', null, [coinIcon(), ' Monety: ', h('b', null, String(res.coins))]),
+        res.bonus > 0 ? h('div.bonus', null, ['Bonus za poziom ' + res.bandName + ' (×' + String(res.rew).replace('.', ',') + '): ', h('b', null, '+' + res.bonus)]) : null,
         h('div', null, ['Zadania: ', h('b', null, res.mathOk + ' / ' + res.mathTotal)]),
         h('div', null, ['Czas: ', h('b', null, Math.floor(res.time / 60) + ':' + String(res.time % 60).padStart(2, '0'))]),
       ]),
@@ -286,7 +297,7 @@
     D.CHARACTERS.forEach(c => { if (!c.unlock && c.price > 0 && !p.owned.chars.includes(c.id)) cands.push({ type: 'char', id: c.id, price: c.price }); });
     D.HATS.forEach(x => { if (x.price > 0 && !S.ownsHat(p, x.id)) cands.push({ type: 'hat', id: x.id, price: x.price }); });
     D.TRAILS.forEach(x => { if (x.price > 0 && !S.ownsTrail(p, x.id)) cands.push({ type: 'trail', id: x.id, price: x.price }); });
-    promos = U.shuffle(Math.random, cands).slice(0, 2).map(c => Object.assign(c, { dq: M.discountQuestion(c.price, p.skill) }));
+    promos = U.shuffle(Math.random, cands.filter(c => c.price <= 100)).slice(0, 2).map(c => Object.assign(c, { dq: M.discountQuestion(c.price, p.skill) }));
   }
   function promoFor(type, id) { return (promos || []).find(x => x.type === type && x.id === id); }
 
@@ -406,7 +417,7 @@
       alertBox('Za mało monet', 'Masz ' + p.coins + ' monet, a to kosztuje ' + item.price + '. Brakuje ci ' + (item.price - p.coins) + '. Zbieraj dalej!');
       return;
     }
-    if (p.skill >= 2.5) {
+    if (p.skill >= 2.3 && p.coins <= 100) {   // 'how many coins left?' - only while numbers stay within 100
       const left = p.coins - item.price;
       const choices = M.numChoices(left, [p.coins + item.price, left + 10]);
       const m = modal([
@@ -467,7 +478,7 @@
           h('div.stat', null, [h('b', null, String(s.bestStreak)), h('span', null, 'najdłuższa seria')]),
           h('div.stat', null, [h('b', null, String(D.countStars(p))), h('span', null, 'gwiazdek')]),
         ]),
-        h('label', null, band.name + ' - postęp w trudności'),
+        h('label', null, 'Poziom ' + band.name + ' - postęp'),
         h('div.bar', null, h('div.fill', { style: 'width:' + U.clamp(lvlPct, 3, 100) + '%' })),
         h('label', null, 'Tematy'),
         topics.length ? h('div.topics', null, topics.map(t => h('div.topic', null, [
@@ -496,7 +507,7 @@
         h('h3', null, 'Dźwięk'),
         slider('Muzyka', 'music'), slider('Efekty', 'sfx'),
         p ? h('h3', null, 'Matematyka dla: ' + p.name) : null,
-        p ? h('div.levels', null, D.MATH_LEVELS.map(m => h('div.lvlcard' + (p.mathLevel === m.id ? '.sel' : ''), { onclick: () => { if (m.id !== p.mathLevel) confirmBox('Zmienić poziom?', 'Zadania będą od teraz: ' + m.desc.toLowerCase() + '.', () => { S.setMathLevel(p, m.id); settings(); }); } }, [h('div.lvlname', null, m.name), h('div.lvlage', null, m.age), h('div.lvldesc', null, m.desc)]))) : null,
+        p ? h('div.levels', null, D.MATH_LEVELS.map(m => h('div.lvlcard' + (p.mathLevel === m.id ? '.sel' : ''), { onclick: () => { if (m.id !== p.mathLevel) confirmBox('Zmienić poziom?', 'Zadania będą od teraz: ' + m.desc.toLowerCase() + '.', () => { S.setMathLevel(p, m.id); settings(); }); } }, lvlBody(m)))) : null,
         p && LZ.Speech.available ? h('h3', null, 'Czytanie na głos') : null,
         p && LZ.Speech.available ? h('div.row.wrap', null, [
           h('button.btn.mid' + (p.readAloud ? '.on' : ''), { onclick: () => { p.readAloud = !p.readAloud; S.save(); if (p.readAloud) LZ.Speech.say('Będę czytać zadania na głos.'); settings(); } }, p.readAloud ? 'Czytam zadania: TAK' : 'Czytam zadania: NIE'),

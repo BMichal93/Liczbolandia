@@ -217,10 +217,19 @@
    * but only inside this band, so the 7-year-old never gets equations
    * and the 12-year-old never gets 2+3.
    */
+  /*
+   * Difficulty levels (chosen per profile, changeable in Ustawienia).
+   * Only + - × : within 100, no negative numbers. Harder levels add
+   * multiplication and division and pay better: `reward` multiplies the
+   * coin bonuses for correct answers, the maths chest, boss hits and the
+   * end-of-level bonus - so the harder maths is worth choosing.
+   * min/max bound the adaptive skill (see mathgen.js for the tiers).
+   */
   const MATH_LEVELS = [
-    { id: 1, name: 'Poziom 1', age: 'ok. 6-8 lat', desc: 'Liczenie, dodawanie i odejmowanie do 20', min: 1.0, max: 2.99, start: 1.2 },
-    { id: 2, name: 'Poziom 2', age: 'ok. 8-10 lat', desc: 'Tabliczka mnożenia, liczby do 100', min: 2.5, max: 3.99, start: 2.8 },
-    { id: 3, name: 'Poziom 3', age: 'ok. 11-13 lat', desc: 'Ułamki, procenty, równania, potęgi', min: 4.0, max: 5.99, start: 4.3 },
+    { id: 1, name: 'Łatwy', icon: '⭐', desc: 'Dodawanie i odejmowanie do 20', note: 'z kropkami do liczenia', min: 1.0, max: 2.99, start: 1.2, reward: 1 },
+    { id: 2, name: 'Średni', icon: '⭐⭐', desc: 'Dodawanie i odejmowanie do 100', note: '', min: 2.3, max: 3.99, start: 2.6, reward: 1.5 },
+    { id: 3, name: 'Trudny', icon: '⭐⭐⭐', desc: 'Do 100 + mnożenie i dzielenie do 50', note: 'tabliczka przez 2, 3, 4, 5, 10', min: 3.0, max: 4.99, start: 3.3, reward: 2 },
+    { id: 4, name: 'Mistrzowski', icon: '👑', desc: 'Cała tabliczka mnożenia i dzielenie do 100', note: '', min: 4.6, max: 5.99, start: 4.8, reward: 3 },
   ];
 
   LZ.D = { CHARACTERS, VARIANT_PRICES, HATS, TRAILS, WORLDS, LEVELS_PER_WORLD, BADGES, MATH_LEVELS, countStars, countCompleted };

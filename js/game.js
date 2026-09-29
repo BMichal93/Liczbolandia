@@ -37,6 +37,7 @@
     const maxHearts = ab.hearts || 3;
     G = {
       lvl, prof, ch, ab, wi, li, t: 0, state: 'play',
+      rew: (S.mathBand(prof).reward || 1),   // difficulty reward multiplier
       grid: lvl.cols, W: lvl.W, H: lvl.H,
       mask: null,
       coins: 0, stars: [false, false, false], hearts: maxHearts, maxHearts,
@@ -357,7 +358,8 @@
       confetti(b.x + T / 2, b.y, 30);
       floatText(b.x + T / 2, b.y - 20, U.pick(Math.random, ['Brawo!', 'Super!', 'Świetnie!', 'Ekstra!', 'Tak jest!']), '#2fb34a', 30);
       if (gate.first) mathResult(gate.problem.topic, true);
-      for (let i = 0; i < 5; i++) setTimeout(() => G && popCoin(b.x + T / 2, b.y), i * 90);
+      // coin shower for a correct answer - bigger on harder difficulty levels
+      for (let i = 0; i < Math.round(5 * G.rew); i++) setTimeout(() => G && popCoin(b.x + T / 2, b.y), i * 70);
       setTimeout(() => A.play('gate'), 300);
       G.shake = 0.3;
     } else {
@@ -440,7 +442,7 @@
     z.chest.open = 0.01;
     setTimeout(() => {
       if (!G) return;
-      for (let i = 0; i < 10; i++) popCoin(z.chest.x + 22, z.chest.y, true);
+      for (let i = 0; i < Math.round(10 * G.rew); i++) popCoin(z.chest.x + 22, z.chest.y, true);
       if (!G.stars[1]) G.ents.push({ k: 'star', x: z.chest.x + 22, y: z.chest.y - 30, idx: 1, vy: -420, fly: true });
     }, 350);
   }
@@ -586,7 +588,7 @@
       if (e.dead) { e.deadT += dt; e.vy += 1800 * dt; e.y += e.vy * dt; if (e.deadT > 1.2) G.enemies.splice(i, 1); continue; }
       if (e.x + e.w < camL || e.x > camR) continue;   // sleep off-screen
       e.t += dt;
-      const young = G.prof.mathLevel === 1;
+      const young = G.prof.mathLevel <= 2;   // gentler enemies/bosses on the easier levels
       const spd = young ? 0.8 : 1;
       switch (e.type) {
         case 'slime': case 'shroom': case 'hedgehog': case 'snowball': {
@@ -687,7 +689,7 @@
    * ================================================================= */
   function setupBoss() {
     const b = G.lvl.boss;
-    const young = G.prof.mathLevel === 1;
+    const young = G.prof.mathLevel <= 2;   // gentler enemies/bosses on the easier levels
     const hp = Math.max(3, 3 + Math.floor(G.wi / 2) - (young ? 1 : 0));
     const size = { slimeking: [130, 110], snowman: [120, 150], octopus: [130, 120], shroomlord: [140, 120], storm: [150, 100], chocodragon: [150, 150] }[b.kind];
     G.boss = {
@@ -786,6 +788,7 @@
             A.play('correct'); if (b.first) mathResult(b.problem.topic, true);
             b.orbs.forEach(x => { x.alive = false; x.pop = 1; });
             G.projectiles.push({ kind: 'magic', x: o.x, y: o.y, vx: 0, vy: 0, g: 0, r: 16, life: 3, target: true });
+            for (let i = 0; i < Math.round(4 * G.rew); i++) setTimeout(() => G && popCoin(o.x, o.y), i * 70);
             b.phase = 'hitwait'; b.phaseT = 0;
             floatText(o.x, o.y - 30, 'Brawo!', '#2fb34a', 30);
           } else {
@@ -868,8 +871,11 @@
     if (G.lvl.boss && !prof.bossWins.includes(G.wi)) { prof.bossWins.push(G.wi); newChars = S.grantBossUnlocks(prof); }
     const badges = S.checkBadges(prof);
     S.save();
+    // difficulty bonus: harder maths levels multiply what you collected
+    const bonus = Math.round(G.coins * (G.rew - 1));
+    if (bonus > 0) { prof.coins += bonus; prof.stats.totalCoins += bonus; S.checkBadges(prof); S.save(); }
     const secs = Math.round((performance.now() - G.startTime) / 1000);
-    const res = { wi: G.wi, li: G.li, coins: G.coins, stars: G.stars.slice(), mathOk: G.mathOk, mathTotal: G.mathTotal, time: secs, firstClear, badges, newChars, boss: !!G.lvl.boss, worldName: G.lvl.world.name };
+    const res = { bonus, rew: G.rew, bandName: S.mathBand(prof).name, wi: G.wi, li: G.li, coins: G.coins, stars: G.stars.slice(), mathOk: G.mathOk, mathTotal: G.mathTotal, time: secs, firstClear, badges, newChars, boss: !!G.lvl.boss, worldName: G.lvl.world.name };
     setTimeout(() => LZ.UI.levelComplete(res), 300);
   }
 
@@ -1251,6 +1257,7 @@
     const cx = pad + 18 + G.maxHearts * 36 + 18;
     Art.drawCoin(ctx, cx, pad + 20, 0, 13);
     outlinedText(ctx, String(G.coins), cx + 20, pad + 22, 28, '#fff', '#5a3a8a', 'left');
+    if (G.rew > 1) { ctx.font = '800 28px "Baloo 2", sans-serif'; const w = ctx.measureText(String(G.coins)).width; outlinedText(ctx, '×' + String(G.rew).replace('.', ','), cx + 26 + w, pad + 24, 18, '#ffd23f', '#8a5a00', 'left'); }
     // stars
     for (let i = 0; i < 3; i++) {
       const sx = cx + 100 + i * 34;

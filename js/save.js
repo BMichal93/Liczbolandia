@@ -30,6 +30,7 @@
       equip: { char: 'cat', variant: 0, hat: 'none', trail: 'none' },
       badges: [],
       readAloud: ml.id === 1,   // read questions aloud - default on for the youngest level
+      mathV2: true,
       stats: { correct: 0, wrong: 0, streak: 0, bestStreak: 0, totalCoins: 0, stomps: 0, jumps: 0, purchases: 0, topics: {} },
       created: Date.now(), lastPlayed: Date.now(),
     };
@@ -63,6 +64,16 @@
       out.stats = Object.assign(fresh.stats, p.stats || {});
       out.stats.topics = out.stats.topics || {};
       if (p.readAloud === undefined) out.readAloud = out.mathLevel === 1;
+      // saves from before the difficulty rework (v1 had 3 age levels with
+      // fractions/percent/negatives): map to the new levels and re-seed skill
+      if (!p.mathV2) {
+        out.mathLevel = { 1: 1, 2: 3, 3: 4 }[p.mathLevel || 1] || 1;
+        const b = LZ.D.MATH_LEVELS.find(m => m.id === out.mathLevel);
+        out.skill = b.start; out.mathV2 = true;
+        // drop stats for topics that no longer exist
+        const keep = ['add', 'sub', 'count', 'compare', 'seq', 'mul', 'div', 'word', 'collect', 'money'];
+        for (const k in out.stats.topics) if (!keep.includes(k)) delete out.stats.topics[k];
+      }
       return out;
     });
     return d;

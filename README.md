@@ -17,10 +17,15 @@ Działa na telefonie, tablecie i laptopie - widok i menu dopasowują się do ekr
 - 6 światów × (3 poziomy + boss), w każdym świecie nowa mechanika: sprężyny, lód, pływanie, grzyby-trampoliny, znikające chmurki i wiatr, czekoladowa lawa i spadające platformy.
 - Matematyka wpleciona w rozgrywkę:
   - **bramy** - skocz głową w klocek z dobrą odpowiedzią,
-  - **zbieranie liczb** - suma, parzyste/nieparzyste, wielokrotności, liczby pierwsze, kolejność - nagroda w skrzyni,
+  - **zbieranie liczb** - suma, parzyste/nieparzyste, kolejność, liczby z tabliczki mnożenia - nagroda w skrzyni,
   - **bossowie** - pokonuje się ich dobrymi odpowiedziami,
-  - **sklep** - promocje i liczenie reszty.
-- 3 poziomy matematyki (ok. 6-8, 8-10, 11-13 lat) z automatycznym dopasowaniem trudności.
+  - **sklep** - promocje i liczenie reszty (w zakresie do 100).
+- Tylko dodawanie, odejmowanie, mnożenie i dzielenie, liczby od 0 do 100, bez liczb ujemnych. 4 poziomy trudności:
+  - **Łatwy** (nagrody ×1) - dodawanie i odejmowanie do 20, z kropkami do liczenia,
+  - **Średni** (×1,5) - dodawanie i odejmowanie do 100,
+  - **Trudny** (×2) - do 100 + mnożenie i dzielenie do 50,
+  - **Mistrzowski** (×3) - cała tabliczka mnożenia i dzielenie do 100.
+  W ramach poziomu gra sama dopasowuje zadania do dziecka.
 - 9 postaci o różnych umiejętnościach (w tym Świnka Kuleczka - wysokie odbicie od przeciwników), kolory, dodatki, ślady, odznaki.
 - Osobne profile graczy, automatyczny zapis, kopia zapasowa do pliku lub jako kod.
 
