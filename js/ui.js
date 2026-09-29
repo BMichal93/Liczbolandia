@@ -74,6 +74,7 @@
       h('p.tag', null, 'Skacz, zbieraj, licz!'),
       h('button.btn.big.primary.pulse', { onclick: () => { A.unlock(); profiles(); } }, 'Graj!'),
       installHint(),
+      h('button.btn.small.ghost', { onclick: shareGame }, 'Udostępnij grę (kod QR)'),
     ]));
   }
   let deferredInstall = null;
@@ -97,6 +98,31 @@
       m.note ? h('div.lvlnote', null, m.note) : null,
       h('div.lvlrew', null, ['Nagrody ', h('b', null, '×' + String(m.reward).replace('.', ','))]),
     ];
+  }
+
+  /*
+   * "Udostępnij grę": the easy way to pass the game on.
+   *  - QR code on screen: another Android phone scans it -> install page
+   *    with one "Zainstaluj" button (install.html)
+   *  - share button: the phone's own share menu (WhatsApp, Messenger, SMS...)
+   *    with the same install link
+   *  - copy link as a fallback where sharing isn't available (laptops)
+   */
+  const INSTALL_URL = 'https://bmichal93.github.io/Liczbolandia/install.html';
+  function shareGame() {
+    const shareBtn = navigator.share ? h('button.btn.mid.primary', { onclick: () => {
+      navigator.share({ title: 'Liczbolandia', text: 'Liczbolandia - gra z matematyką dla dzieci. Otwórz link i dotknij „Zainstaluj grę”:', url: INSTALL_URL }).catch(() => {});
+    } }, 'Wyślij link') : null;
+    const copyBtn = h('button.btn.mid', { onclick: (e) => {
+      const done = () => { e.target.textContent = 'Skopiowano!'; };
+      (navigator.clipboard ? navigator.clipboard.writeText(INSTALL_URL) : Promise.reject()).then(done).catch(() => { const t = h('textarea'); t.value = INSTALL_URL; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); done(); });
+    } }, 'Kopiuj link');
+    const m = modal([
+      h('h2', null, 'Udostępnij grę'),
+      h('img.qrimg', { src: 'qr.png', alt: 'Kod QR do instalacji gry' }),
+      h('p', null, 'Zeskanuj aparatem telefonu z Androidem i dotknij „Zainstaluj grę”.'),
+      h('div.row.wrap.center-row', null, [shareBtn, copyBtn, h('button.btn.mid', { onclick: () => m.close() }, 'Zamknij')]),
+    ]);
   }
 
   /* ================= PROFILES ================= */
@@ -159,6 +185,7 @@
             h('button.btn.mid.blue', { onclick: badges }, 'Odznaki'),
             h('button.btn.mid.green', { onclick: stats }, 'Moje wyniki'),
           ]),
+          h('button.btn.small.ghost', { onclick: shareGame }, 'Udostępnij grę (kod QR)'),
         ]),
       ]),
     ]));
@@ -524,6 +551,7 @@
         h('h3', null, 'Aplikacja'),
         h('div.row.wrap', null, [
           h('button.btn.mid', { onclick: installFlow }, 'Dodaj na ekran telefonu'),
+          h('button.btn.mid.blue', { onclick: shareGame }, 'Udostępnij grę'),
           h('button.btn.mid', { onclick: () => { const el = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (el.requestFullscreen) el.requestFullscreen().catch(() => {}); } }, 'Pełny ekran'),
         ]),
         h('p.note', null, 'Sterowanie: na telefonie przyciski na ekranie. Na komputerze strzałki lub A/D i spacja, P - pauza.'),

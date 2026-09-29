@@ -183,6 +183,8 @@ textarea.code { width: 100%; height: 90px; font-family: monospace; font-size: 11
 .results .bonus { color: #c47a00; }
 .unlock { background: #fff4c9; border-radius: 14px; padding: 6px; margin: 6px 0; font-size: 17px; }
 .badge-big { font-size: 56px; }
+.center-row { justify-content: center; }
+.qrimg { width: min(240px, 46vh); height: min(240px, 46vh); image-rendering: pixelated; display: block; margin: 6px auto; border-radius: 10px; }
 
 /* ---------- in-game HUD ---------- */
 #hud { position: fixed; inset: 0; z-index: 4; pointer-events: none; }

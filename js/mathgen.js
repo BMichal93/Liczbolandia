@@ -90,21 +90,13 @@
     [1, () => { const c = ri(3, 12), b = ri(2, 8); return mk('? - ' + b + ' = ' + c, c + b, 'sub', { extra: [c - b >= 0 ? c - b : c + b + 1] }); }],
     [1, () => { const a = ri(2, 10); return mk(a + ' + ' + a + ' = ?', 2 * a, 'add', { extra: [2 * a + 1] }); }],
     [1, () => { const step = pick([2, 2, 5]), s = step === 5 ? 5 * ri(0, 1) : ri(0, 12); return mk([s, s + step, s + 2 * step].join(', ') + ', ?', s + 3 * step, 'seq'); }],   // stays within 20
-    [3, () => {
-      const n = pick(NAMES), noun = pick(NOUNS), a = ri(3, 12), b = ri(2, 20 - a);
-      return mk(n + ' ma ' + nf(a, noun) + ' i dostaje jeszcze ' + b + '. Ile ' + noun[2] + ' ma teraz?', a + b, 'word', { extra: [a - b > 0 ? a - b : a + b + 2] });
-    }],
-    [2, () => {
-      const n = pick(NAMES), noun = pick(NOUNS), a = ri(8, 20), b = ri(2, a - 2);
-      // 'added instead of subtracted' as a wrong option only while it stays within 20
-      return mk(n + ' ma ' + nf(a, noun) + '. Oddaje ' + b + ' koleżance. Ile ' + noun[2] + ' zostało?', a - b, 'word', { extra: [a + b <= 20 ? a + b : a - b + 2] });
-    }],
-    [1, () => {
-      const n1 = pick(NAMES); let n2 = pick(NAMES); while (n2 === n1) n2 = pick(NAMES);
-      const noun = pick(NOUNS), a = ri(5, 14), b = ri(2, 20 - a);   // total stays within 20
-      return mk(n1 + ' ma ' + nf(a, noun) + ', a ' + n2 + ' ma ' + nf(b, noun) + '. Ile ' + noun[2] + ' mają razem?', a + b, 'word', { extra: [Math.abs(a - b)] });
-    }],
-    [1, () => { const a = ri(2, 9), b = ri(1, 9); return mk('Masz ' + a + ' zł i dostajesz ' + b + ' zł. Ile masz razem?', a + b, 'money'); }],
+    // Story problems are kept to one short line ("Masz 7 jabłek. Dostajesz 5. Ile masz?"):
+    // the child should spend the time on the maths, not on reading.
+    [1, () => { const noun = pick(NOUNS), a = ri(3, 12), b = ri(2, 20 - a); return mk('Masz ' + nf(a, noun) + '. Dostajesz ' + b + '. Ile masz?', a + b, 'word', { extra: [a - b > 0 ? a - b : a + b + 2] }); }],
+    // 'added instead of subtracted' as a wrong option only while it stays within 20
+    [1, () => { const noun = pick(NOUNS), a = ri(8, 20), b = ri(2, a - 2); return mk('Masz ' + nf(a, noun) + '. Oddajesz ' + b + '. Ile zostało?', a - b, 'word', { extra: [a + b <= 20 ? a + b : a - b + 2] }); }],
+    [1, () => { const noun = pick(NOUNS), a = ri(5, 14), b = ri(2, 20 - a); return mk(nf(a, noun) + ' i ' + nf(b, noun) + '. Ile razem?', a + b, 'word', { extra: [Math.abs(a - b)] }); }],   // total stays within 20
+    [1, () => { const a = ri(2, 9), b = ri(1, 9); return mk('Masz ' + a + ' zł. Dostajesz ' + b + ' zł. Ile masz?', a + b, 'money'); }],
   ];
 
   /* ---------------- Tier 3: + and - within 100 ---------------- */
@@ -115,15 +107,9 @@
     [3, () => { const a = ri(30, 99), b = ri(11, a - 5); return mk(a + ' - ' + b + ' = ?', a - b, 'sub', { extra: [a - b + 10, a - b - 10] }); }],
     [2, () => { const a = ri(21, 89), b = ri(2, 9); return R() < 0.5 ? mk(a + ' + ' + b + ' = ?', a + b, 'add', { extra: [a + b - 10] }) : mk(a + ' - ' + b + ' = ?', a - b, 'sub', { extra: [a - b + 10] }); }],
     [2, () => { const c = ri(30, 100), a = ri(11, c - 5); return mk(a + ' + ? = ' + c, c - a, 'add', { extra: [c - a + 10] }); }],
-    [3, () => {
-      const n = pick(NAMES), noun = pick(NOUNS), a = ri(20, 60), b = ri(11, 99 - a);
-      return mk(n + ' ma ' + nf(a, noun) + ' i dostaje jeszcze ' + b + '. Ile ' + noun[2] + ' ma teraz?', a + b, 'word', { extra: [a + b - 10, a - b > 0 ? a - b : a + b + 10] });
-    }],
-    [2, () => {
-      const n = pick(NAMES), noun = pick(NOUNS), a = ri(40, 99), b = ri(11, a - 10);
-      return mk(n + ' ma ' + nf(a, noun) + '. Oddaje ' + b + ' koleżance. Ile ' + noun[2] + ' zostało?', a - b, 'word', { extra: [a - b + 10] });
-    }],
-    [2, () => { const m = pick([20, 50, 100]), p = ri(3, m - 2); return mk('Płacisz ' + m + ' zł za zakupy za ' + p + ' zł. Ile dostaniesz reszty?', m - p, 'money', { extra: [m - p + 10, m - p - 10] }); }],
+    [1, () => { const noun = pick(NOUNS), a = ri(20, 60), b = ri(11, 99 - a); return mk('Masz ' + nf(a, noun) + '. Dostajesz ' + b + '. Ile masz?', a + b, 'word', { extra: [a + b - 10, a - b > 0 ? a - b : a + b + 10] }); }],
+    [1, () => { const noun = pick(NOUNS), a = ri(40, 99), b = ri(11, a - 10); return mk('Masz ' + nf(a, noun) + '. Oddajesz ' + b + '. Ile zostało?', a - b, 'word', { extra: [a - b + 10] }); }],
+    [1, () => { const m = pick([20, 50, 100]), p = ri(3, m - 2); return mk('Masz ' + m + ' zł. Wydajesz ' + p + ' zł. Ile zostało?', m - p, 'money', { extra: [m - p + 10, m - p - 10] }); }],
     [1, () => { const s = ri(1, 30), st = pick([3, 4, 5, 10]); return mk([s, s + st, s + 2 * st, s + 3 * st].join(', ') + ', ?', s + 4 * st, 'seq'); }],
   ];
 
@@ -139,11 +125,12 @@
   const legsQ = (maxProduct) => {
     const it = pick(LEGS.filter(x => x.k * 2 <= maxProduct));
     const n = ri(2, Math.min(10, Math.floor(maxProduct / it.k)));
-    return mk('Każdy ' + it.w[0] + ' ma ' + it.k + ' ' + P(it.k, it.l[0], it.l[1], it.l[2]) + '. Ile ' + it.l[2] + ' ' + P(n, 'ma', 'mają', 'ma') + ' ' + n + ' ' + P(n, it.w[0], it.w[1], it.w[2]) + '?', it.k * n, 'word', { extra: [it.k + n] });
+    const W = it.w[0][0].toUpperCase() + it.w[0].slice(1);
+    return mk(W + ' ma ' + it.k + ' ' + P(it.k, it.l[0], it.l[1], it.l[2]) + '. Ile ' + it.l[2] + ' ' + P(n, 'ma', 'mają', 'ma') + ' ' + n + ' ' + P(n, it.w[0], it.w[1], it.w[2]) + '?', it.k * n, 'word', { extra: [it.k + n] });
   };
   const shareQ = (maxTotal) => {
     const n = pick(NAMES), b = ri(2, 5), q = ri(2, Math.min(10, Math.floor(maxTotal / b))), a = b * q;
-    return mk(n + ' ma ' + a + ' ' + P(a, 'naklejkę', 'naklejki', 'naklejek') + ' i daje po równo każdej z ' + b + ' koleżanek. Ile dostanie każda?', q, 'word', { extra: [a - b] });
+    return mk(a + ' ' + P(a, 'naklejka', 'naklejki', 'naklejek') + ' dla ' + b + ' dzieci po równo. Ile ma każde?', q, 'word', { extra: [a - b] });
   };
   const T4 = [
     [4, () => { const a = pick([2, 3, 4, 5, 10]), b = ri(2, a === 10 ? 5 : 10); return R() < 0.5 ? mk(a + ' · ' + b + ' = ?', a * b, 'mul', { extra: [a + b, a * b + a] }) : mk(b + ' · ' + a + ' = ?', a * b, 'mul', { extra: [a + b, a * b - b] }); }],
@@ -159,11 +146,11 @@
     [5, () => { const a = ri(2, 10), b = ri(2, 10); return mk(a + ' · ' + b + ' = ?', a * b, 'mul', { extra: [a + b, a * b + a, a * b - b] }); }],
     [4, () => { const b = ri(2, 10), q = ri(2, 10); return mk((b * q) + ' : ' + b + ' = ?', q, 'div', { extra: [b * q - b, q + 1] }); }],
     [1, () => { const b = ri(2, 9), q = ri(2, 9), c = b * q; return mk(b + ' · ? = ' + c, q, 'mul', { extra: [c - b, q + 1] }); }],
-    [2, () => legsQ(100)],
-    [2, () => shareQ(100)],
+    [1, () => legsQ(100)],
+    [1, () => shareQ(100)],
     [1, () => {
       const it = pick([['Lizak', 'lizaki', 'lizaków'], ['Bilet', 'bilety', 'biletów'], ['Zeszyt', 'zeszyty', 'zeszytów']]), p = ri(2, 10), n = ri(2, 9);
-      return mk(it[0] + ' kosztuje ' + p + ' zł. Ile zapłacisz za ' + n + ' ' + P(n, it[0].toLowerCase(), it[1], it[2]) + '?', p * n, 'money', { extra: [p + n, p * n + p] });
+      return mk(it[0] + ' to ' + p + ' zł. Ile za ' + n + ' ' + P(n, it[0].toLowerCase(), it[1], it[2]) + '?', p * n, 'money', { extra: [p + n, p * n + p] });
     }],
     [1, () => { const st = ri(3, 9); return mk([st, 2 * st, 3 * st, 4 * st].join(', ') + ', ?', 5 * st, 'seq'); }],
   ];
@@ -206,7 +193,7 @@
       const sol = []; for (let i = 0; i < parts; i++) sol.push(ri(1, maxN));
       const target = sol.reduce((s, v) => s + v, 0);
       const extra = []; while (extra.length < (t <= 1 ? 2 : 3)) extra.push(ri(1, maxN));
-      return { kind: 'sum', title: 'Zbierz liczby, które razem dają ' + target, target, labels: U.shuffle(R, sol.concat(extra)).map(String), topic: 'collect' };
+      return { kind: 'sum', title: 'Zbierz liczby: razem ' + target, target, labels: U.shuffle(R, sol.concat(extra)).map(String), topic: 'collect' };
     });
     if (t <= 3) {
       opts.push(() => {
@@ -215,14 +202,14 @@
         while (labels.filter(v => (v % 2 === 0) === even).length < goodCount) { const v = ri(1, max); if (!labels.includes(v) && (v % 2 === 0) === even) labels.push(v); }
         while (labels.length < goodCount + 3) { const v = ri(1, max); if (!labels.includes(v) && (v % 2 === 0) !== even) labels.push(v); }
         return {
-          kind: 'set', title: 'Zbierz wszystkie liczby ' + (even ? 'parzyste' : 'nieparzyste'), labels: U.shuffle(R, labels).map(String),
+          kind: 'set', title: 'Zbierz liczby ' + (even ? 'parzyste' : 'nieparzyste'), labels: U.shuffle(R, labels).map(String),
           good: v => (+v % 2 === 0) === even, whyBad: v => v + ' to liczba ' + (even ? 'nieparzysta' : 'parzysta') + '!', topic: 'collect',
         };
       });
       opts.push(() => {
         const labels = []; const max = t === 1 ? 20 : t === 2 ? 30 : 100;
         while (labels.length < 5) { const v = ri(0, max); if (!labels.includes(v)) labels.push(v); }
-        return { kind: 'order', title: 'Zbieraj od najmniejszej do największej', labels: U.shuffle(R, labels).map(String), sorted: labels.slice().sort((a, b) => a - b).map(String), topic: 'collect' };
+        return { kind: 'order', title: 'Od najmniejszej do największej', labels: U.shuffle(R, labels).map(String), sorted: labels.slice().sort((a, b) => a - b).map(String), topic: 'collect' };
       });
     }
     if (t >= 4) {
@@ -231,7 +218,7 @@
         const k = t === 4 ? pick([2, 3, 4, 5, 10]) : ri(3, 9); const labels = [];
         while (labels.length < 4) { const v = k * ri(1, Math.floor(100 / k)); if (!labels.includes(v)) labels.push(v); }
         while (labels.length < 7) { const v = ri(1, 100); if (v % k !== 0 && !labels.includes(v)) labels.push(v); }
-        return { kind: 'set', title: 'Zbierz liczby z tabliczki mnożenia przez ' + k, labels: U.shuffle(R, labels).map(String), good: v => +v % k === 0, whyBad: v => v + ' nie dzieli się przez ' + k + '.', topic: 'collect' };
+        return { kind: 'set', title: 'Zbierz liczby z tabliczki × ' + k, labels: U.shuffle(R, labels).map(String), good: v => +v % k === 0, whyBad: v => v + ' nie dzieli się przez ' + k + '.', topic: 'collect' };
       });
     }
     const c = pick(opts)();
@@ -243,7 +230,7 @@
   function discountQuestion(price, skill) {
     // young players: round discounts (10, 20, 30); older: any amount
     const off = skill < 3 ? Math.min(price - 10, pick([10, 20, 30])) : Math.min(price - 10, 10 + ri(1, 40));
-    return { off, q: 'Promocja! ' + price + ' monet, taniej o ' + off + '. Ile zapłacisz?', a: String(price - off), choices: numChoices(price - off, [price + off, price - off + 10]).filter(c => +c >= 0), topic: 'money' };
+    return { off, q: 'Cena ' + price + ', taniej o ' + off + '. Ile zapłacisz?', a: String(price - off), choices: numChoices(price - off, [price + off, price - off + 10]).filter(c => +c >= 0), topic: 'money' };
   }
 
   LZ.M = { question, challenge, discountQuestion, TOPICS, numChoices };

@@ -66,5 +66,12 @@
       "type": "image/png",
       "label": "Garderoba i sklep"
     }
-  ]
+  ],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://bmichal93.github.io/Liczbolandia/manifest.webmanifest"
+    }
+  ],
+  "prefer_related_applications": false
 }

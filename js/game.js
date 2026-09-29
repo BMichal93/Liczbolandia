@@ -1302,8 +1302,8 @@
   function drawBanner(ctx, t) {
     const bn = G.banner;
     let title = '', sub = '', visual = null;
-    if (bn.kind === 'gate') { const pr = bn.ref.problem; if (!pr) return; title = pr.q; visual = pr.visual; sub = 'Skocz głową w klocek z dobrą odpowiedzią!'; if (bn.ref.wrong >= 1 && pr.hint) sub = pr.hint; }
-    else if (bn.kind === 'boss') { const pr = bn.ref.problem; title = pr.q; visual = pr.visual; sub = 'Dotknij kulki z dobrą odpowiedzią!'; }
+    if (bn.kind === 'gate') { const pr = bn.ref.problem; if (!pr) return; title = pr.q; visual = pr.visual; sub = 'Uderz głową w dobry klocek!'; if (bn.ref.wrong >= 1 && pr.hint) sub = pr.hint; }
+    else if (bn.kind === 'boss') { const pr = bn.ref.problem; title = pr.q; visual = pr.visual; sub = 'Dotknij dobrej kulki!'; }
     else if (bn.kind === 'challenge') {
       const z = bn.ref, c = z.c;
       title = c.title;

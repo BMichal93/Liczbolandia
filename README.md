@@ -4,6 +4,12 @@ Kolorowa platformówka z matematyką dla dzieci. Działa w przeglądarce i insta
 
 **Graj:** https://bmichal93.github.io/Liczbolandia/
 
+## Udostępnianie - kod QR
+
+Zeskanuj kod aparatem telefonu z Androidem i dotknij „Zainstaluj grę” (strona `install.html`). W grze: **Udostępnij grę** (menu główne, ustawienia) pokazuje ten kod na ekranie i pozwala wysłać link (WhatsApp, Messenger, SMS). Plakat do wydruku: `liczbolandia-plakat-qr.pdf`.
+
+![Kod QR](qr.png)
+
 ## Instalacja na telefonie (Android)
 
 1. Otwórz link powyżej w Chrome.

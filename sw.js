@@ -6,9 +6,9 @@
  * cache in the background so the next launch picks up updates.
  * Bump VERSION whenever files change so old caches get cleaned up.
  */
-const VERSION = 'lz-v5';
+const VERSION = 'lz-v6';
 const FILES = [
-  './', 'index.html', 'manifest.webmanifest', 'css/style.css',
+  './', 'index.html', 'install.html', 'qr.png', 'manifest.webmanifest', 'css/style.css',
   'js/util.js', 'js/data.js', 'js/mathgen.js', 'js/save.js', 'js/audio.js', 'js/art.js',
   'js/levelgen.js', 'js/game.js', 'js/input.js', 'js/ui.js', 'js/main.js',
   'fonts/baloo-2-latin-500-normal.woff2', 'fonts/baloo-2-latin-700-normal.woff2', 'fonts/baloo-2-latin-800-normal.woff2',
