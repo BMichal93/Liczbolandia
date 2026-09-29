@@ -23,7 +23,7 @@
   // a common peak). Without it the jump was ~8x quieter than the shop 'ding'.
   let curGain = 1;
   const LEVEL = { jump: 5, djump: 3.5, coin: 4.4, stomp: 2.2, bump: 2.9, block: 4.4, sprout: 5, power: 4.4, heart: 4.4, star: 5, hurt: 4.4, fall: 5,
-    correct: 1.35, wrong: 1.9, gate: 5, bosshit: 1.6, throw: 5, click: 3, pop: 2.5, spring: 1.5, checkpoint: 4.4, pause: 5, flag: 5, win: 1.1, buy: 0.7, splash: 3.5 };
+    correct: 1.35, wrong: 1.9, gate: 5, bosshit: 1.6, throw: 5, click: 3, pop: 2.5, spring: 1.5, checkpoint: 4.4, pause: 5, flag: 5, win: 1.1, buy: 0.7, splash: 3.5, break: 2, cannon: 1.8, warp: 4 };
 
   function unlock() {
     if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
@@ -164,6 +164,12 @@
       note(midi(88), t + 1.0, 0.9, 25, 0.08, null, { vib: 7, hold: 0.5 });
     },
     buy: t => { arp([84, 88, 91, 96], t, 0.05, 50, 0.1, 0.1); noise(t + 0.2, 0.1, 0.08, null, 6000, 'highpass'); },
+    // brick smashed: crunchy noise + tumbling low notes
+    break: t => { noise(t, 0.22, 0.25, null, 2200, 'lowpass', 300); [0, 0.05, 0.1].forEach((d, i) => note(midi(52 - i * 5), t + d, 0.08, 50, 0.1)); },
+    // cannon fires: low thump + puff
+    cannon: t => { note(110, t, 0.2, 50, 0.16, null, { slide: 45 }); noise(t, 0.25, 0.2, null, 900, 'lowpass', 150); },
+    // warp into a stump: descending "bloop-bloop-bloop"
+    warp: t => { for (let i = 0; i < 3; i++) note(midi(76 - i * 5), t + i * 0.16, 0.15, 25, 0.12, null, { slide: midi(64 - i * 5) }); },
     splash: t => { noise(t, 0.32, 0.18, null, 1400, 'bandpass', 300); note(500, t, 0.12, 'sine', 0.06, null, { slide: 1100 }); },
   };
   const lastPlay = {};

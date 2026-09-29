@@ -385,7 +385,7 @@
     ctx.save();
     const world = LZ.D.WORLDS[0];
     if (S.kind === 'enemy') {
-      const sz = { slime: [36, 26], bee: [32, 30], hedgehog: [36, 26], snowball: [34, 34], fish: [36, 26], jelly: [30, 34], urchin: [30, 30], shroom: [36, 34], bat: [34, 28], cloudy: [40, 30], firejelly: [30, 34] }[id];
+      const sz = { slime: [36, 26], bee: [32, 30], hedgehog: [36, 26], snowball: [34, 34], fish: [36, 26], jelly: [30, 34], urchin: [30, 30], shroom: [36, 34], bat: [34, 28], cloudy: [40, 30], firejelly: [30, 34], plant: [34, 46], ball: [30, 30] }[id];
       const k = size / 60; ctx.scale(k, k);
       drawEnemy(ctx, { type: id, x: -sz[0] / 2, y: 18 - sz[1], w: sz[0], h: sz[1], dir: 1, seed: 1, roll: 0, col: '#8fe36b' }, t, world);
     } else if (S.kind === 'boss') {
@@ -524,6 +524,20 @@
         g.closePath(); g.fill();
         g.fillStyle = 'rgba(255,255,255,0.35)'; U.rr(g, left ? 8 : 2, 2, T - (left ? 12 : 4) - (right ? 6 : 0), 3, 1.5); g.fill();
       }
+    } else if (code === 'B') {
+      // brick: world-coloured bricks in two offset rows with mortar between
+      const col = p.block, mortar = U.shade(p.blockDark, -0.35);
+      g.fillStyle = mortar; g.fillRect(0, 0, T, T);
+      const brickRow = (y, xs) => xs.forEach(([bx, bw]) => {
+        U.rr(g, bx + 1.5, y + 1.5, bw - 3, 21, 3); g.fillStyle = col; g.fill();
+        g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(bx + 4, y + 3.5, bw - 9, 3);
+        g.fillStyle = 'rgba(0,0,0,0.12)'; g.fillRect(bx + 3, y + 17, bw - 6, 4);
+      });
+      g.save(); g.beginPath(); g.rect(0, 0, T, T); g.clip();
+      brickRow(0, [[0, 24], [24, 24]]);
+      brickRow(24, [[-12, 24], [12, 24], [36, 24]]);
+      g.restore();
+      g.strokeStyle = mortar; g.lineWidth = 2; g.strokeRect(1, 1, T - 2, T - 2);
     } else if (code === '=' || code === 'U') {
       const col = code === 'U' ? '#b99a7a' : p.block, dark = code === 'U' ? '#8a6a4a' : p.blockDark;
       U.rr(g, 1, 1, T - 2, T - 2, 9); g.fillStyle = dark; g.fill();
@@ -674,6 +688,39 @@
         ell(ctx, 0, -12 + b, 20, 8); fs(ctx, '#b8c4dc');
         eyes(-4, -16 + b, 0.7);
         ctx.strokeStyle = '#555'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(5, -6 + b, 3.5, Math.PI + 0.4, -0.4); ctx.stroke();
+        break;
+      }
+      case 'plant': {
+        // "Kłapacz": a snapping flower on a stem, with friendly eyes
+        const hh = e.h, bite = Math.abs(Math.sin(tt * 7)) * 0.5;
+        ctx.strokeStyle = '#3f9a2a'; ctx.lineWidth = 7; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(0, 6); ctx.quadraticCurveTo(4, -hh * 0.4, 0, -hh + 22); ctx.stroke();
+        ell(ctx, -9, -hh * 0.35, 9, 4.5, -0.5); fs(ctx, '#7ed957', '#3f9a2a', 1.5);
+        ell(ctx, 9, -hh * 0.5, 9, 4.5, 0.5); fs(ctx, '#7ed957', '#3f9a2a', 1.5);
+        const hy = -hh + 16, headCol = world.id === 4 ? '#ff7a9a' : world.id === 2 ? '#8fd3ff' : world.id === 3 ? '#ffb347' : '#ff5e7e';
+        // lower jaw
+        ctx.save(); ctx.translate(0, hy); ctx.rotate(bite * 0.6);
+        ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI); ctx.closePath(); fs(ctx, headCol, U.shade(headCol, -0.4), 2);
+        for (let i = -2; i <= 2; i++) { tri(ctx, i * 5.5 - 2.5, 0, i * 5.5 + 2.5, 0, i * 5.5, -4); fs(ctx, '#fff'); }
+        ctx.restore();
+        // upper jaw with spots and eyes
+        ctx.save(); ctx.translate(0, hy); ctx.rotate(-bite * 0.6);
+        ctx.beginPath(); ctx.arc(0, 0, 16, Math.PI, 0); ctx.closePath(); fs(ctx, headCol, U.shade(headCol, -0.4), 2);
+        for (let i = -2; i <= 2; i++) { tri(ctx, i * 5.5 - 2.5, 0, i * 5.5 + 2.5, 0, i * 5.5, 4); fs(ctx, '#fff'); }
+        ell(ctx, -9, -8, 2.5, 2.5); fs(ctx, 'rgba(255,255,255,0.8)'); ell(ctx, 8, -11, 2, 2); fs(ctx, 'rgba(255,255,255,0.8)');
+        ell(ctx, -4, -10, 3.2, 4); fs(ctx, '#fff', '#333', 1); ell(ctx, 4, -10, 3.2, 4); fs(ctx, '#fff', '#333', 1);
+        ell(ctx, -3.5, -9.5, 1.6, 2); fs(ctx, '#222'); ell(ctx, 4.5, -9.5, 1.6, 2); fs(ctx, '#222');
+        ctx.restore();
+        break;
+      }
+      case 'ball': {
+        // cannonball with a puff trail and cross little eyebrows
+        for (let i = 1; i <= 3; i++) { ell(ctx, -12 - i * 9, -15 + Math.sin(tt * 20 + i) * 2, 6 - i, 6 - i); fs(ctx, 'rgba(230,230,240,' + (0.7 - i * 0.18) + ')'); }
+        ell(ctx, 0, -15, 15, 15); fs(ctx, '#3b3550', '#1a1626', 2);
+        ell(ctx, -5, -21, 5, 3.5, -0.6); fs(ctx, 'rgba(255,255,255,0.35)');
+        ell(ctx, 4, -16, 3, 3.6); fs(ctx, '#fff'); ell(ctx, 10, -16, 3, 3.6); fs(ctx, '#fff');
+        ell(ctx, 5, -15.5, 1.5, 2); fs(ctx, '#222'); ell(ctx, 11, -15.5, 1.5, 2); fs(ctx, '#222');
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(1, -22); ctx.lineTo(7, -20); ctx.moveTo(13, -22); ctx.lineTo(8, -20); ctx.stroke();
         break;
       }
       case 'firejelly': {
@@ -896,6 +943,120 @@
     }
   }
 
+  /* =====================================================================
+   * TREE STUMPS (Liczbolandia's version of Mario's pipes), one style per world
+   *   1 sweet-bark stump with pink frosting   2 stump with a snow cap
+   *   3 coral tube                            4 mossy log with little mushrooms
+   *   5 cloud tower                           6 chocolate chimney
+   *   7 (bonus) golden stump
+   * Secret stumps glow from inside.
+   * ===================================================================== */
+  function drawStump(ctx, e, world, t) {
+    const x = e.x, y = e.y, w = e.w, b = e.base, id = world.id;
+    const cx = x + w / 2, rimY = y + 11;
+    const style = {
+      1: { body: '#c98a5a', dark: '#8a5a32', rim: '#e0a878' },
+      2: { body: '#8a6a50', dark: '#5c4432', rim: '#a8866a' },
+      3: { body: '#ff8f7a', dark: '#d9604f', rim: '#ffb3a7' },
+      4: { body: '#6b4e3a', dark: '#46321f', rim: '#8a6a50' },
+      5: { body: '#f3eaff', dark: '#c9b8f0', rim: '#ffffff' },
+      6: { body: '#7a4a2e', dark: '#4a2a18', rim: '#9a6040' },
+      7: { body: '#ffcf3f', dark: '#c99a00', rim: '#ffe680' },
+    }[id] || { body: '#c98a5a', dark: '#8a5a32', rim: '#e0a878' };
+    ctx.save();
+    // roots at the base
+    if (id !== 5 && id !== 3) { [[-1, 0.18], [1, 0.82]].forEach(([d, f]) => { ell(ctx, x + w * f + d * 8, b - 5, 13, 7, d * 0.4); fs(ctx, style.body, style.dark, 2.5); }); }
+    // trunk (slightly narrower than the rim)
+    U.rr(ctx, x + 6, rimY, w - 12, b - rimY, 6); fs(ctx, style.body, style.dark, 3);
+    // body texture
+    ctx.save(); U.rr(ctx, x + 6, rimY, w - 12, b - rimY, 6); ctx.clip();
+    if (id === 3) {             // coral bumps
+      for (let yy = rimY + 14; yy < b; yy += 18) for (let xx = x + 16 + ((yy / 18) % 2) * 12; xx < x + w - 10; xx += 24) { ell(ctx, xx, yy, 6, 5); fs(ctx, 'rgba(255,255,255,0.28)'); }
+    } else if (id === 5) {      // tower bricks + a little arched window
+      ctx.strokeStyle = 'rgba(150,120,210,0.35)'; ctx.lineWidth = 2;
+      for (let yy = rimY + 16; yy < b; yy += 16) { ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x + w, yy); ctx.stroke(); }
+      if (b - rimY > 70) { U.rr(ctx, cx - 8, rimY + 26, 16, 22, 8); fs(ctx, '#8f7bd6'); }
+    } else {                    // bark lines
+      ctx.strokeStyle = style.dark; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+      for (const fx of [0.3, 0.52, 0.74]) { ctx.beginPath(); ctx.moveTo(x + w * fx, rimY + 14); for (let yy = rimY + 14; yy < b; yy += 12) ctx.lineTo(x + w * fx + Math.sin(yy * 0.2 + fx * 9) * 3, yy); ctx.stroke(); }
+    }
+    ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.fillRect(x + w - 22, rimY, 16, b - rimY);
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(x + 12, rimY, 8, b - rimY);
+    ctx.restore();
+    // rim and hole
+    ell(ctx, cx, rimY, w / 2, 12); fs(ctx, style.rim, style.dark, 3);
+    ell(ctx, cx, rimY + 1, w / 2 - 11, 7); fs(ctx, e.secret || e.roomExit ? '#3a2410' : U.shade(style.dark, -0.45));
+    if (e.secret || e.roomExit) {
+      const gl = 0.55 + 0.45 * Math.sin(t * 4);
+      const g = ctx.createRadialGradient(cx, rimY, 2, cx, rimY, w / 2);
+      g.addColorStop(0, 'rgba(255,240,140,' + gl + ')'); g.addColorStop(1, 'rgba(255,240,140,0)');
+      ctx.fillStyle = g; ctx.fillRect(x - 10, rimY - 40, w + 20, 60);
+      for (let i = 0; i < 3; i++) { const a = t * 2 + i * 2.1; starPath(ctx, cx + Math.cos(a) * 30, rimY - 14 + Math.sin(a * 1.3) * 8, 5, 1.8, 4, a); fs(ctx, '#fff6c9'); }
+    }
+    // world decorations on the rim
+    if (id === 1) {             // pink frosting drips + sprinkles
+      ctx.beginPath(); ctx.moveTo(x, rimY);
+      for (let i = 0; i <= 6; i++) { const xx = x + (w * i) / 6; ctx.quadraticCurveTo(xx - w / 12, rimY + (i % 2 ? 22 : 12), xx, rimY + 6); }
+      ctx.lineTo(x + w, rimY - 4); ctx.ellipse(cx, rimY, w / 2, 12, 0, 0, Math.PI, true); ctx.closePath();
+      ctx.save(); ell(ctx, cx, rimY + 1, w / 2 - 11, 7); ctx.rect(x - 20, rimY - 30, w + 40, 80); ctx.clip('evenodd');
+      ctx.beginPath(); ctx.moveTo(x - 1, rimY);
+      for (let i = 0; i <= 6; i++) { const xx = x + (w * i) / 6; ctx.quadraticCurveTo(xx - w / 12, rimY + (i % 2 ? 24 : 13), xx, rimY + 7); }
+      ctx.lineTo(x + w + 1, rimY); ctx.ellipse(cx, rimY, w / 2 + 1, 13, 0, 0, Math.PI, true); ctx.closePath();
+      fs(ctx, '#ff9ecf', '#d9458a', 2);
+      ctx.restore();
+      ['#ffe066', '#5ccfff', '#7be08a', '#fff'].forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(x + 12 + i * 20, rimY + 10 + (i % 2) * 4, 5, 2.5); });
+    } else if (id === 2) {      // snow cap + icicles
+      ell(ctx, cx, rimY - 3, w / 2 + 3, 8); ctx.fillStyle = '#fff'; ctx.fill();
+      ctx.save(); ell(ctx, cx, rimY + 1, w / 2 - 11, 7); ctx.fillStyle = U.shade(style.dark, -0.45); ctx.fill(); ctx.restore();
+      for (let i = 0; i < 5; i++) { tri(ctx, x + 10 + i * 19, rimY + 8, x + 18 + i * 19, rimY + 8, x + 14 + i * 19, rimY + 20 + (i % 2) * 6); fs(ctx, '#d8f4ff'); }
+    } else if (id === 4) {      // moss + little mushrooms
+      ell(ctx, x + 18, rimY + 10, 14, 6); fs(ctx, '#7be08a'); ell(ctx, x + w - 22, rimY + 8, 10, 5); fs(ctx, '#7be08a');
+      const my = Math.min(b - 20, rimY + 40);
+      ctx.fillStyle = '#fff3e0'; ctx.fillRect(x + w - 10, my, 4, 8); ctx.beginPath(); ctx.ellipse(x + w - 8, my, 8, 6, 0, Math.PI, 0); fs(ctx, '#ff6b6b');
+      ctx.fillStyle = '#fff3e0'; ctx.fillRect(x + w - 2, my + 8, 3, 6); ctx.beginPath(); ctx.ellipse(x + w - 0.5, my + 8, 6, 4.5, 0, Math.PI, 0); fs(ctx, '#ff6b6b');
+    } else if (id === 5) {      // cloud puffs around the rim
+      for (let i = 0; i < 5; i++) { ell(ctx, x + 6 + i * 21, rimY + 6 + (i % 2) * 3, 13, 9); ctx.fillStyle = '#fff'; ctx.fill(); }
+      ell(ctx, cx, rimY + 1, w / 2 - 11, 7); ctx.fillStyle = e.secret || e.roomExit ? '#3a2410' : '#6a5a9a'; ctx.fill();
+    } else if (id === 6) {      // chocolate chimney with pink icing drips
+      for (let i = 0; i < 4; i++) { U.rr(ctx, x + 12 + i * 22, rimY + 4, 8, 14 + (i % 2) * 10, 4); fs(ctx, '#ff9ecf'); }
+      ell(ctx, cx, rimY, w / 2, 12); ctx.strokeStyle = '#ff9ecf'; ctx.lineWidth = 4; ctx.stroke();
+    } else if (id === 7) {
+      ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fillRect(x + 14, rimY + 14, 5, b - rimY - 22);
+    }
+    ctx.restore();
+  }
+
+  /* Cannon on a stone pedestal; the barrel turns toward the player and kicks back when firing. */
+  function drawCannon(ctx, e, t) {
+    const x = e.x, y = e.y, b = e.y + e.h, cx = x + T / 2;
+    U.rr(ctx, x + 4, y + 22, T - 8, b - y - 22, 6); fs(ctx, '#7a7090', '#3b3550', 2.5);
+    ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(x + 9, y + 26, 5, b - y - 32);
+    ctx.save(); ctx.translate(cx, y + 18); ctx.scale(e.face, 1); ctx.translate(-e.recoil * 6, 0);
+    U.rr(ctx, -20, -13, 42, 26, 12); fs(ctx, '#4a4560', '#1f1b2e', 2.5);
+    ell(ctx, 22, 0, 6, 13); fs(ctx, '#2a2538', '#1f1b2e', 2);
+    ell(ctx, 22, 0, 3, 8); fs(ctx, '#111');
+    ctx.fillStyle = '#ffd23f'; ctx.fillRect(8, -13, 4, 26);
+    ell(ctx, -6, -4, 3, 3.6); fs(ctx, '#fff'); ell(ctx, 2, -4, 3, 3.6); fs(ctx, '#fff');
+    ell(ctx, -5, -3.5, 1.5, 2); fs(ctx, '#222'); ell(ctx, 3, -3.5, 1.5, 2); fs(ctx, '#222');
+    ctx.restore();
+    ell(ctx, cx - 10, y + 30, 7, 7); fs(ctx, '#5a5370', '#1f1b2e', 2);
+  }
+
+  /* Underground secret room background: dark cave with glowing crystals. */
+  function drawCave(ctx, world, camX, vw, vh, t) {
+    const gr = ctx.createLinearGradient(0, 0, 0, vh);
+    gr.addColorStop(0, '#2a1f4a'); gr.addColorStop(1, '#120c26');
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, vw, vh);
+    const cols = [world.pal.accent || '#ff6fae', '#5ccfff', '#ffe066', '#9d7bff'];
+    for (let i = 0; i < 14; i++) {
+      const x = ((i * 173 - camX * 0.35) % (vw + 200) + vw + 200) % (vw + 200) - 100, y = vh * 0.25 + ((i * 97) % (vh * 0.55));
+      const c = cols[i % 4], s = 10 + (i % 3) * 6, glow = 0.35 + 0.25 * Math.sin(t * 2 + i);
+      const g = ctx.createRadialGradient(x, y, 1, x, y, s * 2.5); g.addColorStop(0, U.rgba(c.startsWith('#') ? c : '#ffe066', glow)); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.fillRect(x - s * 2.5, y - s * 2.5, s * 5, s * 5);
+      ctx.beginPath(); ctx.moveTo(x, y - s * 1.3); ctx.lineTo(x + s * 0.55, y); ctx.lineTo(x, y + s * 0.7); ctx.lineTo(x - s * 0.55, y); ctx.closePath(); fs(ctx, c, 'rgba(255,255,255,0.6)', 1.5);
+    }
+  }
+
   /* Sky + parallax + live effects (clouds, bubbles, fireflies, snow...). */
   function drawBackground(ctx, world, camX, camY, vw, vh, t) {
     const p = world.pal;
@@ -970,6 +1131,6 @@
 
   LZ.Art = {
     drawCharacter, drawHat, drawTrailParticle, drawCoin, drawStar, drawHeart, drawPowerup, getTile, drawQBlock, drawLava,
-    drawEnemy, drawBoss, drawBackground, clearCaches, drawPet, drawSticker, starPath, heartPath, ell, fs, tri, RAINBOW,
+    drawEnemy, drawBoss, drawBackground, clearCaches, drawPet, drawSticker, drawStump, drawCannon, drawCave, starPath, heartPath, ell, fs, tri, RAINBOW,
   };
 })();

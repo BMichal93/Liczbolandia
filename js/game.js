@@ -24,7 +24,8 @@
   let G = null;                     // current level state
   let viewW = 800, viewH = VIEW_TILES_H * T, scale = 1;
 
-  const isSolid = c => c === '#' || c === 'I' || c === '=' || c === '?' || c === 'U';
+  // T = tree stump, B = brick, C = cannon (all solid)
+  const isSolid = c => c === '#' || c === 'I' || c === '=' || c === '?' || c === 'U' || c === 'T' || c === 'B' || c === 'C';
 
   /* =================================================================
    * LEVEL START
@@ -65,7 +66,10 @@
     G.cam.x = G.player.x - viewW * 0.35; G.cam.y = (G.H * T - viewH);
     clampCam(true);
     A.playMusic(lvl.world.music + (lvl.boss ? 100 : 0));
-    toast(lvl.boss ? lvl.boss.name + '!' : lvl.world.name + ' ' + wi + '-' + li, 2.2);
+    toast(lvl.boss ? lvl.boss.name + '!' : lvl.themeName && wi !== 7 ? wi + '-' + li + ': ' + lvl.themeName : lvl.world.name + ' ' + wi + '-' + li, 2.2);
+    // secret room bounds in world units (the room sits past the castle)
+    G.room = lvl.room ? { x0: lvl.room.x0 * T, x1: lvl.room.x1 * T, spawn: { x: lvl.room.spawn.x * T, y: lvl.room.spawn.y * T } } : null;
+    G.secret = lvl.secret || null;
   }
 
   /* Neighbour masks decide which tile edges get grass and rounded corners. */
@@ -93,14 +97,22 @@
         case 'star': G.ents.push({ k: 'star', x: px + T / 2, y: py + T / 2, idx: e.idx }); break;
         case 'spring': G.ents.push({ k: 'spring', x: px + 6, y: py - 26, w: T - 12, h: 26, comp: 0 }); break;
         case 'mushroom': G.ents.push({ k: 'mushroom', x: px - 20, y: py - 38, w: T + 40, h: 38, comp: 0 }); break;
-        case 'moving': G.ents.push({ k: 'plat', sub: 'moving', x: px, y: py, w: e.w * T, h: 18, x1: px, y1: py, x2: e.x2 * T, y2: e.y2 * T, ph: 0, dx: 0, dy: 0 }); break;
+        case 'moving': G.ents.push({ k: 'plat', sub: 'moving', lift: !!e.lift, x: px, y: py, w: e.w * T, h: 18, x1: px, y1: py, x2: e.x2 * T, y2: e.y2 * T, ph: 0, dx: 0, dy: 0 }); break;
         case 'cloud': G.ents.push({ k: 'plat', sub: 'cloud', x: px, y: py, w: e.w * T, h: 18, timer: -1, gone: 0, dx: 0, dy: 0 }); break;
         case 'falling': G.ents.push({ k: 'plat', sub: 'falling', x: px, y: py, w: e.w * T, h: 18, oy: py, timer: -1, vy: 0, dx: 0, dy: 0 }); break;
         case 'wind': G.ents.push({ k: 'wind', x: px, y: py, w: e.w * T, h: e.h * T }); break;
         case 'checkpoint': G.ents.push({ k: 'checkpoint', x: px + T / 2, y: py, on: false, anim: 0 }); break;
         case 'goal': G.ents.push({ k: 'goal', x: px + T / 2, y: py, flagY: 0 }); G.goalX = px; break;
         case 'castle': G.ents.push({ k: 'castle', x: px, y: py }); break;
-        case 'sign': G.ents.push({ k: 'sign', x: px + T / 2, y: py }); break;
+        case 'sign': G.ents.push({ k: 'sign', x: px + T / 2, y: py, down: !!e.down }); break;
+        case 'stump': {
+          // hollow tree stump; `base` = ground row it stands on (room stumps stand on the room floor)
+          const st = { k: 'stump', x: px, y: py, w: 2 * T, h: e.h * T, base: (e.base || (e.y + e.h)) * T, secret: !!e.secret, exit: !!e.exit, roomExit: !!e.roomExit, standT: 0 };
+          G.ents.push(st);
+          if (e.plant) { const pl = spawnEnemy('plant', px + T / 2, py); pl.x = px + T - pl.w / 2; pl.stumpTop = py; pl.stump = st; pl.y = py; pl.up = 0; pl.cycle = Math.random() * 3; }
+          break;
+        }
+        case 'cannon': G.ents.push({ k: 'cannon', x: px, y: py, w: T, h: e.h * T, fireT: 1.5 + Math.random() * 2, face: -1, recoil: 0 }); break;
         case 'gate': {
           const gate = { k: 'gate', x: e.x * T + 4, y: 0, w: T - 8, h: e.gh * T, baseH: e.gh * T, open: 0, state: 'closed', zone: [e.zone[0] * T, e.zone[1] * T], blocks: [], problem: null, wrong: 0, first: true };
           e.blocks.forEach(bx => {
@@ -117,11 +129,11 @@
   }
 
   function spawnEnemy(type, px, py) {
-    const size = { slime: [36, 26], bee: [32, 30], hedgehog: [36, 26], snowball: [34, 34], fish: [36, 26], jelly: [30, 34], urchin: [30, 30], shroom: [36, 34], bat: [34, 28], cloudy: [40, 30], firejelly: [30, 34] }[type] || [32, 30];
+    const size = { slime: [36, 26], bee: [32, 30], hedgehog: [36, 26], snowball: [34, 34], fish: [36, 26], jelly: [30, 34], urchin: [30, 30], shroom: [36, 34], bat: [34, 28], cloudy: [40, 30], firejelly: [30, 34], plant: [34, 46], ball: [30, 30] }[type] || [32, 30];
     const e = {
       type, x: px + (T - size[0]) / 2, y: py - size[1], w: size[0], h: size[1], vx: 0, vy: 0, dir: -1,
       ox: px, oy: py - size[1], dead: false, deadT: 0, seed: Math.random() * 10, grounded: false, t: 0, roll: 0,
-      stompable: !['hedgehog', 'urchin', 'firejelly'].includes(type),
+      stompable: !['hedgehog', 'urchin', 'firejelly', 'plant'].includes(type),
       col: null,
     };
     if (type === 'firejelly') { e.restY = py - size[1] + T; e.y = e.restY; e.jt = 1 + Math.random() * 2; }
@@ -160,6 +172,8 @@
     } else if (G.state === 'respawn') {
       G.respawnT -= dt;
       if (G.respawnT <= 0) G.state = 'play';
+    } else if (G.state === 'warp') {
+      updateWarp(dt);
     }
     if (G.pet) {
       // float behind the player's back with a gentle bob; lag makes it feel alive
@@ -354,6 +368,23 @@
       else { G.ents.push({ k: 'power', kind: what, x: tx * T + T / 2, y: ty * T - 18, vy: -200, born: 0.35 }); A.play('sprout'); }
       // knock enemies standing on the block
       for (const e of G.enemies) if (!e.dead && Math.abs(e.x + e.w / 2 - (tx * T + T / 2)) < T && Math.abs(e.y + e.h - ty * T) < 6) killEnemy(e, true);
+    } else if (c === 'B') {
+      const what = G.qc[key];
+      if (what === 'multi' || typeof what === 'number') {
+        // coin brick: one coin per hit, up to 6, then it turns into a used block
+        const left = what === 'multi' ? 6 : what;
+        popCoin(tx * T + T / 2, ty * T); A.play('coin'); G.bumps[key] = 1;
+        if (left <= 1) { G.grid[tx][ty] = 'U'; delete G.qc[key]; } else G.qc[key] = left - 1;
+      } else if (what) {
+        G.grid[tx][ty] = 'U'; G.bumps[key] = 1; delete G.qc[key];
+        G.ents.push({ k: 'power', kind: what, x: tx * T + T / 2, y: ty * T - 18, vy: -200, born: 0.35 }); A.play('sprout');
+      } else {
+        // plain brick: smash! (nothing required ever sits only on bricks)
+        G.grid[tx][ty] = '.'; A.play('break'); G.shake = Math.max(G.shake, 0.08);
+        const col = G.lvl.world.pal.block;
+        for (let k = 0; k < 4; k++) G.particles.push({ x: tx * T + (k % 2 ? 36 : 12), y: ty * T + (k < 2 ? 12 : 36), vx: (k % 2 ? 1 : -1) * (90 + Math.random() * 60), vy: -380 - (k < 2 ? 120 : 0), life: 1.1, max: 1.1, size: 12, kind: 'debris', col, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 14, grav: 1500 });
+      }
+      for (const e of G.enemies) if (!e.dead && Math.abs(e.x + e.w / 2 - (tx * T + T / 2)) < T && Math.abs(e.y + e.h - ty * T) < 6) killEnemy(e, true);
     } else { G.bumps[key] = 0.6; A.play('bump'); }
   }
 
@@ -463,7 +494,13 @@
     for (const e of G.ents) {
       if (e.k !== 'plat') continue;
       const ox = e.x, oy = e.y;
-      if (e.sub === 'moving') {
+      if (e.sub === 'moving' && e.lift) {
+        // lift: waits 1.2s at the bottom and the top so it's easy to step on and off
+        e.ph = (e.ph + dt) % 6.8;
+        const q = e.ph, travel = 2.2, hold = 1.2;
+        const s = q < hold ? 0 : q < hold + travel ? (1 - Math.cos(Math.PI * (q - hold) / travel)) / 2 : q < 2 * hold + travel ? 1 : 1 - (1 - Math.cos(Math.PI * (q - 2 * hold - travel) / travel)) / 2;
+        e.x = U.lerp(e.x1, e.x2, s); e.y = U.lerp(e.y1, e.y2, s);
+      } else if (e.sub === 'moving') {
         e.ph += dt * 0.9;
         const s = (1 - Math.cos(e.ph)) / 2;
         e.x = U.lerp(e.x1, e.x2, s); e.y = U.lerp(e.y1, e.y2, s);
@@ -487,6 +524,9 @@
 
     for (let i = G.ents.length - 1; i >= 0; i--) {
       const e = G.ents[i];
+      // In the secret room (past the castle) the level's position-based
+      // triggers must not fire: the room is further right than the goal.
+      if (G.inRoom && (e.k === 'goal' || e.k === 'gate' || e.k === 'challenge' || e.k === 'checkpoint')) continue;
       switch (e.k) {
         case 'coin': {
           if (e.vy !== undefined) { e.vy += 1400 * dt; e.y += e.vy * dt; e.x += (e.vx || 0) * dt; e.life -= dt; if (e.life <= 0) { G.ents.splice(i, 1); break; } if (e.vy > 0 && e.life < 0.9 && !e.stay) { collectCoin(i, e); break; } }
@@ -552,6 +592,31 @@
           break;
         }
         case 'ans': e.bump = Math.max(0, e.bump - dt * 5); break;
+        case 'cannon': {
+          // fires a slow ball toward the player while on screen and not too close
+          e.recoil = Math.max(0, e.recoil - dt * 4);
+          const onScreen = e.x > G.cam.x - T && e.x < G.cam.x + viewW + T;
+          const dxp = pc.x - (e.x + T / 2);
+          e.face = dxp < 0 ? -1 : 1;
+          e.fireT -= dt;
+          if (onScreen && Math.abs(dxp) > 2.2 * T && e.fireT <= 0) {
+            const young = G.prof.mathLevel <= 2;
+            e.fireT = young ? 4.2 : 3.2;
+            const b = spawnEnemy('ball', e.x, e.y + 34);
+            b.x = e.face < 0 ? e.x - 26 : e.x + T - 4; b.y = e.y + 8; b.vx = e.face * (young ? 120 : 155);
+            e.recoil = 1; A.play('cannon');
+            for (let k = 0; k < 5; k++) G.particles.push({ x: b.x + b.w / 2, y: b.y + b.h / 2, vx: e.face * Math.random() * 80, vy: -Math.random() * 60, life: 0.5, max: 0.5, size: 8, col: 'rgba(230,230,240,0.85)', grav: 0 });
+          }
+          break;
+        }
+        case 'stump': {
+          // secret stump / room exit: stand still on top for a moment to go through
+          if (!(e.secret || e.roomExit)) break;
+          const on = p.grounded && Math.abs(p.vx) < 40 && pc.x > e.x + 8 && pc.x < e.x + e.w - 8 && Math.abs(p.y + PH - e.y) < 3;
+          e.standT = on ? e.standT + dt : Math.max(0, e.standT - dt * 2);
+          if (e.standT > 0.7 && G.state === 'play') startWarp(e);
+          break;
+        }
         case 'challenge': {
           const inZone = pc.x > e.zone[0] - 20 && pc.x < e.zone[1];
           if (inZone && e.state === 'idle') setupChallenge(e);
@@ -636,6 +701,32 @@
           break;
         }
         case 'jelly': e.y = e.oy - 30 + Math.sin(e.t * 1.5) * 50; break;
+        case 'plant': {
+          /*
+           * Snapping plant in a stump: hides, rises 0.5s, stays up 1.4s, sinks
+           * 0.5s. Like in Mario it will NOT come out while the player stands
+           * right next to or on its stump - so there's always a safe way over.
+           */
+          const period = young ? 5.2 : 4.6, hideT = young ? 2.8 : 2.2;
+          const near = Math.abs(p.x + PW / 2 - (e.x + e.w / 2)) < 1.9 * T && p.y + PH > e.stumpTop - 3 * T;
+          e.cycle += dt;
+          let c = e.cycle % period;
+          if (near && c > hideT - 0.05 && c < hideT) { e.cycle -= dt; c = e.cycle % period; }   // stay hidden while she's close
+          e.up = c < hideT ? 0 : c < hideT + 0.5 ? (c - hideT) / 0.5 : c < hideT + 1.9 ? 1 : c < hideT + 2.4 ? 1 - (c - hideT - 1.9) / 0.5 : 0;
+          e.y = e.stumpTop - e.h * e.up + 4;
+          e.dir = p.x < e.x ? -1 : 1;
+          break;
+        }
+        case 'ball': {
+          // cannonball: flies straight, vanishes in a puff at a wall or far off screen
+          e.x += e.vx * dt; e.dir = e.vx < 0 ? -1 : 1;
+          const fx = e.vx < 0 ? e.x : e.x + e.w;
+          if (isSolid(tileAt(Math.floor(fx / T), Math.floor((e.y + e.h / 2) / T))) || e.x < G.cam.x - 400 || e.x > G.cam.x + viewW + 400) {
+            e.dead = true; e.deadT = 1.2;
+            for (let k = 0; k < 6; k++) G.particles.push({ x: e.x + e.w / 2, y: e.y + e.h / 2, vx: (Math.random() - 0.5) * 120, vy: -Math.random() * 80, life: 0.4, max: 0.4, size: 7, col: 'rgba(200,200,210,0.8)', grav: 0 });
+          }
+          break;
+        }
         case 'urchin': break;
         case 'firejelly': {
           e.jt -= dt;
@@ -647,7 +738,8 @@
       }
       // player contact
       if (G.state !== 'play') continue;
-      const hb = { x: e.x + 4, y: e.y + 4, w: e.w - 8, h: e.h - 6 };
+      if (e.type === 'plant' && e.up < 0.35) continue;   // mostly hidden in its stump: harmless
+      const hb = e.type === 'plant' ? { x: e.x + 6, y: e.y + 2, w: e.w - 12, h: Math.max(4, e.stumpTop - e.y - 2) } : { x: e.x + 4, y: e.y + 4, w: e.w - 8, h: e.h - 6 };
       if (U.overlap(p, hb)) {
         if (p.rainbowT > 0) { killEnemy(e); continue; }
         const fromAbove = p.vy > 60 && (p.y + PH) - e.y < 22;
@@ -895,6 +987,44 @@
     setTimeout(() => LZ.UI.levelComplete(res), 300);
   }
 
+  /*
+   * Warp through a stump (Mario's pipe): sink in (0.7s), fade to black,
+   * move to the destination, rise out / drop in, fade back.
+   */
+  function startWarp(st) {
+    const p = G.player;
+    let to;
+    if (st.secret && G.room) to = { x: G.room.spawn.x, y: G.room.spawn.y, rise: false, room: true };
+    else if (st.roomExit && G.secret && G.secret.exit) to = { x: G.secret.exit.x * T + T - PW / 2, y: G.secret.exit.y * T - PH, rise: true, room: false };
+    if (!to) return;
+    G.state = 'warp'; G.warp = { t: 0, from: st, to, x0: st.x + st.w / 2 - PW / 2, y0: st.y - PH };
+    p.vx = 0; p.vy = 0; p.x = G.warp.x0; A.play('warp'); LZ.In.reset();
+  }
+  function updateWarp(dt) {
+    const w = G.warp, p = G.player;
+    w.t += dt;
+    if (w.t < 0.7) { p.y = w.y0 + (w.t / 0.7) * PH; p.sink = w.from.y; }          // sinking into the stump
+    else if (!w.moved && w.t >= 1.0) {
+      w.moved = true; p.x = w.to.x; p.sink = null;
+      if (w.to.rise) { p.y = w.to.y + PH; p.sink = w.to.y + PH; } else p.y = w.to.y;
+      G.inRoom = w.to.room;
+      G.cam.x = p.x - viewW * 0.4; G.cam.y = p.y - viewH * 0.55; clampCam();
+      if (w.to.room) toast('Tajna kryjówka!', 1.8);
+    } else if (w.moved && w.to.rise && w.t < 1.8) { p.y = w.to.y + PH * (1 - (w.t - 1.0) / 0.8); p.sink = w.to.y + PH; }
+    if (w.t >= (w.to.rise ? 1.85 : 1.3)) {
+      p.sink = null; if (w.to.rise) p.y = w.to.y;
+      p.lastSafe = { x: p.x, y: p.y };
+      if (!w.to.room) G.checkpoint = { x: p.x, y: p.y };   // after the secret, a fall doesn't send her all the way back
+      G.state = 'play'; G.warp = null;
+    }
+    p.state = 'idle';
+  }
+  // fade overlay value 0..1 during a warp
+  function warpFade() {
+    const w = G && G.warp; if (!w) return 0;
+    if (w.t < 0.7) return 0; if (w.t < 1.0) return (w.t - 0.7) / 0.3; if (w.t < 1.3) return 1 - (w.t - 1.0) / 0.3; return 0;
+  }
+
   function quit() { if (G) { S.save(); } G = null; LZ.Speech.stop(); }
   function restart() { if (G) start(G.wi, G.li); }
 
@@ -932,8 +1062,12 @@
   }
   function clampCam() {
     const lw = G.W * T, lh = G.H * T;
-    if (lw <= viewW) G.cam.x = (lw - viewW) / 2;
-    else G.cam.x = U.clamp(G.cam.x, 0, lw - viewW);
+    // the secret room lives past the castle: the camera never shows it from the
+    // main level, and inside the room it only shows the room
+    let lo = 0, hi = lw;
+    if (G.room) { if (G.inRoom) { lo = G.room.x0; hi = G.room.x1; } else hi = G.room.x0 - 6 * T; }
+    if (hi - lo <= viewW) G.cam.x = lo + (hi - lo - viewW) / 2;
+    else G.cam.x = U.clamp(G.cam.x, lo, hi - viewW);
     G.cam.y = U.clamp(G.cam.y, 0, Math.max(0, lh - viewH));
   }
 
@@ -959,7 +1093,8 @@
     if (!G) return;
     const t = G.t, world = G.lvl.world;
     ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
-    Art.drawBackground(ctx, world, G.cam.x, G.cam.y, viewW, viewH, t);
+    if (G.inRoom) Art.drawCave(ctx, world, G.cam.x, viewW, viewH, t);
+    else Art.drawBackground(ctx, world, G.cam.x, G.cam.y, viewW, viewH, t);
 
     const sx = G.shake > 0 ? (Math.random() - 0.5) * 8 : 0, sy = G.shake > 0 ? (Math.random() - 0.5) * 8 : 0;
     ctx.save();
@@ -976,7 +1111,7 @@
     for (let x = x0; x <= x1; x++) {
       for (let y = y0; y <= y1; y++) {
         const c = G.grid[x][y];
-        if (c === '.' || c === 'L') continue;
+        if (c === '.' || c === 'L' || c === 'T' || c === 'C') continue;   // stumps and cannons are drawn as entities
         if (c === '?') { Art.drawQBlock(ctx, x * T, y * T, t + x * 0.3, G.bumps[x + ',' + y] || 0); continue; }
         const bump = G.bumps[x + ',' + y] || 0;
         const img = Art.getTile(world, c, (c === '#' || c === 'I') ? G.mask[x][y] : 0);
@@ -990,6 +1125,8 @@
       if (e.x + e.w < G.cam.x - 50 || e.x > G.cam.x + viewW + 50) continue;
       if (e.type === 'firejelly' && e.y >= e.restY - 2) continue;
       ctx.save();
+      // a plant only shows above the rim of its stump, so it looks like it comes out of the hole
+      if (e.type === 'plant' && !e.dead) { if (e.up <= 0.01) { ctx.restore(); continue; } ctx.beginPath(); ctx.rect(e.x - 60, e.stumpTop - 200, e.w + 120, 206); ctx.clip(); }
       if (e.dead) { ctx.translate(e.x + e.w / 2, e.y + e.h / 2); ctx.scale(1, -1); ctx.translate(-(e.x + e.w / 2), -(e.y + e.h / 2)); }
       Art.drawEnemy(ctx, e, t, world);
       ctx.restore();
@@ -1001,10 +1138,13 @@
     const p = G.player;
     if (!(p.invuln > 0 && Math.floor(t * 14) % 2 === 0)) {
       const eq = G.prof.equip;
+      // while warping, the part of the character below the stump rim is hidden
+      if (p.sink != null) { ctx.save(); ctx.beginPath(); ctx.rect(p.x - 100, p.sink - 400, PW + 200, 400); ctx.clip(); }
       if (p.rainbowT > 0) { ctx.save(); ctx.shadowColor = 'hsl(' + (t * 400 % 360) + ',100%,60%)'; ctx.shadowBlur = 18; }
       Art.drawCharacter(ctx, p.x + PW / 2, p.y + PH + 1, { id: eq.char, variant: eq.variant, hat: eq.hat, gold: G.gold, facing: p.facing, t, state: p.hurtT > 0 ? 'hurt' : p.state, phase: p.phase, squash: p.squash, glide: p.glide });
       if (p.rainbowT > 0) ctx.restore();
       if (p.shield) { Art.ell(ctx, p.x + PW / 2, p.y + PH / 2 - 4, 34, 36); ctx.fillStyle = 'rgba(140,220,255,0.22)'; ctx.fill(); ctx.strokeStyle = 'rgba(90,190,255,0.8)'; ctx.lineWidth = 2.5; ctx.stroke(); }
+      if (p.sink != null) ctx.restore();
     }
 
     // projectiles
@@ -1021,6 +1161,7 @@
 
     // particles & floating texts
     for (const q of G.particles) {
+      if (q.kind === 'debris') { ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.rot); ctx.globalAlpha = Math.min(1, q.life * 2); U.rr(ctx, -q.size / 2, -q.size / 2, q.size, q.size * 0.8, 3); Art.fs(ctx, q.col, U.shade(q.col, -0.35), 2); ctx.restore(); continue; }
       if (q.kind === 'confetti') { ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.rot); ctx.globalAlpha = Math.min(1, q.life * 2); ctx.fillStyle = Art.RAINBOW[q.ci % 6]; ctx.fillRect(-5, -3, 10, 6); ctx.restore(); }
       else Art.drawTrailParticle(ctx, q);
     }
@@ -1032,6 +1173,9 @@
     ctx.globalAlpha = 1;
     ctx.restore();
 
+    // warp fade-to-black
+    const wf = warpFade();
+    if (wf > 0) { ctx.fillStyle = 'rgba(20,10,40,' + wf + ')'; ctx.fillRect(0, 0, viewW, viewH); }
     drawHUD(ctx, t);
   }
 
@@ -1106,12 +1250,27 @@
         break;
       }
       case 'gate': drawGate(ctx, e, t); drawBlockHints(ctx, e, t); break;
+      case 'stump': {
+        Art.drawStump(ctx, e, G.lvl.world, t);
+        if (e.secret || e.roomExit) {
+          // bobbing "go down here" arrow and a ring that fills while she stands still
+          const cx = e.x + e.w / 2, bob = Math.abs(Math.sin(t * 4)) * 10;
+          ctx.save(); ctx.translate(cx, e.y - 70 - bob); ctx.rotate(Math.PI);
+          ctx.beginPath(); ctx.moveTo(0, -16); ctx.lineTo(16, 4); ctx.lineTo(6, 4); ctx.lineTo(6, 16); ctx.lineTo(-6, 16); ctx.lineTo(-6, 4); ctx.lineTo(-16, 4); ctx.closePath();
+          Art.fs(ctx, '#ffe066', '#c47a00', 2.5); ctx.restore();
+          if (e.standT > 0.05) { ctx.beginPath(); ctx.arc(cx, e.y - 110, 14, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, e.standT / 0.7)); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 6; ctx.stroke(); }
+        }
+        break;
+      }
+      case 'cannon': Art.drawCannon(ctx, e, t); break;
       case 'sign': {
-        // wooden signpost with a big arrow: "go this way", no reading needed
+        // wooden signpost with a big arrow: "go this way" (or "go down" before a secret stump)
         ctx.fillStyle = '#9a6a3a'; ctx.fillRect(e.x - 4, e.y - 70, 8, 70);
         U.rr(ctx, e.x - 34, e.y - 96, 68, 40, 8); Art.fs(ctx, '#d9a066', '#8a5a2a', 2.5);
+        if (e.down) { ctx.save(); ctx.translate(e.x, e.y - 76); ctx.rotate(Math.PI / 2); ctx.translate(-e.x, -(e.y - 76)); }
         ctx.beginPath(); ctx.moveTo(e.x - 20, e.y - 82); ctx.lineTo(e.x + 6, e.y - 82); ctx.lineTo(e.x + 6, e.y - 90); ctx.lineTo(e.x + 22, e.y - 76); ctx.lineTo(e.x + 6, e.y - 62); ctx.lineTo(e.x + 6, e.y - 70); ctx.lineTo(e.x - 20, e.y - 70); ctx.closePath();
         Art.fs(ctx, '#ffffff', '#5a3a1a', 2);
+        if (e.down) ctx.restore();
         break;
       }
       case 'ans': if (e.active || e.label) drawAnswerBlock(ctx, e, t); else { U.rr(ctx, e.x + 1, e.y + 1, T - 2, T - 2, 9); Art.fs(ctx, '#d6d0e8', '#9a92b5', 2); } break;

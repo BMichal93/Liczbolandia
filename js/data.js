@@ -203,7 +203,7 @@
     { id: 'shopper', name: 'Zakupy!', desc: 'Kup coś w sklepie', check: p => p.stats.purchases >= 1 },
     { id: 'allbosses', name: 'Bohaterka', desc: 'Pokonaj wszystkich bossów', check: p => (p.bossWins || []).length >= 6 },
     { id: 'stickers12', name: 'Pół albumu', desc: 'Zbierz 12 naklejek', check: p => (p.stickers || []).length >= 12 },
-    { id: 'stickersAll', name: 'Kolekcjonerka', desc: 'Zbierz wszystkie naklejki', check: p => (p.stickers || []).length >= 24 },
+    { id: 'stickersAll', name: 'Kolekcjonerka', desc: 'Zbierz wszystkie naklejki', check: p => (p.stickers || []).length >= STICKERS.length },
     { id: 'firstPet', name: 'Mam pupila!', desc: 'Kup pupila za gwiazdki', check: p => (p.starItems || []).some(i => i.startsWith('pet_')) },
     { id: 'starShopAll', name: 'Gwiezdna kolekcja', desc: 'Kup wszystko w sklepie za gwiazdki', check: p => (p.starItems || []).length >= 7 },
   ];
@@ -236,6 +236,7 @@
     { id: 'snowball', name: 'Śnieżynek', kind: 'enemy' }, { id: 'fish', name: 'Rybka', kind: 'enemy' }, { id: 'jelly', name: 'Meduza', kind: 'enemy' },
     { id: 'urchin', name: 'Jeżowiec', kind: 'enemy' }, { id: 'shroom', name: 'Grzybek', kind: 'enemy' }, { id: 'bat', name: 'Nietoperek', kind: 'enemy' },
     { id: 'cloudy', name: 'Chmurek', kind: 'enemy' }, { id: 'firejelly', name: 'Ognik', kind: 'enemy' },
+    { id: 'plant', name: 'Kłapacz', kind: 'enemy' }, { id: 'ball', name: 'Kulka z armatki', kind: 'enemy' },
     { id: 'slimeking', name: 'Król Glutek', kind: 'boss' }, { id: 'snowman', name: 'Bałwan Bubu', kind: 'boss' }, { id: 'octopus', name: 'Ośmiornica Ola', kind: 'boss' },
     { id: 'shroomlord', name: 'Grzybolord', kind: 'boss' }, { id: 'storm', name: 'Burzynka', kind: 'boss' }, { id: 'chocodragon', name: 'Smok Czekoladowy', kind: 'boss' },
     { id: 'heart', name: 'Serduszko', kind: 'power' }, { id: 'magnet', name: 'Magnes', kind: 'power' }, { id: 'shield', name: 'Tarcza', kind: 'power' },

@@ -230,6 +230,7 @@
       }, [
         h('div.lnum', null, boss ? 'BOSS' : String(l)),
         boss ? h('div.lbossname', null, w.boss.name) : h('div.lstars', null, [0, 1, 2].map(i => starIcon(!!st[i]))),
+        boss ? null : h('div.ltheme', null, LZ.Gen.THEMES[LZ.Gen.themeFor(wi, l)].name),
         !open ? h('div.lock', null, '🔒') : null,
       ]));
     }

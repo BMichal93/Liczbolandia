@@ -12,11 +12,39 @@
  * Grid codes:
  *   .  empty        #  ground         I  ice ground     =  solid block
  *   ?  ?-block      -  one-way plank  S  thorn bush     L  chocolate lava
+ *   B  brick (smash it from below; some hold a stack of coins)
+ *   T  hollow tree stump (solid; drawn by its entity, may hide a snapping plant)
+ *   C  cannon (solid; drawn by its entity, fires slow cannonballs)
+ *   U  used block / underground wall
+ *
+ * Every level also gets a THEME (Las pniaków, Ceglane miasteczko...) that
+ * changes which chunks dominate, so levels in one world feel different.
  */
 (function () {
   const U = LZ.U, D = LZ.D;
   const H = 14;          // rows in every level
   const MAX_GAP = 4;     // widest gap a normal jump clears comfortably
+
+  /*
+   * Level themes: weights for the chunk library. A level's theme decides
+   * its character; world-specific chunks (ice, clouds...) are added on top.
+   */
+  const THEMES = {
+    meadow: { name: 'Słoneczna ścieżka', w: { flat: 3, gap: 3, steps: 2, floating: 2, blocks: 2.5, spring: 1.5, stumps: 2, bricks: 1.5, pyramid: 1, valley: 1.5 } },
+    stumps: { name: 'Las pniaków', w: { stumps: 5, flat: 1.5, gap: 2, steps: 1.5, blocks: 1.5, valley: 2, twoRoutes: 1.5, pyramid: 1 } },
+    bricks: { name: 'Ceglane miasteczko', w: { bricks: 4, tunnel: 3, twoRoutes: 2.5, flat: 1, gap: 1.5, blocks: 1, stumps: 1 } },
+    heights: { name: 'Podniebne schody', w: { pyramid: 3, elevator: 2.5, floating: 3, pillars: 2, spring: 2, gap: 2, steps: 1.5 } },
+    fort: { name: 'Twierdza armatek', w: { cannons: 4, pyramid: 2, thorns: 2, stumps: 2, bricks: 1.5, gap: 2, parade: 1.5, tunnel: 1 } },
+  };
+  /* Which theme a level gets: world 1 introduces them one by one; later
+     worlds get a seeded mix of 3 different ones (the cannon fort from world 2). */
+  function themeFor(wi, li) {
+    if (wi === 7) return 'meadow';
+    if (wi === 1) return ['meadow', 'stumps', 'bricks'][li - 1];
+    const r = U.rng(wi * 7717 + 3);
+    const opts = U.shuffle(r, ['stumps', 'bricks', 'heights', 'fort', 'meadow']);
+    return opts[li - 1];
+  }
 
   function generate(wi, li) {
     // world 7 is the star-shop bonus level "Kraina Monet": one replayable level
@@ -28,6 +56,7 @@
     const has = f => world.features.includes(f);
     const water = has('water');
     const diff = (wi - 1) * 0.55 + (li - 1) * 0.4;       // 0 .. ~3.6
+    const theme = themeFor(wi, li);
     const cols = [];
     const ents = [];
     const qc = {};                                       // "x,y" -> ?-block content
@@ -57,6 +86,17 @@
       ents.push({ t: 'enemy', type, x: cx, y: fly ? cy - 2 - Math.floor(r() * 2) : cy });
     };
     const maybeEnemy = (cx) => { if (r() < (bonus ? 0.12 : 0.35 + diff * 0.12)) enemy(cx, gh); };
+    const walker = () => U.pick(r, walkers.length ? walkers : ['slime']);
+    // hollow tree stump, 2 tiles wide, h tiles tall, standing on ground level gh
+    const stump = (sx, h, opts) => {
+      opts = opts || {};
+      for (let i = 0; i < 2; i++) { ground(sx + i, gh); for (let y = gh - h; y < gh; y++) set(sx + i, y, 'T'); }
+      ents.push(Object.assign({ t: 'stump', x: sx, y: gh - h, h }, opts));
+    };
+    // brick with an optional surprise inside
+    const brick = (bx, by, content) => { set(bx, by, 'B'); if (content) qc[bx + ',' + by] = content; };
+    const brickSurprise = () => r() < 0.18 ? 'multi' : r() < 0.08 ? U.pick(r, ['heart', 'magnet', 'boots']) : null;
+    const plantChance = water ? 0.25 : bonus ? 0 : diff < 0.4 ? 0 : Math.min(0.75, 0.35 + diff * 0.12);
 
     /* ---------------- chunk library ---------------- */
     const C = {
@@ -137,12 +177,14 @@
         x += 2;
       },
       spring() {
-        for (let i = 0; i < 8; i++) ground(x + i, gh);
+        // walking onto a spring launches you, and a child holding 'right' flies
+        // ~6 tiles - so the chunk ends with a long safe landing strip
+        for (let i = 0; i < 13; i++) ground(x + i, gh);
         ents.push({ t: 'spring', x: x + 2, y: gh });
         const py = Math.max(2, gh - 6);
         for (let i = 3; i <= 7; i++) { set(x + i, py, '-'); coin(x + i, py - 1); }
         starSpots.push({ x: x + 6, y: Math.max(1, py - 2) });
-        x += 8;
+        x += 13;
       },
       moving() {
         const pw = U.ri(r, 8, 10);
@@ -181,8 +223,10 @@
         const hi = Math.max(3, gh - 5);
         for (let i = 5; i < 11; i++) { ground(x + i, hi); coin(x + i, hi - 1); }
         starSpots.push({ x: x + 8, y: Math.max(1, hi - 3) });
-        for (let i = 11; i < 14; i++) ground(x + i, gh);
-        x += 14;
+        // stairs back down (a blind 5-tile drop could land in the next gap)
+        let k = 0; for (let hgt = hi + 1; hgt < gh; hgt++, k++) ground(x + 11 + k, hgt);
+        for (let i = 0; i < 3; i++) ground(x + 11 + k + i, gh);
+        x += 14 + k;
       },
       clouds() {
         ground(x, gh); x++;
@@ -230,6 +274,121 @@
         starSpots.push({ x: x + 6, y: Math.max(1, gh - 8) });
         x += n;
       },
+
+      /* ---- Mario-style terrain ---- */
+      // a row of hollow stumps of different heights; some hide a snapping plant
+      stumps() {
+        const count = U.ri(r, 2, 3);
+        ground(x, gh); ground(x + 1, gh); x += 2;
+        for (let k = 0; k < count; k++) {
+          const h = U.ri(r, 2, diff > 1.2 ? 3 : 2);
+          stump(x, h, { plant: r() < plantChance });
+          coin(x, gh - h - 2); coin(x + 1, gh - h - 2);
+          const gapW = U.ri(r, 3, 5);
+          for (let i = 2; i < 2 + gapW; i++) ground(x + i, gh);
+          if (gapW >= 4 && k === 1) maybeEnemy(x + 3);
+          x += 2 + gapW;
+        }
+      },
+      // Mario brick row with ?-blocks; some bricks hide a coin stack or a power-up
+      bricks() {
+        const n = 13;
+        for (let i = 0; i < n; i++) ground(x + i, gh);
+        const pat = U.pick(r, ['BB?BB', 'B?B?B', '?BBB?', 'BBB?BBB', 'B?BB?B']);
+        const bx = x + 3, by = gh - 3;
+        for (let i = 0; i < pat.length; i++) {
+          if (pat[i] === '?') { set(bx + i, by, '?'); qc[(bx + i) + ',' + by] = r() < 0.3 ? U.wpick(r, [[3, 'heart'], [2, 'magnet'], [2, 'shield'], [2, 'boots'], [1.2, 'rainbow']]) : 'coin'; }
+          else brick(bx + i, by, brickSurprise());
+          coin(bx + i, by - 1);
+        }
+        // a second, higher row in the middle (reachable from the first row)
+        if (by - 3 >= 2 && r() < 0.6) {
+          const mid = bx + Math.floor(pat.length / 2) - 1;
+          for (let i = 0; i < 3; i++) { brick(mid + i, by - 3, i === 1 ? 'multi' : null); coin(mid + i, by - 4); }
+          starSpots.push({ x: mid + 1, y: Math.max(1, by - 5) });
+        }
+        if (r() < 0.7) ents.push({ t: 'enemy', type: walker(), x: x + 9, y: gh });
+        x += n;
+      },
+      // low brick ceiling: smash your way through or run on top of it
+      tunnel() {
+        const n = U.ri(r, 11, 15);
+        for (let i = 0; i < n; i++) ground(x + i, gh);
+        for (let i = 2; i < n - 2; i++) {
+          const c = r() < 0.15 ? '?' : 'B';
+          if (c === '?') { set(x + i, gh - 3, '?'); qc[(x + i) + ',' + (gh - 3)] = 'coin'; } else brick(x + i, gh - 3, r() < 0.12 ? 'multi' : null);
+          if (i % 2 === 0) coin(x + i, gh - 1);
+          coin(x + i, gh - 4);
+        }
+        ents.push({ t: 'enemy', type: walker(), x: x + Math.floor(n / 2), y: gh });
+        if (diff > 1.2) ents.push({ t: 'enemy', type: walker(), x: x + n - 4, y: gh });
+        x += n;
+      },
+      // two routes: a safe-ish low road with enemies, and a high brick road with coins and a star
+      twoRoutes() {
+        const n = 22;
+        for (let i = 0; i < n; i++) ground(x + i, gh);
+        set(x + 2, gh - 1, '='); set(x + 3, gh - 1, '='); set(x + 3, gh - 2, '=');
+        for (let i = 5; i <= 17; i++) { brick(x + i, gh - 4, i === 11 ? 'multi' : null); coin(x + i, gh - 5); }
+        set(x + 8, gh - 4, '?'); qc[(x + 8) + ',' + (gh - 4)] = U.pick(r, ['heart', 'boots', 'magnet']);
+        starSpots.push({ x: x + 12, y: Math.max(1, gh - 7) });
+        ents.push({ t: 'enemy', type: walker(), x: x + 9, y: gh });
+        ents.push({ t: 'enemy', type: walker(), x: x + 15, y: gh });
+        x += n;
+      },
+      // Mario staircase pyramid; later levels put a gap between the two halves
+      pyramid() {
+        const top = Math.min(4, gh - 3), gap = diff < 0.6 ? 0 : U.ri(r, 1, 2);
+        ground(x, gh); ground(x + 1, gh); x += 2;
+        for (let k = 1; k <= top; k++) { ground(x, gh); for (let y = gh - k; y < gh; y++) set(x, y, '='); if (k === top) coin(x, gh - k - 1); x++; }
+        for (let i = 0; i < gap; i++) { pit(x); coin(x, gh - top - 2); x++; }
+        for (let k = top; k >= 1; k--) { ground(x, gh); for (let y = gh - k; y < gh; y++) set(x, y, '='); if (k === top) coin(x, gh - k - 1); x++; }
+        ground(x, gh); ground(x + 1, gh); x += 2;
+      },
+      // ride a lift up to a high ledge full of coins
+      /*
+       * The lift sits flush with the ground at the bottom (just walk on) and
+       * rides up a 2-wide shaft to a high ledge. The shaft has a safe floor,
+       * so missing the lift costs nothing - hop out or wait for it. The ledge
+       * steps back down with stairs (a blind drop could land in the next gap).
+       */
+      elevator() {
+        if (gh < 8 || water) return C.steps();
+        ground(x, gh); ground(x + 1, gh);
+        const fl = Math.min(H - 1, gh + 2);                          // shaft floor only 2 tiles down:
+        ground(x + 2, fl); ground(x + 3, fl);                        // hop onto the lift or climb out
+        ents.push({ t: 'moving', x: x + 2, y: gh, w: 2, x2: x + 2, y2: gh - 6, lift: true });
+        for (let i = 4; i < 11; i++) { ground(x + i, gh - 5); coin(x + i, gh - 6); }
+        starSpots.push({ x: x + 8, y: Math.max(1, gh - 8) });
+        [gh - 4, gh - 3, gh - 2, gh - 1].forEach((hgt, k) => ground(x + 11 + k, hgt));
+        for (let i = 15; i < 18; i++) ground(x + i, gh);
+        x += 18;
+      },
+      // a dip in the terrain: walk down into a hollow and climb out
+      valley() {
+        const deep = Math.min(11, gh + 2);
+        if (deep === gh) return C.steps();
+        ground(x, gh); ground(x + 1, gh);
+        ground(x + 2, gh + 1 <= deep ? gh + 1 : deep);
+        for (let i = 3; i < 10; i++) { ground(x + i, deep); if (i % 2) coin(x + i, deep - 2); }
+        if (r() < 0.6) ents.push({ t: 'enemy', type: walker(), x: x + 7, y: deep });
+        ground(x + 10, gh + 1 <= deep ? gh + 1 : deep);
+        ground(x + 11, gh); ground(x + 12, gh);
+        x += 13;
+      },
+      // cannon tower firing slow cannonballs - jump over or stomp them
+      cannons() {
+        if (diff < 0.5) return C.bricks();
+        const two = diff > 2 && gh - 4 >= 3;
+        const n = two ? 17 : 13;                                   // always 3+ flat tiles after the last cannon
+        for (let i = 0; i < n; i++) ground(x + i, gh);
+        const hc = U.ri(r, 1, 2);
+        for (let y = gh - hc; y < gh; y++) set(x + 8, y, 'C');
+        ents.push({ t: 'cannon', x: x + 8, y: gh - hc, h: hc });
+        arc(x + 6, 4, gh - hc - 2);
+        if (two) { for (let y = gh - 2; y < gh; y++) set(x + 13, y, 'C'); ents.push({ t: 'cannon', x: x + 13, y: gh - 2, h: 2 }); }
+        x += n;
+      },
     };
 
     /* ---- special chunks: maths gate, number challenge, checkpoint ---- */
@@ -249,6 +408,27 @@
       ents.push({ t: 'challenge', zone: [x, x + n], spots: spots.map(s => [x + s[0], s[1]]), chest: [x + 19, gh] });
       x += n;
     }
+    /*
+     * Secret stump (Mario's warp pipe): stand still on the glowing stump and
+     * you sink into an underground coin room. The room's exit stump brings
+     * you back further along the level, out of an 'exit stump'.
+     */
+    let secret = null;
+    function secretChunk() {
+      gh = U.clamp(gh, 8, 11);
+      for (let i = 0; i < 8; i++) ground(x + i, gh);
+      stump(x + 4, 2, { secret: true });
+      ents.push({ t: 'sign', x: x + 2, y: gh, down: true });
+      secret = { x: x + 4 };
+      x += 8;
+    }
+    function exitChunk() {
+      gh = U.clamp(gh, 8, 11);
+      for (let i = 0; i < 6; i++) ground(x + i, gh);
+      stump(x + 2, 2, { exit: true });
+      secret.exit = { x: x + 2, y: gh - 2 };
+      x += 6;
+    }
     function checkpoint() {
       for (let i = 0; i < 4; i++) ground(x + i, gh);
       ents.push({ t: 'checkpoint', x: x + 1, y: gh });
@@ -259,9 +439,11 @@
     for (let i = 0; i < 8; i++) ground(i, gh);
     x = 8;
     ents.push({ t: 'sign', x: 5, y: gh });
-    const length = bonus ? 130 : 150 + wi * 14 + li * 10;
-    const pool = [[3, 'flat'], [3, 'gap'], [2, 'steps'], [2, 'floating'], [2.5, 'blocks'], [1.5, 'pillars'], [1.5, 'spring'], [1.5, 'parade']];
-    if (diff > 0.5) pool.push([1, 'thorns']);
+    // longer levels than before (about 1.4x), with two checkpoints
+    const length = bonus ? 130 : 215 + wi * 16 + li * 12;
+    const pool = Object.entries(THEMES[theme].w).map(([k, v]) => [v, k]);
+    if (diff > 0.5 && !THEMES[theme].w.thorns) pool.push([0.8, 'thorns']);
+    if (!THEMES[theme].w.parade) pool.push([0.8, 'parade']);
     if (wi === 1 && li === 1) pool.forEach(p => { if (p[1] === 'pillars' || p[1] === 'parade') p[0] = 0.5; });
     if (has('moving')) pool.push([2, 'moving']);
     if (has('ice')) pool.push([3, 'ice']);
@@ -269,18 +451,23 @@
     if (has('cloud')) pool.push([3, 'clouds']);
     if (has('wind')) pool.push([2, 'wind']);
     if (has('falling')) pool.push([3, 'falling']);
-    if (water) { pool.push([3, 'reef']); pool.forEach(p => { if (p[1] === 'spring' || p[1] === 'thorns') p[0] = 0; }); }
+    if (water) { pool.push([3, 'reef']); pool.forEach(p => { if (['spring', 'thorns', 'elevator'].includes(p[1])) p[0] = 0; }); }
     if (!has('moving') && wi >= 2) pool.push([1, 'moving']);
 
     if (bonus) pool.forEach(p => { if (['blocks', 'spring', 'floating'].includes(p[1])) p[0] *= 2.5; if (['parade', 'thorns', 'gap'].includes(p[1])) p[0] *= 0.3; });
     const specials = [
-      { at: 0.28, fn: gateChunk },
-      { at: 0.5, fn: checkpoint },
-      { at: 0.55, fn: challengeChunk },
-      { at: 0.8, fn: gateChunk },
+      { at: 0.17, fn: gateChunk },
+      { at: 0.3, fn: checkpoint },
+      { at: 0.4, fn: challengeChunk },
+      { at: 0.55, fn: gateChunk },
+      { at: 0.68, fn: checkpoint },
+      { at: 0.85, fn: gateChunk },
     ];
+    if (!bonus) specials.push({ at: 0.22, fn: secretChunk });
+    specials.sort((a, b) => a.at - b.at);
     let last = '';
     while (x < length) {
+      if (secret && !secret.exit && x >= secret.x + 26) { exitChunk(); continue; }
       const sp = specials.find(s => !s.done && x >= length * s.at);
       if (sp) { sp.done = true; sp.fn(); continue; }
       let name = U.wpick(r, pool);
@@ -289,6 +476,7 @@
       C[name]();
     }
     specials.forEach(s => { if (!s.done) s.fn(); });
+    if (secret && !secret.exit) exitChunk();
 
     // Finale: stairs up, the goal flag and a little castle.
     for (let i = 0; i < 3; i++) ground(x + i, gh);
@@ -299,12 +487,41 @@
     ents.push({ t: 'castle', x: x + 9, y: gh });
     x += 16;
 
+    // underground secret room, placed past the castle behind solid walls
+    let room = null;
+    if (secret) {
+      for (let i = 0; i < 6; i++) for (let y = 0; y < H; y++) set(x + i, y, 'U');
+      x += 6;
+      const rx = x, RW = 26;
+      for (let i = 0; i < RW; i++) {
+        for (let y = 0; y < H; y++) set(rx + i, y, (i === 0 || i === RW - 1 || y <= 1 || y >= 11) ? 'U' : '.');
+      }
+      // coin carpet on the floor and a platform with coins and the star above it
+      for (let i = 2; i < RW - 6; i++) { coin(rx + i, 10); if (i % 2 === 0) coin(rx + i, 9); }
+      for (let i = 8; i <= 15; i++) { set(rx + i, 8, '='); coin(rx + i, 7); }
+      for (const i of [4, 5, 18, 19]) brick(rx + i, 7, 'multi');
+      // exit stump on the right, standing on the room floor
+      const sx = rx + RW - 5;
+      for (let i = 0; i < 2; i++) for (let y = 9; y < 11; y++) set(sx + i, y, 'T');
+      ents.push({ t: 'stump', x: sx, y: 9, h: 2, roomExit: true, base: 11 });
+      room = { x0: rx, x1: rx + RW, spawn: { x: rx + 2, y: 3 }, star: { x: rx + 12, y: 5 } };
+      x += RW;
+    }
+
     // Stars: one early, one from the maths chest, one late.
     const W = cols.length;
     const early = starSpots.filter(s => s.x < W * 0.5);
     const late = starSpots.filter(s => s.x >= W * 0.5);
     // Fallback: float the star 3 tiles above the ground - a plain jump reaches it.
-    const above = (cx) => { let y = 0; while (y < H && cols[cx][y] === '.') y++; return { x: cx, y: Math.max(1, y - 3) }; };
+    // (searching outward for a column with solid ground - never over a pit or lava)
+    const above = (cx0) => {
+      for (let d = 0; d < 40; d++) for (const cx of [cx0 + d, cx0 - d]) {
+        if (cx < 1 || cx >= cols.length) continue;
+        let y = 0; while (y < H && cols[cx][y] === '.') y++;
+        if (y < H && y > 4 && '#I='.includes(cols[cx][y])) return { x: cx, y: y - 3 };
+      }
+      return { x: cx0, y: 5 };
+    };
     const s0 = early.length ? U.pick(r, early) : above(20);
     const s2 = late.length ? U.pick(r, late) : above(W - 30);
     // Kraina Monet: a double line of coins follows the ground along the whole level
@@ -320,10 +537,11 @@
       }
     }
     // the bonus level has no stars - stars stay a fixed, earned currency
-    if (!bonus) { ents.push({ t: 'star', x: s0.x, y: s0.y, idx: 0 }); ents.push({ t: 'star', x: s2.x, y: s2.y, idx: 2 }); }
+    // the third star waits in the secret room when there is one - a reward for exploring
+    if (!bonus) { ents.push({ t: 'star', x: s0.x, y: s0.y, idx: 0 }); const st2 = room ? room.star : s2; ents.push({ t: 'star', x: st2.x, y: st2.y, idx: 2 }); }
     // star idx 1 lives in the challenge chest (see game.js)
 
-    return { world, wi, li, H, W, cols, ents, qc, start: { x: 2, y: 9 }, water, boss: null };
+    return { world, wi, li, H, W: cols.length, cols, ents, qc, start: { x: 2, y: 9 }, water, boss: null, theme, themeName: THEMES[theme].name, secret, room };
   }
 
   /* Boss arena: a closed room, three perches for the answer orbs. */
@@ -345,5 +563,5 @@
     };
   }
 
-  LZ.Gen = { generate, H };
+  LZ.Gen = { generate, H, themeFor, THEMES };
 })();
