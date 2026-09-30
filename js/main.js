@@ -166,7 +166,15 @@
     // first interaction unlocks audio
     ['pointerdown', 'keydown', 'touchstart'].forEach(ev => window.addEventListener(ev, () => LZ.A.unlock(), { once: true, passive: true }));
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-      navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW failed', e));
+      // updateViaCache 'none': always ask the server for a new sw.js, never the HTTP cache
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => reg.update()).catch(e => console.warn('SW failed', e));
+      // when a new version takes over, reload once so the whole game is the new version
+      // (otherwise the page keeps running the old files until it is closed)
+      let reloaded = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloaded || (LZ.Game && LZ.Game.active)) return;   // never yank her out of a level
+        reloaded = true; location.reload();
+      });
     }
   }
   boot();
