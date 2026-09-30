@@ -198,7 +198,8 @@
     const p = S.active();
     const cards = D.WORLDS.map(w => {
       const open = S.isWorldUnlocked(p, w.id);
-      let st = 0; for (let l = 1; l <= 3; l++) st += (p.stars[S.levelKey(w.id, l)] || []).filter(Boolean).length;
+      let st = 0; for (let l = 1; l < D.LEVELS_PER_WORLD; l++) st += (p.stars[S.levelKey(w.id, l)] || []).filter(Boolean).length;
+      const maxSt = (D.LEVELS_PER_WORLD - 1) * 3;   // the boss always pays its 3 stars, so the card counts the ones you have to find
       const beaten = p.bossWins.includes(w.id);
       return h('div.wcard' + (open ? '' : '.locked'), {
         style: 'background:linear-gradient(160deg,' + w.pal.skyTop + ',' + w.pal.skyBot + ')',
@@ -208,7 +209,7 @@
         h('div.wname', null, w.name),
         h('div.wsub', null, open ? w.sub : '🔒'),
         h('div.wground', { style: 'background:' + w.pal.grass + ';border-top:6px solid ' + w.pal.grassDark }),
-        open ? h('div.wstars', null, [starIcon(), ' ' + st + '/9', beaten ? h('span.crown', null, ' 👑') : null]) : null,
+        open ? h('div.wstars', null, [starIcon(), ' ' + st + '/' + maxSt, beaten ? h('span.crown', null, ' 👑') : null]) : null,
       ]);
     });
     show(h('div.screen', null, [
@@ -425,7 +426,7 @@
               if (it.type === 'pet') eq.pet = it.id;
               if (it.type === 'skin') eq.gold = true;
               const nb = S.checkBadges(p); S.save(); A.play('star'); wardrobe('stars');
-              alertBox('Masz to!', it.type === 'level' ? 'Tajny poziom czeka na mapie świata!' : it.type === 'pet' ? 'Twój pupil będzie z tobą na każdym poziomie.' : it.type === 'perk' ? 'Od teraz masz dodatkowe serduszko.' : 'Twoja postać świeci złotem!', () => { if (nb.length) celebrateBadges(nb); });
+              alertBox('Masz to!', it.type === 'level' ? 'Tajny poziom czeka na mapie świata!' : it.type === 'pet' ? 'Twój pupil będzie z tobą na każdym poziomie.' : it.type === 'perk' ? it.desc : 'Twoja postać świeci złotem!', () => { if (nb.length) celebrateBadges(nb); });
             });
           };
         } else if (it.type === 'pet') { action = eq.pet === it.id ? 'Założony (zdejmij)' : 'Załóż'; onclick = () => { eq.pet = eq.pet === it.id ? 'none' : it.id; S.save(); wardrobe('stars'); }; }

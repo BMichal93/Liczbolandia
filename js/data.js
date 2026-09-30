@@ -89,6 +89,17 @@
       ],
     },
     {
+      // A pricey one on purpose: a long-term coin goal once the cheaper
+      // characters are owned. Fast AND bouncy, but no magic.
+      id: 'bunny', name: 'Króliczka Hopka', desc: 'Szybka i skoczna - najlepsza biegaczka po wydmach.',
+      ability: { speed: 1.12, jump: 1.08 }, abilityText: 'Szybka + wysoki skok', price: 900, unlock: null,
+      variants: [
+        { name: 'Szara', pal: { body: '#d8d2e0', belly: '#ffffff', accent: '#ffb3c7', eye: '#2a2230' } },
+        { name: 'Kremowa', pal: { body: '#fff1d6', belly: '#ffffff', accent: '#ffb3c7', eye: '#2a2230' } },
+        { name: 'Czekoladowa', pal: { body: '#9a6a4c', belly: '#f3e1d2', accent: '#ffb3c7', eye: '#1e140e' } },
+      ],
+    },
+    {
       id: 'unicorn', name: 'Jednorożka Tęcza', desc: 'Magiczny podwójny skok! Nagroda za bossa Świata 3.',
       ability: { doubleJump: true }, abilityText: 'Podwójny skok', price: 0, unlock: { boss: 3 },
       variants: [
@@ -98,7 +109,7 @@
       ],
     },
     {
-      id: 'dragon', name: 'Smoczek Iskra', desc: 'Podwójny skok i szybowanie. Nagroda za ostatniego bossa!',
+      id: 'dragon', name: 'Smoczek Iskra', desc: 'Podwójny skok i szybowanie. Nagroda za bossa Świata 6!',
       ability: { doubleJump: true, glide: true, speed: 1.08 }, abilityText: 'Podwójny skok + szybowanie', price: 0, unlock: { boss: 6 },
       variants: [
         { name: 'Morski', pal: { body: '#4fd1c5', belly: '#fff6c9', accent: '#9f7aea', eye: '#1a2330' } },
@@ -128,6 +139,7 @@
     { id: 'pirate', name: 'Kapelusz pirata', price: 190 },
     { id: 'gearcap', name: 'Czapka mechanika', price: 0, badge: 'boss7' },
     { id: 'astro', name: 'Hełm kosmonautki', price: 0, badge: 'boss8' },
+    { id: 'nemes', name: 'Chusta faraona', price: 0, badge: 'boss9' },
   ];
 
   /* Particle trails left while running. */
@@ -198,9 +210,16 @@
       features: ['lowgrav', 'moving', 'falling'], enemies: ['alien', 'ufo'], music: 83,
       boss: { id: 'comet', name: 'Królowa Komet', color: '#8fd3ff', attack: 'rain' },
     },
+    {
+      // new mechanic: quicksand - wade slowly and sink to your knees, or jump over
+      id: 9, name: 'Złota Pustynia', sub: 'Uwaga, ruchome piaski!',
+      pal: { skyTop: '#5cc2ff', skyBot: '#fff0c7', far: '#f7c98a', mid: '#eeb46a', grass: '#ffe29a', grassDark: '#e8b85a', dirt: '#e0a45a', dirtDark: '#c4843c', block: '#4fd1c5', blockDark: '#2a9f96', plank: '#d9a066', accent: '#ff6fae' },
+      features: ['quicksand', 'wind', 'moving'], enemies: ['scorpion', 'cactus', 'vulture'], music: 89,
+      boss: { id: 'sphinx', name: 'Sfinks Mruczek', color: '#f2c46b', attack: 'shock' },
+    },
   ];
-  // levels 1-5 normal, level 6 is the boss (was 3 + boss before; saves are migrated in save.js)
-  const LEVELS_PER_WORLD = 6;
+  // levels 1-7 normal, level 8 is the boss (history: 3+boss, then 5+boss; saves are migrated in save.js)
+  const LEVELS_PER_WORLD = 8;
   const BONUS_ID = 99;   // the star-shop bonus level lives outside the world list
 
   /*
@@ -222,16 +241,17 @@
     { id: 'allbosses', name: 'Bohaterka', desc: 'Pokonaj wszystkich bossów', check: p => (p.bossWins || []).length >= WORLDS.length },
     { id: 'boss7', name: 'Mechaniczka', desc: 'Pokonaj Robota Zębatka', check: p => (p.bossWins || []).includes(7), reward: 'Czapka mechanika' },
     { id: 'boss8', name: 'Kosmonautka', desc: 'Pokonaj Królową Komet', check: p => (p.bossWins || []).includes(8), reward: 'Hełm kosmonautki' },
+    { id: 'boss9', name: 'Pani Pustyni', desc: 'Pokonaj Sfinksa Mruczka', check: p => (p.bossWins || []).includes(9), reward: 'Chusta faraona' },
     { id: 'stickers12', name: 'Pół albumu', desc: 'Zbierz 12 naklejek', check: p => (p.stickers || []).length >= 12 },
     { id: 'stickersAll', name: 'Kolekcjonerka', desc: 'Zbierz wszystkie naklejki', check: p => (p.stickers || []).length >= STICKERS.length },
     { id: 'firstPet', name: 'Mam pupila!', desc: 'Kup pupila za gwiazdki', check: p => (p.starItems || []).some(i => i.startsWith('pet_')) },
-    { id: 'starShopAll', name: 'Gwiezdna kolekcja', desc: 'Kup wszystko w sklepie za gwiazdki', check: p => (p.starItems || []).length >= 7 },
+    { id: 'starShopAll', name: 'Gwiezdna kolekcja', desc: 'Kup wszystko w sklepie za gwiazdki', check: p => STAR_ITEMS.every(i => (p.starItems || []).includes(i.id)) },
   ];
 
   /*
    * STAR SHOP. Stars are the rare currency: each level hides 3 and a boss
-   * gives 3, so the whole game holds exactly 8 worlds x 6 x 3 = 144. The
-   * star items below cost 144 in total - getting everything means finishing
+   * gives 3, so the whole game holds exactly 9 worlds x 8 x 3 = 216. The
+   * star items below cost 216 in total - getting everything means finishing
    * every level AND finding every hidden star (one per level waits in the
    * secret room). Each item changes how the game plays or looks.
    */
@@ -241,15 +261,18 @@
     { id: 'bonus_level', type: 'level', name: 'Kraina Monet', desc: 'Tajny poziom pełen monet i ?-klocków. Można grać ile razy chcesz!', stars: 8 },
     { id: 'pet_firefly', type: 'pet', name: 'Świetlik', desc: 'Świeci i zbiera monety z daleka.', stars: 12 },
     { id: 'perk_heart', type: 'perk', name: 'Dodatkowe serduszko', desc: 'Na każdym poziomie masz o 1 serduszko więcej.', stars: 12 },
-    { id: 'gold', type: 'skin', name: 'Złota postać', desc: 'Każda postać może być złota i błyszcząca!', stars: 12 },
-    { id: 'pet_dragon', type: 'pet', name: 'Mini-smoczek', desc: 'Najlepszy pupil: zbiera monety z największej odległości.', stars: 15 },
+    { id: 'gold', type: 'skin', name: 'Złota postać', desc: 'Każda postać może być złota i błyszcząca!', stars: 24 },
+    { id: 'pet_dragon', type: 'pet', name: 'Mini-smoczek', desc: 'Zieje iskierkami i zbiera monety z daleka.', stars: 15 },
     { id: 'pet_robot', type: 'pet', name: 'Robocik', desc: 'Mały latający robot. Zbiera monety.', stars: 14 },
     { id: 'pet_ufo', type: 'pet', name: 'Mini-UFO', desc: 'Wciąga monety promieniem z daleka!', stars: 18 },
     { id: 'perk_shield', type: 'perk', name: 'Tarcza na start', desc: 'Każdy poziom zaczynasz z tarczą.', stars: 20 },
     { id: 'perk_heart2', type: 'perk', name: 'Drugie serduszko', desc: 'Jeszcze jedno serduszko więcej na każdym poziomie.', stars: 20 },
+    { id: 'perk_magnet', type: 'perk', name: 'Magnes na start', desc: 'Każdy poziom zaczynasz z magnesem na monety.', stars: 18 },
+    { id: 'perk_boots', type: 'perk', name: 'Superskok na start', desc: 'Każdy poziom zaczynasz z butami do superskoku.', stars: 18 },
+    { id: 'pet_scarab', type: 'pet', name: 'Złoty Skarabeusz', desc: 'Błyszczący żuczek z pustyni. Zbiera monety z bardzo daleka!', stars: 24 },
   ];
   // how far (in tiles) each pet reaches for coins
-  const PETS = { pet_butterfly: { reach: 1.8 }, pet_fish: { reach: 2.3 }, pet_firefly: { reach: 3 }, pet_robot: { reach: 3.2 }, pet_dragon: { reach: 3.8 }, pet_ufo: { reach: 4.4 } };
+  const PETS = { pet_butterfly: { reach: 1.8 }, pet_fish: { reach: 2.3 }, pet_firefly: { reach: 3 }, pet_robot: { reach: 3.2 }, pet_dragon: { reach: 3.8 }, pet_ufo: { reach: 4.4 }, pet_scarab: { reach: 5 } };
 
   /*
    * STICKER ALBUM - a long-term coin sink. Every pack gives a sticker you
@@ -262,9 +285,10 @@
     { id: 'cloudy', name: 'Chmurek', kind: 'enemy' }, { id: 'firejelly', name: 'Ognik', kind: 'enemy' },
     { id: 'plant', name: 'Kłapacz', kind: 'enemy' }, { id: 'ball', name: 'Kulka z armatki', kind: 'enemy' },
     { id: 'robot', name: 'Nakręcany robot', kind: 'enemy' }, { id: 'alien', name: 'Kosmitek', kind: 'enemy' }, { id: 'ufo', name: 'Latający talerz', kind: 'enemy' },
+    { id: 'scorpion', name: 'Skorpionek', kind: 'enemy' }, { id: 'cactus', name: 'Kaktusik', kind: 'enemy' }, { id: 'vulture', name: 'Sępik', kind: 'enemy' },
     { id: 'slimeking', name: 'Król Glutek', kind: 'boss' }, { id: 'snowman', name: 'Bałwan Bubu', kind: 'boss' }, { id: 'octopus', name: 'Ośmiornica Ola', kind: 'boss' },
     { id: 'shroomlord', name: 'Grzybolord', kind: 'boss' }, { id: 'storm', name: 'Burzynka', kind: 'boss' }, { id: 'chocodragon', name: 'Smok Czekoladowy', kind: 'boss' },
-    { id: 'gearbot', name: 'Robot Zębatek', kind: 'boss' }, { id: 'comet', name: 'Królowa Komet', kind: 'boss' },
+    { id: 'gearbot', name: 'Robot Zębatek', kind: 'boss' }, { id: 'comet', name: 'Królowa Komet', kind: 'boss' }, { id: 'sphinx', name: 'Sfinks Mruczek', kind: 'boss' },
     { id: 'heart', name: 'Serduszko', kind: 'power' }, { id: 'magnet', name: 'Magnes', kind: 'power' }, { id: 'shield', name: 'Tarcza', kind: 'power' },
     { id: 'boots', name: 'Superskok', kind: 'power' }, { id: 'rainbow', name: 'Tęczowa gwiazda', kind: 'power' },
     { id: 'coin', name: 'Złota moneta', kind: 'item' }, { id: 'star', name: 'Gwiazdka', kind: 'item' },

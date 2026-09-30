@@ -35,6 +35,7 @@
       readAloud: ml.id === 1,   // read questions aloud - default on for the youngest level
       mathV2: true,
       levelsV2: true,
+      levelsV3: true,
       stats: { correct: 0, wrong: 0, streak: 0, bestStreak: 0, totalCoins: 0, stomps: 0, jumps: 0, purchases: 0, topics: {} },
       created: Date.now(), lastPlayed: Date.now(),
     };
@@ -87,6 +88,22 @@
           out[key] = next;
         }
         out.levelsV2 = true;
+      }
+      /*
+       * Levels v3 (Sept 2026): 7 levels + boss per world (boss = level 8).
+       * Runs after v2, so even the oldest saves end up here. The boss result
+       * moves from level 6 to 8; levels 6-7 are new and open up after level 5.
+       */
+      if (!p.levelsV3) {
+        for (const key of ['done', 'stars', 'best']) {
+          const m = out[key] || {}, next = {};
+          for (const k in m) {
+            const [w, l] = k.split('-').map(Number);
+            next[w === LZ.D.BONUS_ID ? k : w + '-' + (l === 6 ? 8 : l)] = m[k];
+          }
+          out[key] = next;
+        }
+        out.levelsV3 = true;
       }
       if (!p.mathV2) {
         out.mathLevel = { 1: 1, 2: 3, 3: 4 }[p.mathLevel || 1] || 1;

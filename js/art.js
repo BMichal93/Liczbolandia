@@ -150,6 +150,9 @@
       ctx.save(); ctx.translate(-8, -20); ctx.rotate(-1.2 + f); ell(ctx, -6, 0, 9, 3.5); fs(ctx, pal.body, oc, 2); ctx.restore();
     } else if (id === 'hamster') {
       ell(ctx, -14, -9, 3.5, 3); fs(ctx, pal.body, oc, 1.8);
+    } else if (id === 'bunny') {
+      // fluffy round tail
+      ell(ctx, -14, -12, 6, 6); fs(ctx, pal.belly, oc, 1.8);
     }
     ctx.restore();
   }
@@ -171,6 +174,15 @@
     } else if (id === 'guinea') {
       ell(ctx, hx - 15, hy - 5, 5.5, 7.5, -0.9); fs(ctx, '#f6b3a8', oc, lw);
       ell(ctx, hx + 17, hy - 5, 5.5, 7.5, 0.9); fs(ctx, '#f6b3a8', oc, lw);
+    } else if (id === 'bunny') {
+      // long ears that sway a little; the back one flops over at the tip
+      const sw = Math.sin(t * 3) * 0.06;
+      ctx.save(); ctx.translate(hx - 6, hy - 12); ctx.rotate(-0.25 + sw);
+      ell(ctx, 0, -13, 5.5, 14); fs(ctx, pal.body, oc, lw); ell(ctx, 0, -12, 2.8, 10); fs(ctx, pal.accent);
+      ctx.restore();
+      ctx.save(); ctx.translate(hx + 8, hy - 13); ctx.rotate(0.3 - sw);
+      ell(ctx, 0, -13, 5.5, 14); fs(ctx, pal.body, oc, lw); ell(ctx, 0, -12, 2.8, 10); fs(ctx, pal.accent);
+      ctx.restore();
     } else if (id === 'panda') {
       ell(ctx, hx - 12, hy - 12, 6.5, 6.5); fs(ctx, pal.accent, U.shade(pal.accent, -0.3), lw);
       ell(ctx, hx + 13, hy - 12, 6.5, 6.5); fs(ctx, pal.accent, U.shade(pal.accent, -0.3), lw);
@@ -233,12 +245,13 @@
 
     // nose / beak / mouth
     if (id === 'penguin') { tri(ctx, hx + 3, hy + 3, hx + 11, hy + 3, hx + 7, hy + 9); fs(ctx, pal.accent, U.shade(pal.accent, -0.3), 1.5); return; }
-    if (id === 'fox' || id === 'cat' || id === 'hamster' || id === 'panda' || id === 'guinea') { ell(ctx, hx + 4, hy + 4, 2, 1.5); fs(ctx, id === 'fox' ? '#2b1a12' : '#ff6f91'); }
+    if (id === 'fox' || id === 'cat' || id === 'hamster' || id === 'panda' || id === 'guinea' || id === 'bunny') { ell(ctx, hx + 4, hy + 4, 2, 1.5); fs(ctx, id === 'fox' ? '#2b1a12' : '#ff6f91'); }
     if (id === 'dragon') { ell(ctx, hx + 8, hy + 3, 1, 1); fs(ctx, oc); ell(ctx, hx + 4, hy + 3, 1, 1); fs(ctx, oc); }
     ctx.strokeStyle = U.shade(pal.eye, 0.1); ctx.lineWidth = 1.8; ctx.lineCap = 'round';
     if (surprised) { ell(ctx, hx + 4, hy + 9.5, 2.3, 2.8); fs(ctx, '#7a2a3a'); }
     else if (id === 'frog') { ctx.beginPath(); ctx.arc(hx + 2, hy + 3, 9, 0.25, Math.PI - 0.25); ctx.stroke(); }
     else { ctx.beginPath(); ctx.arc(hx + 2, hy + 6, 2.6, 0.2, Math.PI - 0.2); ctx.arc(hx + 6.4, hy + 6, 2.6, 0.2, Math.PI - 0.2); ctx.stroke(); }
+    if (id === 'bunny' && !surprised) { U.rr(ctx, hx + 2.6, hy + 7, 3.6, 3.6, 1); fs(ctx, '#fff', oc, 0.8); }
     if (id === 'cat') {
       ctx.strokeStyle = 'rgba(80,40,60,0.55)'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(hx + 14, hy + 3); ctx.lineTo(hx + 21, hy + 1); ctx.moveTo(hx + 14, hy + 6); ctx.lineTo(hx + 21, hy + 7); ctx.moveTo(hx - 9, hy + 3); ctx.lineTo(hx - 16, hy + 1); ctx.stroke();
@@ -331,6 +344,18 @@
         ctx.strokeStyle = '#9aa3c5'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx + 12, hy - 18); ctx.lineTo(hx + 16, hy - 28); ctx.stroke(); ell(ctx, hx + 16, hy - 29, 2.6, 2.6); fs(ctx, '#ff5e7e');
         break;
       }
+      case 'nemes': {
+        // pharaoh's striped headdress (reward for beating the Sphinx)
+        ctx.beginPath(); ctx.moveTo(hx - 17, hy - 4); ctx.quadraticCurveTo(hx + 1, hy - 26, hx + 19, hy - 4);
+        ctx.lineTo(hx + 22, hy + 14); ctx.lineTo(hx + 14, hy + 14); ctx.lineTo(hx + 12, hy - 2); ctx.lineTo(hx - 10, hy - 2); ctx.lineTo(hx - 12, hy + 14); ctx.lineTo(hx - 20, hy + 14); ctx.closePath();
+        fs(ctx, '#ffd23f', '#b8861c', 2);
+        ctx.save(); ctx.clip(); ctx.strokeStyle = '#2a9fd6'; ctx.lineWidth = 3;
+        for (let k = -24; k < 30; k += 7) { ctx.beginPath(); ctx.moveTo(hx - 30, hy + k); ctx.lineTo(hx + 30, hy + k - 4); ctx.stroke(); }
+        ctx.restore();
+        U.rr(ctx, hx - 12, hy - 7, 26, 5, 2); fs(ctx, '#2a9fd6', '#155f86', 1.2);
+        ell(ctx, hx + 1, hy - 14, 3.5, 4); fs(ctx, '#ff5e7e', '#a3223f', 1.2);
+        break;
+      }
       case 'pirate': {
         ctx.beginPath(); ctx.moveTo(hx - 18, top + 2); ctx.quadraticCurveTo(hx + 1, top - 22, hx + 20, top + 2); ctx.quadraticCurveTo(hx + 1, top - 4, hx - 18, top + 2); fs(ctx, '#2d2a3a', '#111', 1.5);
         ell(ctx, hx + 1, top - 7, 3.2, 3); fs(ctx, '#fff');
@@ -394,6 +419,19 @@
         for (let i = -1; i <= 1; i++) { ell(ctx, i * 7, 1, 1.6, 1.6); fs(ctx, Math.floor(t * 6 + i) % 2 ? '#ffe066' : '#ff5e7e'); }
         break;
       }
+      case 'pet_scarab': {
+        // golden flying scarab with shimmering wing cases
+        const f = Math.sin(t * 28) * 0.5;
+        ell(ctx, -5, -9, 8, 3.5, -0.6 + f); fs(ctx, 'rgba(220,245,255,0.8)'); ell(ctx, 5, -9, 8, 3.5, 0.6 - f); fs(ctx, 'rgba(220,245,255,0.8)');
+        ell(ctx, 0, 0, 10, 9); fs(ctx, '#ffd23f', '#b8861c', 1.8);
+        ctx.strokeStyle = '#b8861c'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(0, 8); ctx.stroke();
+        ell(ctx, -4, -3, 2.5, 2, -0.5); fs(ctx, 'rgba(255,255,255,0.7)');
+        ell(ctx, 8, -6, 5, 4.5); fs(ctx, '#4fd1c5', '#2a8a80', 1.5);
+        ell(ctx, 10, -7, 1.4, 1.6); fs(ctx, '#222');
+        const gl = 0.4 + 0.3 * Math.sin(t * 4);
+        starPath(ctx, -10, -12, 3, 1.2, 4, t); fs(ctx, 'rgba(255,250,200,' + gl + ')');
+        break;
+      }
       case 'pet_dragon': {
         const f = Math.sin(t * 10) * 0.4;
         ctx.save(); ctx.translate(-3, -6); ctx.rotate(-0.5 - f); tri(ctx, 0, 0, -14, -10, -10, 3); fs(ctx, '#9f7aea', '#5a3fbf', 1.5); ctx.restore();
@@ -416,7 +454,7 @@
     ctx.save();
     const world = LZ.D.WORLDS[0];
     if (S.kind === 'enemy') {
-      const sz = { slime: [36, 26], bee: [32, 30], hedgehog: [36, 26], snowball: [34, 34], fish: [36, 26], jelly: [30, 34], urchin: [30, 30], shroom: [36, 34], bat: [34, 28], cloudy: [40, 30], firejelly: [30, 34], plant: [34, 46], ball: [30, 30], robot: [34, 38], alien: [34, 32], ufo: [46, 30] }[id];
+      const sz = { slime: [36, 26], bee: [32, 30], hedgehog: [36, 26], snowball: [34, 34], fish: [36, 26], jelly: [30, 34], urchin: [30, 30], shroom: [36, 34], bat: [34, 28], cloudy: [40, 30], firejelly: [30, 34], plant: [34, 46], ball: [30, 30], robot: [34, 38], alien: [34, 32], ufo: [46, 30], scorpion: [40, 28], cactus: [32, 40], vulture: [46, 32] }[id];
       const k = size / 60; ctx.scale(k, k);
       drawEnemy(ctx, { type: id, x: -sz[0] / 2, y: 18 - sz[1], w: sz[0], h: sz[1], dir: 1, seed: 1, roll: 0, col: '#8fe36b' }, t, world);
     } else if (S.kind === 'boss') {
@@ -784,6 +822,46 @@
         for (let i = -2; i <= 2; i++) { ell(ctx, i * 8, -10, 2.2, 2.2); fs(ctx, Math.floor(tt * 6 + i) % 2 ? '#ffe066' : '#ff5e7e'); }
         break;
       }
+      case 'scorpion': {
+        // round little desert scorpion: curly tail with a heart-shaped tip, snapping claws
+        const st = Math.sin(tt * 14) * 2, cl = Math.abs(Math.sin(tt * 4)) * 0.4;
+        for (let i = 0; i < 3; i++) { ctx.strokeStyle = '#a3542a'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(-8 + i * 7, -6); ctx.lineTo(-12 + i * 7 + (i % 2 ? st : -st), 0); ctx.stroke(); }
+        ctx.beginPath(); ctx.moveTo(-14, -12); ctx.bezierCurveTo(-30, -14, -30, -38, -14, -38); ctx.strokeStyle = '#a3542a'; ctx.lineWidth = 9; ctx.lineCap = 'round'; ctx.stroke(); ctx.strokeStyle = '#ff8a3d'; ctx.lineWidth = 5.5; ctx.stroke();
+        heartPath(ctx, -12, -40, 8); fs(ctx, '#ff5e7e', '#a3223f', 1.5);
+        ell(ctx, 0, -11, 15, 9); fs(ctx, '#ff8a3d', '#a3542a', 2);
+        ctx.save(); ctx.translate(16, -12); ctx.rotate(-0.3);
+        ell(ctx, 4, 0, 6, 5); fs(ctx, '#ff8a3d', '#a3542a', 1.8);
+        tri(ctx, 8, -1, 14, -4 - cl * 8, 14, 2); fs(ctx, '#ffa94d', '#a3542a', 1.2); tri(ctx, 8, 1, 14, 5 + cl * 8, 14, 1); fs(ctx, '#ffa94d', '#a3542a', 1.2);
+        ctx.restore();
+        eyes(1, -16, 0.6);
+        break;
+      }
+      case 'cactus': {
+        // walking cactus with a flower on top: spiky, so it can't be stomped
+        const step = Math.sin(tt * 8) * 2;
+        ell(ctx, -6, -2 - Math.max(0, step), 5, 3); fs(ctx, '#3f8a2a'); ell(ctx, 6, -2 - Math.max(0, -step), 5, 3); fs(ctx, '#3f8a2a');
+        U.rr(ctx, -12, -38, 24, 36, 12); fs(ctx, '#5cc15a', '#2f7a2a', 2);
+        U.rr(ctx, -21, -26, 9, 14, 4.5); fs(ctx, '#5cc15a', '#2f7a2a', 2); U.rr(ctx, 12, -32, 9, 14, 4.5); fs(ctx, '#5cc15a', '#2f7a2a', 2);
+        ctx.strokeStyle = '#fffbe0'; ctx.lineWidth = 1.4;
+        for (const [sx, sy] of [[-8, -30], [8, -26], [-6, -12], [7, -10], [0, -20], [-18, -22], [18, -28]]) { ctx.beginPath(); ctx.moveTo(sx - 3, sy); ctx.lineTo(sx + 3, sy); ctx.moveTo(sx, sy - 3); ctx.lineTo(sx, sy + 3); ctx.stroke(); }
+        for (let i = 0; i < 5; i++) { const a = i / 5 * TAU + tt; ell(ctx, Math.cos(a) * 4, -40 + Math.sin(a) * 4, 3.5, 3.5); fs(ctx, '#ff85c8'); }
+        ell(ctx, 0, -40, 2.5, 2.5); fs(ctx, '#ffe066');
+        eyes(-5, -24, 0.6);
+        break;
+      }
+      case 'vulture': {
+        // friendly-looking desert bird gliding in circles
+        const fl = Math.sin(tt * 7) * 0.5;
+        ctx.save(); ctx.translate(-4, -18); ctx.rotate(-0.4 - fl); ell(ctx, -12, 0, 16, 6); fs(ctx, '#8a6a50', '#4a3222', 1.8); ctx.restore();
+        ell(ctx, 0, -14, 15, 11); fs(ctx, '#a8866a', '#4a3222', 2);
+        ell(ctx, 2, -10, 8, 6); fs(ctx, '#f3e1d2');
+        ctx.save(); ctx.translate(4, -18); ctx.rotate(0.4 + fl); ell(ctx, 12, 0, 16, 6); fs(ctx, '#8a6a50', '#4a3222', 1.8); ctx.restore();
+        ell(ctx, 14, -24, 8, 7.5); fs(ctx, '#ffb3a7', '#a8594a', 1.8);
+        ell(ctx, 10, -18, 7, 3); fs(ctx, '#fff');
+        tri(ctx, 20, -25, 28, -21, 20, -19); fs(ctx, '#ffd23f', '#b8861c', 1.2);
+        ell(ctx, 16, -26, 1.8, 2.2); fs(ctx, '#222');
+        break;
+      }
       case 'firejelly': {
         const p = Math.sin(tt * 12) * 3;
         ctx.beginPath(); ctx.moveTo(-14, 0); ctx.quadraticCurveTo(-16, -18, -6, -26 - p); ctx.quadraticCurveTo(0, -38, 4, -28); ctx.quadraticCurveTo(14, -30 + p, 12, -16); ctx.quadraticCurveTo(16, -4, 14, 0); ctx.closePath();
@@ -878,6 +956,30 @@
         ell(ctx, -12 + (b.look || 0) * 3, -128, 6, 6); fs(ctx, mood2 === 'angry' ? '#ff5e7e' : '#7be08a'); ell(ctx, 12 + (b.look || 0) * 3, -128, 6, 6); fs(ctx, mood2 === 'angry' ? '#ff5e7e' : '#7be08a');
         ctx.strokeStyle = '#7be08a'; ctx.lineWidth = 3; ctx.beginPath(); if (mood2 === 'hurt') ctx.arc(0, -114, 5, 0, Math.PI * 2); else ctx.arc(0, -120, 8, 0.3, Math.PI - 0.3); ctx.stroke();
         ctx.strokeStyle = '#6b7489'; ctx.lineWidth = 9; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-50, -86); ctx.lineTo(-68, -60 + Math.sin(t * 5) * 8); ctx.moveTo(50, -86); ctx.lineTo(70, -70 - Math.sin(t * 5) * 10); ctx.stroke();
+        break;
+      }
+      case 'sphinx': {
+        // Sfinks Mruczek: a big sandy cat-sphinx in a striped headdress; it
+        // crouches and jumps (squash) to send shock waves through the sand
+        const sq = b.squash || 0;
+        ctx.scale(1 + sq * 0.25, 1 - sq * 0.25);
+        const tw = Math.sin(t * 3) * 0.2;
+        ctx.save(); ctx.translate(-50, -30); ctx.rotate(-0.4 + tw);
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(-30, -10, -26, -46); ctx.strokeStyle = '#b8861c'; ctx.lineWidth = 14; ctx.lineCap = 'round'; ctx.stroke(); ctx.strokeStyle = '#f2c46b'; ctx.lineWidth = 9; ctx.stroke();
+        ctx.restore();
+        ell(ctx, -6, -34, 56, 34); fs(ctx, '#f2c46b', '#a8751c', 4);
+        ell(ctx, 30, -6, 22, 10); fs(ctx, '#f2c46b', '#a8751c', 3); ell(ctx, -36, -6, 20, 10); fs(ctx, '#f2c46b', '#a8751c', 3);
+        // headdress behind the head
+        ctx.beginPath(); ctx.moveTo(-46, -80); ctx.quadraticCurveTo(0, -150, 46, -80); ctx.lineTo(52, -34); ctx.lineTo(30, -34); ctx.lineTo(28, -70); ctx.lineTo(-28, -70); ctx.lineTo(-30, -34); ctx.lineTo(-52, -34); ctx.closePath();
+        fs(ctx, '#ffd23f', '#b8861c', 4);
+        ctx.save(); ctx.clip(); ctx.strokeStyle = '#2a9fd6'; ctx.lineWidth = 7; for (let k = -150; k < -20; k += 16) { ctx.beginPath(); ctx.moveTo(-60, k); ctx.lineTo(60, k - 8); ctx.stroke(); } ctx.restore();
+        // cat head with ears
+        tri(ctx, -30, -96, -24, -128, -8, -104); fs(ctx, '#f2c46b', '#a8751c', 3); tri(ctx, 8, -104, 24, -128, 30, -96); fs(ctx, '#f2c46b', '#a8751c', 3);
+        ell(ctx, 0, -84, 34, 30); fs(ctx, '#f2c46b', '#a8751c', 4);
+        U.rr(ctx, -30, -112, 60, 9, 4); fs(ctx, '#2a9fd6', '#155f86', 2);
+        ell(ctx, 0, -118, 7, 8); fs(ctx, '#ff5e7e', '#a3223f', 2);
+        face(0, -86, mood);
+        ctx.strokeStyle = 'rgba(90,50,20,0.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(24, -74); ctx.lineTo(44, -78); ctx.moveTo(24, -70); ctx.lineTo(44, -68); ctx.moveTo(-24, -74); ctx.lineTo(-44, -78); ctx.stroke();
         break;
       }
       case 'comet': {
@@ -976,6 +1078,18 @@
       }
       return finish();
     }
+    if (world.id === 9 && which === 'far') {
+      // pyramids on the horizon, one with a golden tip
+      for (let i = 0; i < 5; i++) {
+        const cx = i * BG_W / 5 + 80 + r() * 180, h = 120 + r() * 110;
+        [cx, cx - BG_W, cx + BG_W].forEach(x => {
+          tri(g, x - h * 1.1, H, x, H - h, x + h * 1.1, H); g.fillStyle = p.far; g.fill();
+          tri(g, x, H - h, x + h * 1.1, H, x + h * 0.25, H); g.fillStyle = 'rgba(160,90,30,0.18)'; g.fill();
+          if (i % 2 === 0) { tri(g, x - 14, H - h + 13, x, H - h, x + 14, H - h + 13); g.fillStyle = '#ffe066'; g.fill(); }
+        });
+      }
+      return finish();
+    }
     if (world.id === 5 && which === 'far') {
       // floating islands with little castles
       for (let i = 0; i < 5; i++) {
@@ -1056,6 +1170,20 @@
       // glowing crystals and a little antenna
       if (r() < 0.6) { for (let k = 0; k < 3; k++) { const hh = 22 + k * 10; g.beginPath(); g.moveTo(x + k * 10 - 6, y); g.lineTo(x + k * 10, y - hh); g.lineTo(x + k * 10 + 6, y); g.closePath(); g.fillStyle = ['#5ccfff', '#ff85c8', '#ffe066'][k]; g.fill(); } }
       else { g.strokeStyle = '#c9b8ff'; g.lineWidth = 3; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - 46); g.stroke(); ell(g, x, y - 50, 6, 6); g.fillStyle = '#ff5e7e'; g.fill(); }
+    } else if (id === 9) {
+      if (r() < 0.55) {   // saguaro cactus
+        const h = 50 + r() * 30;
+        g.fillStyle = '#5cc15a'; U.rr(g, x - 8, y - h, 16, h + 4, 8); g.fill();
+        U.rr(g, x - 22, y - h * 0.7, 9, h * 0.35, 4.5); g.fill(); g.fillRect(x - 16, y - h * 0.42, 10, 7);
+        U.rr(g, x + 13, y - h * 0.85, 9, h * 0.4, 4.5); g.fill(); g.fillRect(x + 6, y - h * 0.5, 10, 7);
+        if (r() < 0.5) { ell(g, x, y - h - 2, 5, 5); g.fillStyle = '#ff85c8'; g.fill(); }
+      } else {            // palm tree
+        g.strokeStyle = '#b8894a'; g.lineWidth = 7; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 10, y - 40, x + 4, y - 80); g.stroke();
+        g.fillStyle = '#4fb56a';
+        for (let k = 0; k < 5; k++) { const a = -Math.PI / 2 + (k - 2) * 0.6; g.beginPath(); g.ellipse(x + 4 + Math.cos(a) * 20, y - 80 + Math.sin(a) * 12 + 8, 24, 7, a, 0, TAU); g.fill(); }
+        ell(g, x + 1, y - 76, 4, 4); g.fillStyle = '#8a5a32'; g.fill(); ell(g, x + 8, y - 75, 4, 4); g.fill();
+      }
     } else if (id === 6) {
       g.strokeStyle = '#fff'; g.lineWidth = 8; g.lineCap = 'round';
       g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - 50); g.arc(x + 12, y - 50, 12, Math.PI, 0); g.stroke();
@@ -1083,11 +1211,12 @@
       6: { body: '#7a4a2e', dark: '#4a2a18', rim: '#9a6040' },
       7: { body: '#ff5e7e', dark: '#b8234f', rim: '#ffd23f' },
       8: { body: '#9aa3c5', dark: '#5a6388', rim: '#d9e2f0' },
+      9: { body: '#e8c07a', dark: '#b8894a', rim: '#fff0c7' },
       99: { body: '#ffcf3f', dark: '#c99a00', rim: '#ffe680' },
     }[id] || { body: '#c98a5a', dark: '#8a5a32', rim: '#e0a878' };
     ctx.save();
     // roots at the base
-    if (id !== 5 && id !== 3 && id !== 7 && id !== 8) { [[-1, 0.18], [1, 0.82]].forEach(([d, f]) => { ell(ctx, x + w * f + d * 8, b - 5, 13, 7, d * 0.4); fs(ctx, style.body, style.dark, 2.5); }); }
+    if (id !== 5 && id !== 3 && id !== 7 && id !== 8 && id !== 9) { [[-1, 0.18], [1, 0.82]].forEach(([d, f]) => { ell(ctx, x + w * f + d * 8, b - 5, 13, 7, d * 0.4); fs(ctx, style.body, style.dark, 2.5); }); }
     // trunk (slightly narrower than the rim)
     U.rr(ctx, x + 6, rimY, w - 12, b - rimY, 6); fs(ctx, style.body, style.dark, 3);
     // body texture
@@ -1152,6 +1281,11 @@
       const gl = 0.5 + 0.5 * Math.sin(t * 3);
       U.rr(ctx, cx - 4, rimY + 14, 8, b - rimY - 22, 4); fs(ctx, 'rgba(92,207,255,' + (0.5 + gl * 0.5) + ')');
       for (let yy = rimY + 20; yy < b - 10; yy += 22) { ell(ctx, x + 14, yy, 3, 3); fs(ctx, '#5a6388'); ell(ctx, x + w - 14, yy, 3, 3); fs(ctx, '#5a6388'); }
+    } else if (id === 9) {      // sandstone column: turquoise bands and a little sun sign
+      ctx.save(); U.rr(ctx, x + 6, rimY, w - 12, b - rimY, 6); ctx.clip();
+      ctx.fillStyle = '#4fd1c5'; ctx.fillRect(x, rimY + 14, w, 7); ctx.fillRect(x, b - 18, w, 7);
+      ctx.restore();
+      if (b - rimY > 70) { ell(ctx, cx, rimY + 44, 8, 8); fs(ctx, '#ffd23f', '#b8861c', 1.5); }
     } else if (id === 99) {
       ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fillRect(x + 14, rimY + 14, 5, b - rimY - 22);
     }
@@ -1172,6 +1306,29 @@
     ell(ctx, -5, -3.5, 1.5, 2); fs(ctx, '#222'); ell(ctx, 3, -3.5, 1.5, 2); fs(ctx, '#222');
     ctx.restore();
     ell(ctx, cx - 10, y + 30, 7, 7); fs(ctx, '#5a5370', '#1f1b2e', 2);
+  }
+
+  /* Quicksand, drawn in front of the player: the surface sits a few pixels
+     below the tile top and ripples, so she looks like she's wading in it. */
+  function drawQuicksand(ctx, x, y, t, leftEnd, rightEnd) {
+    const top = y + 6;
+    ctx.beginPath(); ctx.moveTo(x - 0.5, y + T + 0.5);
+    ctx.lineTo(x - 0.5, top + Math.sin(t * 2 + x * 0.05) * 1.5);
+    for (let k = 1; k <= 6; k++) { const xx = x + (T * k) / 6; ctx.lineTo(xx + (k === 6 ? 0.5 : 0), top + Math.sin(t * 2 + xx * 0.05) * 1.5); }
+    ctx.lineTo(x + T + 0.5, y + T + 0.5); ctx.closePath();
+    // darker, wetter orange-brown than the dry dunes, so a pool reads as "different ground"
+    ctx.fillStyle = '#c98642'; ctx.fill();
+    ctx.fillStyle = 'rgba(120,70,20,0.25)';
+    for (let k = 0; k < 5; k++) { ell(ctx, x + 6 + ((k * 19) % 40), top + 12 + ((k * 13) % 26), 2.2, 1.6); ctx.fill(); }
+    // swirls turning slowly, like the sand is being sucked down
+    ctx.strokeStyle = 'rgba(255,220,160,0.55)'; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+    for (let k = 0; k < 2; k++) { const cx = x + 12 + k * 24, cy = top + 14 + k * 12; ctx.beginPath(); ctx.arc(cx, cy, 5 + k * 2, t * 1.5 + k, t * 1.5 + k + 3.5); ctx.stroke(); }
+    // a bubble now and then pops at the surface
+    const bp = (t * 0.7 + x * 0.013) % 1;
+    if (bp < 0.35) { ell(ctx, x + 24 + Math.sin(x) * 10, top + 2, 2 + bp * 10, 1.5 + bp * 6); ctx.strokeStyle = 'rgba(255,230,180,' + (0.8 - bp * 2) + ')'; ctx.lineWidth = 1.5; ctx.stroke(); }
+    ctx.fillStyle = 'rgba(255,225,170,0.6)'; ctx.fillRect(x, top + 1, T, 3);
+    if (leftEnd) { ctx.fillStyle = 'rgba(170,110,40,0.35)'; ctx.fillRect(x, top, 3, T - 6); }
+    if (rightEnd) { ctx.fillStyle = 'rgba(170,110,40,0.35)'; ctx.fillRect(x + T - 3, top, 3, T - 6); }
   }
 
   /* A toothed gear (toy factory decoration, boss projectile). */
@@ -1274,6 +1431,13 @@
         ell(ctx, x, y, 3 + (i % 4), 3 + (i % 4)); ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.5; ctx.stroke();
       }
     }
+    if (id === 9) {
+      // desert: fine sand drifting sideways in the warm wind
+      for (let i = 0; i < 30; i++) {
+        const x = ((i * 157 - t * (60 + (i % 4) * 20) - camX * 0.5) % vw + vw) % vw, y = (i * 83) % vh + Math.sin(t * 2 + i) * 6;
+        ell(ctx, x, y, 1.6 + (i % 3) * 0.6, 1.2 + (i % 3) * 0.4); fs(ctx, 'rgba(255,230,170,0.7)');
+      }
+    }
     if (id === 7) {
       // toy factory: big slowly turning gears floating in the back
       for (let i = 0; i < 5; i++) {
@@ -1305,6 +1469,6 @@
 
   LZ.Art = {
     drawCharacter, drawHat, drawTrailParticle, drawCoin, drawStar, drawHeart, drawPowerup, getTile, drawQBlock, drawLava,
-    drawEnemy, drawBoss, drawBackground, clearCaches, drawPet, drawSticker, drawStump, drawCannon, drawCave, drawGear, drawConveyor, starPath, heartPath, ell, fs, tri, RAINBOW,
+    drawEnemy, drawBoss, drawBackground, clearCaches, drawPet, drawSticker, drawStump, drawCannon, drawCave, drawGear, drawConveyor, drawQuicksand, starPath, heartPath, ell, fs, tri, RAINBOW,
   };
 })();

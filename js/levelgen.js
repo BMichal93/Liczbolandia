@@ -42,10 +42,14 @@
   function themeFor(wi, li) {
     if (wi === D.BONUS_ID) return 'meadow';
     // world 1 introduces the themes one at a time, easiest first
-    if (wi === 1) return ['meadow', 'stumps', 'bricks', 'heights', 'meadow'][li - 1];
+    if (wi === 1) return ['meadow', 'stumps', 'bricks', 'heights', 'meadow', 'stumps', 'bricks'][li - 1];
+    // 7 levels but only 5 themes: two shuffled rounds back to back, never the
+    // same theme twice in a row where the rounds meet
     const r = U.rng(wi * 7717 + 3);
-    const opts = U.shuffle(r, ['stumps', 'bricks', 'heights', 'fort', 'meadow']);
-    return opts[li - 1];
+    const all = ['stumps', 'bricks', 'heights', 'fort', 'meadow'];
+    const a = U.shuffle(r, all.slice()), b = U.shuffle(r, all.slice());
+    if (b[0] === a[a.length - 1]) [b[0], b[1]] = [b[1], b[0]];
+    return a.concat(b)[li - 1];
   }
 
   function generate(wi, li) {
@@ -57,7 +61,8 @@
     const r = bonus ? U.rng(Date.now() & 0xffff) : U.rng(wi * 1009 + li * 37 + 5);   // bonus level is different on every visit
     const has = f => world.features.includes(f);
     const water = has('water');
-    const diff = bonus ? 0.5 : (wi - 1) * 0.45 + (li - 1) * 0.25;   // 0 .. ~4.15
+    // ramps up more gently inside a world now that each world has 7 levels
+    const diff = bonus ? 0.5 : (wi - 1) * 0.42 + (li - 1) * 0.18;   // 0 .. ~4.4
     const theme = themeFor(wi, li);
     const cols = [];
     const ents = [];
@@ -75,20 +80,36 @@
       if (water) ground(cx, H - 1);
       else if (has('lava')) set(cx, H - 2, 'L');
     };
-    const coin = (cx, cy) => ents.push({ t: 'coin', x: cx, y: cy });
+    /*
+     * Coins are rationed per chunk: each terrain chunk either keeps all of
+     * its coins or none (see coinOn in the assembly loop). Dropping whole
+     * groups keeps the lines and arcs looking deliberate, while roughly
+     * halving the coin supply so the shop lasts much longer.
+     */
+    let coinOn = true;
+    const coin = (cx, cy) => { if (coinOn) ents.push({ t: 'coin', x: cx, y: cy }); };
     const arc = (x0, w, y0) => { for (let i = 0; i <= w; i++) coin(x0 + i, y0 - Math.round(Math.sin((i / w) * Math.PI) * 2)); };
-    const walkers = world.enemies.filter(e => ['slime', 'hedgehog', 'shroom', 'snowball', 'robot', 'alien'].includes(e));
-    const flyers = world.enemies.filter(e => ['bee', 'bat', 'cloudy', 'fish', 'jelly', 'ufo'].includes(e));
-    const enemy = (cx, cy) => {
+    const walkers = world.enemies.filter(e => ['slime', 'hedgehog', 'shroom', 'snowball', 'robot', 'alien', 'scorpion', 'cactus'].includes(e));
+    const flyers = world.enemies.filter(e => ['bee', 'bat', 'cloudy', 'fish', 'jelly', 'ufo', 'vulture'].includes(e));
+    /*
+     * Spiky walkers (hedgehog, cactus) can't be stomped, so they only go where
+     * there is open sky and flat ground on both sides (flat stretches and the
+     * head of a parade). Under a brick ceiling or next to quicksand the jump
+     * over them gets cut short and a child lands right on the spikes.
+     */
+    const SPIKY = ['hedgehog', 'cactus'];
+    const softWalkers = walkers.filter(t => !SPIKY.includes(t)), spikyWalkers = walkers.filter(t => SPIKY.includes(t));
+    const enemy = (cx, cy, spikyOk) => {
       let type;
       if (water) type = U.pick(r, ['fish', 'fish', 'jelly']);
       else if (flyers.length && r() < 0.3) type = U.pick(r, flyers);
-      else type = U.pick(r, walkers.length ? walkers : ['slime']);
-      const fly = ['bee', 'bat', 'cloudy', 'fish', 'jelly', 'ufo'].includes(type);
+      else if (spikyOk && spikyWalkers.length && r() < 0.45) type = U.pick(r, spikyWalkers);
+      else type = U.pick(r, softWalkers.length ? softWalkers : ['slime']);
+      const fly = ['bee', 'bat', 'cloudy', 'fish', 'jelly', 'ufo', 'vulture'].includes(type);
       ents.push({ t: 'enemy', type, x: cx, y: fly ? cy - 2 - Math.floor(r() * 2) : cy });
     };
-    const maybeEnemy = (cx) => { if (r() < (bonus ? 0.12 : 0.35 + diff * 0.12)) enemy(cx, gh); };
-    const walker = () => U.pick(r, walkers.length ? walkers : ['slime']);
+    const maybeEnemy = (cx, spikyOk) => { if (r() < (bonus ? 0.12 : 0.35 + diff * 0.12)) enemy(cx, gh, spikyOk); };
+    const walker = () => U.pick(r, softWalkers.length ? softWalkers : ['slime']);
     // hollow tree stump, 2 tiles wide, h tiles tall, standing on ground level gh
     const stump = (sx, h, opts) => {
       opts = opts || {};
@@ -96,8 +117,9 @@
       ents.push(Object.assign({ t: 'stump', x: sx, y: gh - h, h }, opts));
     };
     // brick with an optional surprise inside
-    const brick = (bx, by, content) => { set(bx, by, 'B'); if (content) qc[bx + ',' + by] = content; };
-    const brickSurprise = () => r() < 0.18 ? 'multi' : r() < 0.08 ? U.pick(r, ['heart', 'magnet', 'boots']) : null;
+    // a multi-coin brick counts as coins, so it follows the same per-chunk ration
+    const brick = (bx, by, content) => { set(bx, by, 'B'); if (content === 'multi' && !coinOn) content = null; if (content) qc[bx + ',' + by] = content; };
+    const brickSurprise = () => r() < 0.07 ? 'multi' : r() < 0.08 ? U.pick(r, ['heart', 'magnet', 'boots']) : null;
     const plantChance = water ? 0.25 : bonus ? 0 : diff < 0.4 ? 0 : Math.min(0.75, 0.35 + diff * 0.12);
 
     /* ---------------- chunk library ---------------- */
@@ -106,7 +128,7 @@
         const n = U.ri(r, 5, 9);
         for (let i = 0; i < n; i++) ground(x + i, gh, has('ice') && r() < 0.3 ? 'I' : '#');
         if (bonus || r() < 0.55) for (let i = 1; i < n - 1; i++) { coin(x + i, gh - 2); if (bonus) coin(x + i, gh - 3); }
-        if (n > 6) maybeEnemy(x + n - 2);
+        if (n > 6) maybeEnemy(x + n - 2, true);
         x += n;
       },
       gap() {
@@ -129,7 +151,9 @@
         x += 7;
       },
       floating() {
-        ground(x, gh); x++;
+        // 3 tiles of ground first, so she can land and take a breath before the jumps
+        for (let i = 0; i < 3; i++) ground(x + i, gh);
+        x += 3;
         const top = gh;
         if (diff < 0.8) {
           // gentle version for the first levels: two low planks that touch,
@@ -190,7 +214,10 @@
       },
       moving() {
         const pw = U.ri(r, 8, 10);
-        ground(x, gh); x++;
+        // a 4-tile landing strip before the pit: the previous chunk may end in a
+        // step up, and a jump up that step used to carry her straight into the gap
+        for (let i = 0; i < 4; i++) ground(x + i, gh);
+        x += 4;
         for (let i = 0; i < pw; i++) pit(x + i);
         ents.push({ t: 'moving', x: x + 1, y: gh - 1, w: 3, x2: x + pw - 4, y2: gh - 1 });
         for (let i = 2; i < pw - 2; i++) coin(x + i, gh - 3);
@@ -200,7 +227,9 @@
       parade() {
         const n = 13;
         for (let i = 0; i < n; i++) ground(x + i, gh, has('ice') && r() < 0.5 ? 'I' : '#');
-        enemy(x + 5, gh); enemy(x + 10, gh);
+        // at most one spiky (can't-stomp) enemy per parade, at the front: two of
+        // them a few tiles apart left no safe place to land between the jumps
+        enemy(x + 5, gh, true); enemy(x + 10, gh);
         if (diff > 1.2) enemy(x + 8, gh);
         for (let i = 2; i < n - 2; i += 2) coin(x + i, gh - 3);
         x += n;
@@ -231,7 +260,9 @@
         x += 14 + k;
       },
       clouds() {
-        ground(x, gh); x++;
+        // 3 tiles of ground first, so she can land and take a breath before the jumps
+        for (let i = 0; i < 3; i++) ground(x + i, gh);
+        x += 3;
         const pw = U.ri(r, 10, 12);
         for (let i = 0; i < pw; i++) pit(x + i);
         ents.push({ t: 'cloud', x: x + 1, y: gh - 1, w: 3 });
@@ -274,6 +305,28 @@
         ents.push({ t: 'enemy', type: 'urchin', x: x + 1, y: gh });
         ents.push({ t: 'enemy', type: 'fish', x: x + 8, y: gh - 3 });
         starSpots.push({ x: x + 6, y: Math.max(1, gh - 8) });
+        x += n;
+      },
+
+      /* ---- desert: quicksand ('Q' = one row of sand over solid ground) ---- */
+      // a pool of quicksand: wading is slow and you sink a little - jump over it or wade through
+      quicksand() {
+        const w = U.ri(r, 3, Math.min(7, 4 + Math.floor(diff * 0.6))), n = w + 6;
+        for (let i = 0; i < n; i++) ground(x + i, gh);
+        for (let i = 3; i < 3 + w; i++) set(x + i, gh, 'Q');
+        arc(x + 2, w + 1, gh - 2);
+        if (r() < 0.5) ents.push({ t: 'enemy', type: walker(), x: x + n - 1, y: gh });
+        x += n;
+      },
+      // a long sand sea with stone pillars sticking out: hop pillar to pillar,
+      // or wade the slow way; a vulture circles above
+      sandSea() {
+        const w = U.ri(r, 10, 13), n = w + 4;
+        for (let i = 0; i < n; i++) ground(x + i, gh);
+        for (let i = 2; i < 2 + w; i++) set(x + i, gh, 'Q');
+        for (let k = 5; k < 2 + w - 1; k += 4) { set(x + k, gh, '='); set(x + k, gh - 1, '='); coin(x + k, gh - 3); }
+        if (flyers.length) ents.push({ t: 'enemy', type: U.pick(r, flyers), x: x + Math.floor(n / 2), y: gh - 4 });
+        starSpots.push({ x: x + Math.floor(n / 2), y: Math.max(1, gh - 5) });
         x += n;
       },
 
@@ -338,7 +391,7 @@
         for (let i = 0; i < n; i++) ground(x + i, gh);
         for (let i = 2; i < n - 2; i++) {
           const c = r() < 0.15 ? '?' : 'B';
-          if (c === '?') { set(x + i, gh - 3, '?'); qc[(x + i) + ',' + (gh - 3)] = 'coin'; } else brick(x + i, gh - 3, r() < 0.12 ? 'multi' : null);
+          if (c === '?') { set(x + i, gh - 3, '?'); qc[(x + i) + ',' + (gh - 3)] = 'coin'; } else brick(x + i, gh - 3, r() < 0.06 ? 'multi' : null);
           if (i % 2 === 0) coin(x + i, gh - 1);
           coin(x + i, gh - 4);
         }
@@ -461,8 +514,10 @@
     for (let i = 0; i < 8; i++) ground(i, gh);
     x = 8;
     ents.push({ t: 'sign', x: 5, y: gh });
-    // longer levels than before (about 1.4x), with two checkpoints
-    const length = bonus ? 130 : 215 + wi * 15 + li * 9;
+    // Long levels (about 1.35x the previous size) with a single checkpoint
+    // halfway: a pit only costs a heart and puts you back at the last safe
+    // spot, so the flag matters only when all hearts are gone.
+    const length = bonus ? 130 : 290 + wi * 18 + li * 11;
     const pool = Object.entries(THEMES[theme].w).map(([k, v]) => [v, k]);
     if (diff > 0.5 && !THEMES[theme].w.thorns) pool.push([0.8, 'thorns']);
     if (!THEMES[theme].w.parade) pool.push([0.8, 'parade']);
@@ -474,6 +529,7 @@
     if (has('wind')) pool.push([2, 'wind']);
     if (has('falling')) pool.push([3, 'falling']);
     if (has('conveyor')) { pool.push([3.5, 'conveyor']); pool.push([2.5, 'beltBridge']); }
+    if (has('quicksand')) { pool.push([3.5, 'quicksand']); pool.push([2, 'sandSea']); }
     if (has('lowgrav')) pool.forEach(p => { if (['floating', 'gap', 'pyramid'].includes(p[1])) p[0] *= 1.6; });   // floaty jumps: more air time
     if (water) { pool.push([3, 'reef']); pool.forEach(p => { if (['spring', 'thorns', 'elevator'].includes(p[1])) p[0] = 0; }); }
     if (!has('moving') && wi >= 2) pool.push([1, 'moving']);
@@ -481,10 +537,9 @@
     if (bonus) pool.forEach(p => { if (['blocks', 'spring', 'floating'].includes(p[1])) p[0] *= 2.5; if (['parade', 'thorns', 'gap'].includes(p[1])) p[0] *= 0.3; });
     const specials = [
       { at: 0.17, fn: gateChunk },
-      { at: 0.3, fn: checkpoint },
       { at: 0.4, fn: challengeChunk },
-      { at: 0.55, fn: gateChunk },
-      { at: 0.68, fn: checkpoint },
+      { at: 0.5, fn: checkpoint },
+      { at: 0.62, fn: gateChunk },
       { at: 0.85, fn: gateChunk },
     ];
     if (!bonus) specials.push({ at: 0.22, fn: secretChunk });
@@ -497,7 +552,9 @@
       let name = U.wpick(r, pool);
       if (name === last) name = U.wpick(r, pool);  // avoid the same chunk twice in a row
       last = name;
+      coinOn = r() < (bonus ? 0.6 : 0.42);
       C[name]();
+      coinOn = true;
     }
     specials.forEach(s => { if (!s.done) s.fn(); });
     if (secret && !secret.exit) exitChunk();
@@ -521,9 +578,9 @@
         for (let y = 0; y < H; y++) set(rx + i, y, (i === 0 || i === RW - 1 || y <= 1 || y >= 11) ? 'U' : '.');
       }
       // coin carpet on the floor and a platform with coins and the star above it
-      for (let i = 2; i < RW - 6; i++) { coin(rx + i, 10); if (i % 2 === 0) coin(rx + i, 9); }
-      for (let i = 8; i <= 15; i++) { set(rx + i, 8, '='); coin(rx + i, 7); }
-      for (const i of [4, 5, 18, 19]) brick(rx + i, 7, 'multi');
+      for (let i = 2; i < RW - 6; i += 2) coin(rx + i, 10);
+      for (let i = 8; i <= 15; i++) { set(rx + i, 8, '='); if (i % 2 === 0) coin(rx + i, 7); }
+      for (const i of [4, 19]) brick(rx + i, 7, 'multi');
       // exit stump on the right, standing on the room floor
       const sx = rx + RW - 5;
       for (let i = 0; i < 2; i++) for (let y = 9; y < 11; y++) set(sx + i, y, 'T');
@@ -548,7 +605,8 @@
     };
     const s0 = early.length ? U.pick(r, early) : above(20);
     const s2 = late.length ? U.pick(r, late) : above(W - 30);
-    // Kraina Monet: a double line of coins follows the ground along the whole level
+    // Kraina Monet: a dotted line of coins follows the ground along the whole level
+    // (it was a double line - replaying it was a coin farm that emptied the shop)
     if (bonus) {
       const have = new Set(ents.filter(e => e.t === 'coin').map(e => e.x + ',' + e.y));
       for (let cx = 6; cx < W - 20; cx++) {
@@ -556,7 +614,7 @@
         if (top >= H || top < 4) continue;
         for (const dy of [2, 3]) {
           const cy = top - dy;
-          if (cols[cx][cy] === '.' && cols[cx][cy + 1] === '.' && !have.has(cx + ',' + cy) && (dy === 2 || cx % 2 === 0)) { coin(cx, cy); have.add(cx + ',' + cy); }
+          if (cols[cx][cy] === '.' && cols[cx][cy + 1] === '.' && !have.has(cx + ',' + cy) && dy === 2 && cx % 2 === 0) { coin(cx, cy); have.add(cx + ',' + cy); }
         }
       }
     }

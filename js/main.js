@@ -76,7 +76,12 @@
   /* Pictures for the star-shop cards. */
   function drawStarItem(g, it, t) {
     if (it.type === 'pet') { g.translate(50, 52); g.scale(2.4, 2.4); LZ.Art.drawPet(g, it.id, 0, Math.sin(t * 3) * 2, t, 1); return; }
-    if (it.type === 'perk') { LZ.Art.drawHeart(g, 50, 55, 26, true); g.fillStyle = '#fff'; g.font = '800 26px "Baloo 2", sans-serif'; g.textAlign = 'center'; g.fillText('+1', 50, 62); return; }
+    if (it.type === 'perk') {
+      // each perk shows the power-up it gives; the heart perks show "+1"
+      const pw = { perk_shield: 'shield', perk_magnet: 'magnet', perk_boots: 'boots' }[it.id];
+      if (pw) { g.translate(50, 52); g.scale(1.9, 1.9); LZ.Art.drawPowerup(g, pw, 0, Math.sin(t * 3) * 2, t); return; }
+      LZ.Art.drawHeart(g, 50, 55, 26, true); g.fillStyle = '#fff'; g.font = '800 26px "Baloo 2", sans-serif'; g.textAlign = 'center'; g.fillText('+1', 50, 62); return;
+    }
     if (it.type === 'level') {
       LZ.Art.drawCoin(g, 30, 62, t, 14); LZ.Art.drawCoin(g, 52, 48, t + 1, 14); LZ.Art.drawCoin(g, 72, 64, t + 2, 14);
       LZ.Art.starPath(g, 50, 24, 12, 5, 5, 0); LZ.Art.fs(g, '#ffd23f', '#d98a0b', 2); return;

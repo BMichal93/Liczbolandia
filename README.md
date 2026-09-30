@@ -20,7 +20,7 @@ Działa na telefonie, tablecie i laptopie - widok i menu dopasowują się do ekr
 
 ## Co jest w grze
 
-- 8 światów × (5 poziomów + boss) = 48 poziomów, w każdym świecie nowa mechanika: sprężyny, lód, pływanie, grzyby-trampoliny, znikające chmurki i wiatr, czekoladowa lawa i spadające platformy, taśmociągi w Zabawkowej Fabryce i niska grawitacja w Kosmicznej Galaktyce.
+- 9 światów × (7 poziomów + boss) = 72 poziomy, w każdym świecie nowa mechanika: sprężyny, lód, pływanie, grzyby-trampoliny, znikające chmurki i wiatr, czekoladowa lawa i spadające platformy, taśmociągi w Zabawkowej Fabryce, niska grawitacja w Kosmicznej Galaktyce i ruchome piaski na Złotej Pustyni. Poziomy są długie, z jednym punktem kontrolnym w połowie.
 - Każdy poziom ma swój motyw (Słoneczna ścieżka, Las pniaków, Ceglane miasteczko, Podniebne schody, Twierdza armatek) i teren w stylu Mario: dziuple-pnie z kłapaczami, cegły do rozbijania (niektóre z wieloma monetami), armatki, piramidy schodów, tunele, dwie trasy (góra/dół), windy, dwa punkty kontrolne. W każdym poziomie jest **tajny pień** - stań na nim chwilę, a trafisz do podziemnej kryjówki z monetami i gwiazdką.
 - Matematyka wpleciona w rozgrywkę:
   - **bramy** - skocz głową w klocek z dobrą odpowiedzią,
@@ -28,15 +28,16 @@ Działa na telefonie, tablecie i laptopie - widok i menu dopasowują się do ekr
   - **bossowie** - pokonuje się ich dobrymi odpowiedziami,
   - **sklep** - promocje i liczenie reszty (w zakresie do 100).
   - Monety za zadanie są tylko za dobrą odpowiedź za pierwszym razem. Po pomyłce brama i tak się otworzy, ale bez monet.
+- Monet jest mniej, żeby sklep starczył na dłużej: tylko część odcinków poziomu ma monety, a Kraina Monet nie jest już „farmą” monet.
 - Tylko dodawanie, odejmowanie, mnożenie i dzielenie, liczby od 0 do 100, bez liczb ujemnych. 4 poziomy trudności:
   - **Łatwy** (nagrody ×1) - dodawanie i odejmowanie do 20, z kropkami do liczenia,
   - **Średni** (×1,5) - dodawanie i odejmowanie do 100,
   - **Trudny** (×2) - do 100 + mnożenie i dzielenie do 50,
   - **Mistrzowski** (×3) - cała tabliczka mnożenia i dzielenie do 100.
   W ramach poziomu gra sama dopasowuje zadania do dziecka.
-- 9 postaci o różnych umiejętnościach (w tym Świnka Kuleczka - wysokie odbicie od przeciwników), kolory, dodatki, ślady, odznaki.
-- **Sklep za gwiazdki** - gwiazdki to rzadka waluta (w całej grze jest ich 144, tyle kosztuje wszystko w tym sklepie): pupile zbierające monety (Motylek, Rybka w bańce, Świetlik, Mini-smoczek, Robocik, Mini-UFO), dodatkowe serduszka, tarcza na start, złota postać i tajny poziom **Kraina Monet**.
-- **Album naklejek** - 31 naklejek ze stworkami, bossami i przedmiotami z gry; paczka kosztuje 80 monet i zawsze daje nową naklejkę.
+- 10 postaci o różnych umiejętnościach (w tym Świnka Kuleczka - wysokie odbicie od przeciwników, i droga Króliczka Hopka - szybka i skoczna), kolory, dodatki, ślady, odznaki.
+- **Sklep za gwiazdki** - gwiazdki to rzadka waluta (w całej grze jest ich 216, tyle kosztuje wszystko w tym sklepie): pupile zbierające monety (Motylek, Rybka w bańce, Świetlik, Mini-smoczek, Robocik, Mini-UFO, Złoty Skarabeusz), dodatkowe serduszka, tarcza, magnes i superskok na start, złota postać i tajny poziom **Kraina Monet**.
+- **Album naklejek** - 35 naklejek ze stworkami, bossami i przedmiotami z gry; paczka kosztuje 80 monet i zawsze daje nową naklejkę.
 - Muzyka i dźwięki w stylu 8-bit (chiptune), generowane na żywo.
 - Osobne profile graczy, automatyczny zapis, kopia zapasowa do pliku lub jako kod.
 

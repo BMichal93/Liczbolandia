@@ -224,3 +224,10 @@ body.touch #controls { display: block; }
   .modal h2 { font-size: 22px; } .modal p { font-size: 16px; } .modal p.q { font-size: 20px; } .bigstar { width: 44px; height: 44px; }
   .hubbtns { gap: 10px; } .panel { padding: 10px 14px; }
 }
+
+/* Short landscape phones: a two-line world name plus the subtitle ran under
+   the star badge, so drop the subtitle and shrink the name a little. */
+@media (max-height: 480px) {
+  .wsub { display: none; }
+  .wname { font-size: 19px; }
+}

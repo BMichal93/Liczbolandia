@@ -62,6 +62,8 @@
     G.pet = petId && petId !== 'none' && (prof.starItems || []).includes(petId) ? { id: petId, x: G.player.x - 40, y: G.player.y - 30, reach: D.PETS[petId].reach * T } : null;
     G.gold = !!prof.equip.gold && (prof.starItems || []).includes('gold');
     if (si.includes('perk_shield')) G.player.shield = true;   // star-shop perk: start with a shield
+    if (si.includes('perk_magnet')) G.player.magnetT = 20;   // start with a 20 s coin magnet
+    if (si.includes('perk_boots')) G.player.bootsT = 15;     // and 15 s of super-jump boots
     // world mechanics
     G.lowgrav = lvl.world.features.includes('lowgrav');
     computeMasks();
@@ -85,7 +87,7 @@
       for (let y = 0; y < H; y++) {
         const c = grid[x][y];
         if (c !== '#' && c !== 'I') { col.push(0); continue; }
-        const g = (xx, yy) => xx < 0 || xx >= W || yy >= H ? true : yy < 0 ? false : (grid[xx][yy] === '#' || grid[xx][yy] === 'I' || grid[xx][yy] === '>' || grid[xx][yy] === '<');
+        const g = (xx, yy) => xx < 0 || xx >= W || yy >= H ? true : yy < 0 ? false : (grid[xx][yy] === '#' || grid[xx][yy] === 'I' || grid[xx][yy] === '>' || grid[xx][yy] === '<' || grid[xx][yy] === 'Q');   // no grass edge under quicksand
         col.push((g(x, y - 1) ? 0 : 1) | (g(x + 1, y) ? 0 : 2) | (g(x, y + 1) ? 0 : 4) | (g(x - 1, y) ? 0 : 8));
       }
       G.mask.push(col);
@@ -133,11 +135,11 @@
   }
 
   function spawnEnemy(type, px, py) {
-    const size = { slime: [36, 26], bee: [32, 30], hedgehog: [36, 26], snowball: [34, 34], fish: [36, 26], jelly: [30, 34], urchin: [30, 30], shroom: [36, 34], bat: [34, 28], cloudy: [40, 30], firejelly: [30, 34], plant: [34, 46], ball: [30, 30], robot: [34, 38], alien: [34, 32], ufo: [46, 30] }[type] || [32, 30];
+    const size = { slime: [36, 26], bee: [32, 30], hedgehog: [36, 26], snowball: [34, 34], fish: [36, 26], jelly: [30, 34], urchin: [30, 30], shroom: [36, 34], bat: [34, 28], cloudy: [40, 30], firejelly: [30, 34], plant: [34, 46], ball: [30, 30], robot: [34, 38], alien: [34, 32], ufo: [46, 30], scorpion: [40, 28], cactus: [32, 40], vulture: [46, 32] }[type] || [32, 30];
     const e = {
       type, x: px + (T - size[0]) / 2, y: py - size[1], w: size[0], h: size[1], vx: 0, vy: 0, dir: -1,
       ox: px, oy: py - size[1], dead: false, deadT: 0, seed: Math.random() * 10, grounded: false, t: 0, roll: 0,
-      stompable: !['hedgehog', 'urchin', 'firejelly', 'plant'].includes(type),
+      stompable: !['hedgehog', 'urchin', 'firejelly', 'plant', 'cactus'].includes(type),   // spiky ones hurt from above too
       col: null,
     };
     if (type === 'firejelly') { e.restY = py - size[1] + T; e.y = e.restY; e.jt = 1 + Math.random() * 2; }
@@ -227,7 +229,9 @@
     if (In.jumpPressed) { p.buffer = P.buffer; In.jumpPressed = false; }
     else p.buffer -= dt;
     p.coyote = p.grounded ? P.coyote : p.coyote - dt;
-    const jumpMul = (ab.jump || 1) * (p.bootsT > 0 ? 1.28 : 1);
+    // quicksand holds your feet: a slightly weaker jump (still clears a 2-tile bank)
+    const inSand = p.grounded && p.groundTile === 'Q';
+    const jumpMul = (ab.jump || 1) * (p.bootsT > 0 ? 1.28 : 1) * (inSand ? 0.86 : 1);
 
     if (water) {
       if (p.buffer > 0) { p.vy = -P.wSwim * (ab.jump || 1); p.buffer = 0; A.play('splash'); p.squash = -0.3; }
@@ -261,12 +265,19 @@
     // space: a floaty jump stays in the air ~40% longer, which carried players
     // past planks and ledges laid out for normal jumps. Slowing sideways drift
     // in the air keeps the jump's footprint the same while it still feels floaty.
-    moveX(p, p.vx * dt * (G.lowgrav && !p.grounded ? 0.72 : 1));
+    // quicksand: wading is half speed, so jumping over a pool is the quick way
+    moveX(p, p.vx * dt * (G.lowgrav && !p.grounded ? 0.72 : 1) * (inSand ? 0.5 : 1));
     const wasGrounded = p.grounded;
     p.grounded = false; p.on = null;
     moveY(p, p.vy * dt, prevBottom);
     // conveyor belt: carries whoever stands on it
     if (p.grounded && (p.groundTile === '>' || p.groundTile === '<')) moveX(p, (p.groundTile === '>' ? 1 : -1) * 105 * dt);
+    // quicksand: standing in it you slowly sink up to your knees (never deeper -
+    // it slows you down but can't swallow anyone), stepping out resets it
+    if (p.grounded && p.groundTile === 'Q') {
+      p.sinkD = Math.min(22, (p.sinkD || 0) + 26 * dt);
+      if (Math.abs(p.vx) > 30 && Math.random() < 0.3) G.particles.push({ x: p.x + PW / 2 + (Math.random() - 0.5) * 20, y: p.y + PH - 4, vx: (Math.random() - 0.5) * 60, vy: -60 - Math.random() * 40, life: 0.4, max: 0.4, size: 4, col: '#e8b86a', grav: 400 });
+    } else if (!p.grounded || p.groundTile !== 'Q') p.sinkD = 0;
     // invisible ceiling at the top of the level: no swimming or flying over a maths gate
     if (p.y < 0) { p.y = 0; if (p.vy < 0) p.vy = 0; }
     if (p.grounded && !wasGrounded) { p.squash = 0.35; p.jumps = 0; if (!water) dust(p.x + PW / 2, p.y + PH, 3); }
@@ -333,6 +344,11 @@
       for (let tx = x0; tx <= x1; tx++) {
         const c = tileAt(tx, ty);
         if (isSolid(c) || (c === '-' && prevBottom <= ty * T + 1)) { o.y = ty * T - o.h; o.vy = 0; o.grounded = true; o.groundTile = c; break; }
+        // quicksand is soft ground for the player only: the surface sits sinkD
+        // pixels down and moves lower the longer she stands in it. Feet already
+        // inside the sand row get pulled down to that surface (that's the sinking),
+        // because gravity alone moves them less per frame than the sand sinks.
+        if (c === 'Q' && o === G.player) { const sy = ty * T + (o.sinkD || 0); if (prevBottom <= sy + 1) { o.y = sy - o.h; o.vy = 0; o.grounded = true; o.groundTile = 'Q'; break; } }
       }
     } else if (dy < 0) {
       const ty = Math.floor(o.y / T);
@@ -382,7 +398,7 @@
       const what = G.qc[key];
       if (what === 'multi' || typeof what === 'number') {
         // coin brick: one coin per hit, up to 6, then it turns into a used block
-        const left = what === 'multi' ? 6 : what;
+        const left = what === 'multi' ? 4 : what;   // 4 coins per multi brick (was 6 - the shop emptied too fast)
         popCoin(tx * T + T / 2, ty * T); A.play('coin'); G.bumps[key] = 1;
         if (left <= 1) { G.grid[tx][ty] = 'U'; delete G.qc[key]; } else G.qc[key] = left - 1;
       } else if (what) {
@@ -412,7 +428,7 @@
       if (gate.first) {
         mathResult(gate.problem.topic, true);
         // coin shower only for a first-try answer - bigger on harder difficulty levels
-        for (let i = 0; i < Math.round(5 * G.rew); i++) setTimeout(() => G && popCoin(b.x + T / 2, b.y), i * 70);
+        for (let i = 0; i < Math.round(3 * G.rew); i++) setTimeout(() => G && popCoin(b.x + T / 2, b.y), i * 70);
       } else floatText(b.x + T / 2, b.y - 50, 'Brama otwarta (bez monet)', '#7a6a9a', 18);
       setTimeout(() => A.play('gate'), 300);
       G.shake = 0.3;
@@ -497,7 +513,7 @@
     setTimeout(() => {
       if (!G) return;
       // coins only if there was no mistake; the star is always given for finishing it
-      if (!z.mistake) for (let i = 0; i < Math.round(10 * G.rew); i++) popCoin(z.chest.x + 22, z.chest.y, true);
+      if (!z.mistake) for (let i = 0; i < Math.round(6 * G.rew); i++) popCoin(z.chest.x + 22, z.chest.y, true);
       if (!G.stars[1]) G.ents.push({ k: 'star', x: z.chest.x + 22, y: z.chest.y - 30, idx: 1, vy: -420, fly: true });
     }, 350);
   }
@@ -685,8 +701,8 @@
       const young = G.prof.mathLevel <= 2;   // gentler enemies/bosses on the easier levels
       const spd = young ? 0.8 : 1;
       switch (e.type) {
-        case 'slime': case 'shroom': case 'hedgehog': case 'snowball': case 'robot': case 'alien': {
-          const sp = (e.type === 'snowball' ? 115 : e.type === 'hedgehog' ? 55 : e.type === 'robot' ? 80 : 65) * spd;
+        case 'slime': case 'shroom': case 'hedgehog': case 'snowball': case 'robot': case 'alien': case 'scorpion': case 'cactus': {
+          const sp = (e.type === 'snowball' ? 115 : e.type === 'hedgehog' ? 55 : e.type === 'robot' ? 80 : e.type === 'scorpion' ? 75 : e.type === 'cactus' ? 0 : 65) * spd;   // a cactus stands still: spiky AND walking was too much for a 7-year-old
           e.vx = e.dir * sp;
           e.vy = Math.min(e.vy + P.grav * dt, P.maxFall);
           e.hitWall = 0;
@@ -705,7 +721,7 @@
           if (e.y > G.H * T + 100) e.dead = true;
           break;
         }
-        case 'bee': case 'cloudy': case 'fish': case 'bat': case 'ufo': {
+        case 'bee': case 'cloudy': case 'fish': case 'bat': case 'ufo': case 'vulture': {
           const range = e.type === 'fish' ? 4 * T : 3 * T;
           const sp = (e.type === 'bat' ? 95 : 70) * spd;
           e.x += e.dir * sp * dt;
@@ -812,7 +828,7 @@
     const b = G.lvl.boss;
     const young = G.prof.mathLevel <= 2;   // gentler enemies/bosses on the easier levels
     const hp = Math.max(3, 3 + Math.floor(G.wi / 2) - (young ? 1 : 0));
-    const size = { slimeking: [130, 110], snowman: [120, 150], octopus: [130, 120], shroomlord: [140, 120], storm: [150, 100], chocodragon: [150, 150], gearbot: [140, 150], comet: [140, 130] }[b.kind];
+    const size = { slimeking: [130, 110], snowman: [120, 150], octopus: [130, 120], shroomlord: [140, 120], storm: [150, 100], chocodragon: [150, 150], gearbot: [140, 150], comet: [140, 130], sphinx: [128, 112] }[b.kind];
     G.boss = {
       kind: b.kind, name: b.name, attack: b.attack, x: 19 * T, y: 11 * T - size[1], w: size[0], h: size[1],
       vx: 0, vy: 0, dir: -1, hp, maxHp: hp, phase: 'intro', phaseT: 0, flash: 0, atkT: 1, grounded: true,
@@ -841,7 +857,8 @@
         }
         b.squash = (b.squash || 0) * Math.pow(0.02, dt);
         if (b.grounded && b.atkT <= 0) {
-          b.grounded = false; b.vy = -820; b.atkT = 2.1;
+          // the Sphinx has 7 hearts (vs Glutek's 3), so it rests a bit longer between pounces
+          b.grounded = false; b.vy = -820; b.atkT = b.kind === 'sphinx' ? 2.7 : 2.1;
           const target = U.clamp(p.x - b.w / 2, 3 * T, (G.W - 3) * T - b.w);
           b.vx = (target - b.x) / 1.0; b.dir = b.vx < 0 ? -1 : 1;
         }
@@ -909,7 +926,7 @@
             A.play('correct'); if (b.first) mathResult(b.problem.topic, true);
             b.orbs.forEach(x => { x.alive = false; x.pop = 1; });
             G.projectiles.push({ kind: 'magic', x: o.x, y: o.y, vx: 0, vy: 0, g: 0, r: 16, life: 3, target: true });
-            if (b.first) for (let i = 0; i < Math.round(4 * G.rew); i++) setTimeout(() => G && popCoin(o.x, o.y), i * 70);   // coins only for a first-try answer
+            if (b.first) for (let i = 0; i < Math.round(3 * G.rew); i++) setTimeout(() => G && popCoin(o.x, o.y), i * 70);   // coins only for a first-try answer
             b.phase = 'hitwait'; b.phaseT = 0;
             floatText(o.x, o.y - 30, 'Brawo!', '#2fb34a', 30);
           } else {
@@ -1124,7 +1141,7 @@
     for (let x = x0; x <= x1; x++) {
       for (let y = y0; y <= y1; y++) {
         const c = G.grid[x][y];
-        if (c === '.' || c === 'L' || c === 'T' || c === 'C') continue;   // stumps and cannons are drawn as entities
+        if (c === '.' || c === 'L' || c === 'T' || c === 'C' || c === 'Q') continue;   // stumps and cannons are drawn as entities, quicksand in front of the player
         if (c === '?') { Art.drawQBlock(ctx, x * T, y * T, t + x * 0.3, G.bumps[x + ',' + y] || 0); continue; }
         if (c === '>' || c === '<') { Art.drawConveyor(ctx, x * T, y * T, c === '>' ? 1 : -1, t, world, tileAt(x - 1, y) !== c, tileAt(x + 1, y) !== c); continue; }
         const bump = G.bumps[x + ',' + y] || 0;
@@ -1163,6 +1180,9 @@
 
     // projectiles
     for (const q of G.projectiles) drawProjectile(ctx, q, t);
+
+    // quicksand in front of the player, so she looks knee-deep in it
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) if (G.grid[x][y] === 'Q') Art.drawQuicksand(ctx, x * T, y * T, t, tileAt(x - 1, y) !== 'Q', tileAt(x + 1, y) !== 'Q');
 
     // chocolate lava in front of things that fall into it
     let run = -1;
@@ -1396,7 +1416,7 @@
     ctx.save(); ctx.globalAlpha = 0.5;
     for (let i = 0; i < 12; i++) {
       const x = e.x + ((i * 37) % e.w), y = e.y + e.h - ((t * 260 + i * 97) % e.h);
-      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      ctx.strokeStyle = G.lvl.world.id === 9 ? '#fff0c7' : '#ffffff'; ctx.lineWidth = 3; ctx.lineCap = 'round';   // desert: sandy dust devil
       ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 8, y - 20, x, y - 40); ctx.stroke();
     }
     ctx.restore();
