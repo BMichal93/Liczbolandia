@@ -310,3 +310,32 @@ textarea.code.copied { border-color: var(--green); }
 
 body.decorating #controls, body.decorating #btn-deco, body.decorating #btn-pause { display: none; }
 .decoempty { grid-column: 1 / -1; font-size: 13px; }
+
+/* ---------- main menu (hub) ---------- */
+.hubbtns { flex: 0 1 440px; min-width: 300px; gap: 10px; }   /* #ui is already zoomed for big screens, so plain px here */
+.hubtiles { display: flex; gap: 10px; }
+.hubtile { flex: 1; border: 0; border-radius: 22px; padding: 10px 12px; display: flex; flex-direction: column; align-items: center; gap: 0; cursor: pointer; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.18); transition: transform .1s; }
+.hubtile:active { transform: scale(.96) translateY(3px); }
+.hubtile .ti { font-size: 34px; line-height: 1.1; text-shadow: none; }
+.hubtile b { font: 800 26px "Baloo 2", sans-serif; line-height: 1.1; }
+.hubtile small { font: 700 12px "Baloo 2", sans-serif; opacity: .95; line-height: 1.2; }
+.hubtile.mission { background: linear-gradient(#ffcf3f, #ffa51f); box-shadow: 0 6px 0 #d9820b; color: #6b3a00; text-shadow: 0 1px 0 rgba(255,255,255,.4); }
+.hubtile.trip { background: linear-gradient(#7fdc93, #3fb866); box-shadow: 0 6px 0 #2a8a4a; }
+.hubrow { display: flex; gap: 8px; }
+.hubbtn { flex: 1; border: 0; border-radius: 16px; padding: 7px 6px; display: flex; flex-direction: column; align-items: center; font: 800 15px "Baloo 2", sans-serif; color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.18); position: relative; cursor: pointer; line-height: 1.15; }
+.hubbtn:active { transform: translateY(3px); }
+.hubbtn .ti { font-size: 22px; text-shadow: none; }
+.hubbtn.orange { background: linear-gradient(#ffb877, #ff8f3d); box-shadow: 0 4px 0 #c9621c; }
+.hubbtn.purple { background: linear-gradient(#b8a0ff, var(--purple)); box-shadow: 0 4px 0 var(--purple-d); }
+.hubbtn.pink { background: linear-gradient(#ff9ecf, var(--pink)); box-shadow: 0 4px 0 var(--pink-d); }
+.hubbtn .tag { position: absolute; top: -8px; right: -4px; background: #fff; color: #c9621c; border-radius: 999px; padding: 0 7px; font-size: 12px; line-height: 20px; text-shadow: none; box-shadow: 0 2px 0 rgba(0,0,0,.15); }
+.hubbtn .tag.ok { color: #2a8a4a; }
+.hubrow.small .hubpill { flex: 1; border: 0; border-radius: 999px; padding: 6px 4px; background: rgba(255,255,255,.9); color: var(--purple-d); font: 800 14px "Baloo 2", sans-serif; box-shadow: 0 3px 0 rgba(60,30,120,.2); cursor: pointer; }
+.hubrow.small .hubpill:active { transform: translateY(2px); }
+@media (max-height: 400px) {
+  .hubtile .ti { font-size: 26px; } .hubtile b { font-size: 22px; } .hubtile { padding: 6px 10px; }
+  .hubbtn { padding: 5px 4px; } .hubbtn .ti { font-size: 18px; }
+}
+/* landscape: the hero and the menu side by side (the menu shrinks rather than wrapping below) */
+@media (orientation: landscape) { .hub .hubmain { flex-wrap: nowrap; } }
+.hubbtn .tag { text-shadow: none; -webkit-text-stroke: 0; }

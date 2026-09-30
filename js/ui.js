@@ -170,30 +170,39 @@
     const p = S.active(); if (!p) return profiles();
     A.playMusic(5);
     const newBadges = S.checkBadges(p); S.save();
+    // the daily button shows a tick when today's goal is done, or the running streak
+    const doneToday = p.daily && p.daily.last === LZ.X.dateKey();
+    const streakOn = p.daily && p.daily.streak > 1 && p.daily.last >= LZ.X.dateKey(new Date(Date.now() - 86400000));
+    const dailyTag = doneToday ? h('span.tag.ok', null, '✓') : streakOn ? h('span.tag', null, p.daily.streak + ' dni 🔥') : null;
     show(h('div.screen.hub', null, [
       h('div.topbar', null, [
         h('button.btn.small', { onclick: profiles }, 'Zmień gracza'),
         h('div.who', null, [h('b', null, p.name), '  ', starIcon(), ' ' + D.countStars(p) + '  ', coinIcon(), ' ' + p.coins]),
-        h('button.btn.small', { onclick: settings }, 'Ustawienia'),
+        h('button.btn.small', { onclick: settings }, '⚙ Ustawienia'),
       ]),
       h('div.hubmain', null, [
-        h('div.hero', null, [preview({ id: p.equip.char, variant: p.equip.variant, hat: p.equip.hat, walk: true }, 190)]),
+        h('div.hero', null, [preview({ id: p.equip.char, variant: p.equip.variant, hat: p.equip.hat, walk: true }, 170)]),
+        /*
+         * The menu in three tiers, most important first: the two ways to play
+         * (big picture tiles with a one-line hint), then three everyday extras,
+         * then the collections. One icon + one word per button, so a 7-year-old
+         * can find things before she can read every label.
+         */
         h('div.hubbtns', null, [
-          h('div.row.bigrow', null, [
-            h('button.btn.big.primary', { onclick: () => worlds() }, 'Graj'),
-            h('button.btn.big.green', { onclick: () => play(0, 0, { kind: 'home' }) }, '🏠 Mój domek'),
+          h('div.hubtiles', null, [
+            h('button.hubtile.mission', { onclick: () => worlds() }, [h('span.ti', null, '🗺️'), h('b', null, 'Misja'), h('small', null, 'Poziomy i bossowie')]),
+            h('button.hubtile.trip', { onclick: () => play(0, 0, { kind: 'home' }) }, [h('span.ti', null, '🏠'), h('b', null, 'Wyprawa'), h('small', null, 'Domek i wielki świat')]),
           ]),
-          h('div.row', null, [
-            h('button.btn.mid.orange', { onclick: dailyScreen }, [p.daily && p.daily.last === LZ.X.dateKey() ? '✓ ' : '', 'Poziom dnia', p.daily && p.daily.streak > 1 && p.daily.last >= LZ.X.dateKey(new Date(Date.now() - 86400000)) ? h('span.streak', null, ' ' + p.daily.streak + ' dni') : null]),
-            h('button.btn.mid.purple', { onclick: () => workshop() }, 'Pracownia'),
+          h('div.hubrow', null, [
+            h('button.hubbtn.orange', { onclick: dailyScreen }, [h('span.ti', null, '📅'), 'Poziom dnia', dailyTag]),
+            h('button.hubbtn.purple', { onclick: () => workshop() }, [h('span.ti', null, '🔨'), 'Pracownia']),
+            h('button.hubbtn.pink', { onclick: () => wardrobe('chars') }, [h('span.ti', null, '👗'), 'Garderoba']),
           ]),
-          h('button.btn.mid.pink', { onclick: () => wardrobe('chars') }, 'Garderoba i sklep'),
-          h('div.row', null, [
-            h('button.btn.mid.blue', { onclick: badges }, 'Odznaki'),
-            h('button.btn.mid.gold', { onclick: album }, 'Album'),
-            h('button.btn.mid.green', { onclick: stats }, 'Wyniki'),
+          h('div.hubrow.small', null, [
+            h('button.hubpill', { onclick: badges }, '🏅 Odznaki'),
+            h('button.hubpill', { onclick: album }, '📖 Album'),
+            h('button.hubpill', { onclick: stats }, '📊 Wyniki'),
           ]),
-          h('button.btn.small.ghost', { onclick: shareGame }, 'Udostępnij grę (kod QR)'),
         ]),
       ]),
     ]));
