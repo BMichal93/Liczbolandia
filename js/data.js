@@ -170,6 +170,9 @@
     { id: 'miner', name: 'Kask z latarką', price: 0, badge: 'deep40' },
     { id: 'aviator', name: 'Gogle lotniczki', price: 0, badge: 'skyhigh' },
     { id: 'crystal', name: 'Kryształowy diadem', price: 0, badge: 'chests25' },
+    { id: 'strawhat', name: 'Słomkowy kapelusz', price: 0, badge: 'gardener' },
+    { id: 'chef', name: 'Czapka kucharza', price: 0, badge: 'baker' },
+    { id: 'fishhat', name: 'Kapelusz wędkarki', price: 0, badge: 'fisher' },
   ];
 
   /* Particle trails left while running. */
@@ -257,6 +260,7 @@
    * Badges (odznaki). Each check() looks at the profile. Some reward a hat
    * or trail, which ties "being good at maths" to "getting cool stuff".
    */
+  const sumOf = o => Object.values(o || {}).reduce((a, b) => a + b, 0);
   const BADGES = [
     { id: 'first_level', name: 'Pierwszy krok', desc: 'Ukończ pierwszy poziom', check: p => countCompleted(p) >= 1, reward: 'Czapeczka urodzinowa' },
     { id: 'boss1', name: 'Pogromczyni Glutka', desc: 'Pokonaj pierwszego bossa', check: p => (p.bossWins || []).includes(1), reward: 'Korona' },
@@ -299,6 +303,14 @@
     { id: 'chests25', name: 'Łowczyni skarbów', desc: 'Otwórz 25 skrzyń', check: p => ((p.world || {}).chestCount || 0) >= 25, reward: 'Kryształowy diadem' },
     { id: 'quests3', name: 'Dobra sąsiadka', desc: 'Pomóż 3 sąsiadom', check: p => ((p.world || {}).questCount || 0) >= 3 },
     { id: 'moleFound', name: 'Przyjaciółka kreta', desc: 'Znajdź kreta w złotej skrzyni', check: p => !!(p.world || {}).mole, reward: 'Postać: Kret Grzebuś' },
+    // pet, garden, kitchen and the other open-world activities (profile.fun)
+    { id: 'petfriend', name: 'Najlepsi przyjaciele', desc: 'Przygarnij pupila do domku', check: p => !!(p.fun && p.fun.pupil) },
+    { id: 'gardener', name: 'Ogrodniczka', desc: 'Zbierz 20 owoców i warzyw z ogródka', check: p => sumOf(p.fun && p.fun.book && p.fun.book.crops) >= 20, reward: 'Słomkowy kapelusz' },
+    { id: 'baker', name: 'Mała piekarnia', desc: 'Upiecz 5 ciast', check: p => sumOf(p.fun && p.fun.book && p.fun.book.cakes) >= 5, reward: 'Czapka kucharza' },
+    { id: 'fisher', name: 'Wędkarka', desc: 'Złów 6 różnych ryb', check: p => Object.keys((p.fun && p.fun.book && p.fun.book.fish) || {}).length >= 6, reward: 'Kapelusz wędkarki' },
+    { id: 'riddles', name: 'Mądra głowa', desc: 'Rozwiąż zagadki Strażnika Głębin', check: p => Object.keys((p.fun && p.fun.guards) || {}).length >= 1 },
+    { id: 'xmarks', name: 'X oznacza skarb', desc: 'Wykop skarb z mapy', check: p => ((p.fun && p.fun.maps) || 0) >= 1 },
+    { id: 'book30', name: 'Wielka księga', desc: 'Zapisz 30 odkryć w Księdze odkryć', check: p => !!(LZ.Book && LZ.Book.found(p) >= 30) },
     { id: 'stickers12', name: 'Pół albumu', desc: 'Zbierz 12 naklejek', check: p => (p.stickers || []).length >= 12 },
     { id: 'stickersAll', name: 'Kolekcjonerka', desc: 'Zbierz wszystkie naklejki', check: p => (p.stickers || []).length >= STICKERS.length },
     { id: 'firstPet', name: 'Mam pupila!', desc: 'Kup pupila za gwiazdki', check: p => (p.starItems || []).some(i => i.startsWith('pet_')) },

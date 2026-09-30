@@ -237,6 +237,8 @@
     if (p.invuln > 0) p.invuln -= dt;
     if (p.hurtT > 0) p.hurtT -= dt;
     p.magnetT = Math.max(0, p.magnetT - dt); p.bootsT = Math.max(0, p.bootsT - dt); p.rainbowT = Math.max(0, p.rainbowT - dt);
+    // a ride (mine cart, balloon, boat) moves her itself: no walking, no gravity
+    if (G.lockPlayer) { p.vx = 0; p.vy = 0; p.grounded = true; p.state = G.lockPlayer; p.jumps = 0; return; }
 
     // horizontal: accelerate toward the wanted speed; ice keeps momentum
     const acc = p.grounded ? (onIce ? P.iceAcc : P.accG) : P.accA;
@@ -839,11 +841,12 @@
     for (let i = 0; i < 8; i++) G.particles.push({ x: e.x + e.w / 2, y: e.y + e.h / 2, vx: (Math.random() - 0.5) * 260, vy: -Math.random() * 200, life: 0.5, max: 0.5, size: 5, kind: 'stars', rot: Math.random() * 6, grav: 400 });
     if (stomp) floatText(e.x + e.w / 2, e.y - 10, 'Hop!', '#ff6fae', 22);
     popCoin(e.x + e.w / 2, e.y);
+    if (G.sb && G.sb.onKill) G.sb.onKill(G, e, stomp);
   }
 
   function hurt(fromX, cause) {
     const p = G.player;
-    if (p.invuln > 0 || G.state !== 'play') return;
+    if (p.invuln > 0 || G.state !== 'play' || G.ghost) return;   // ghost: riding a cart or a balloon
     G.damage = G.damage || {}; G.damage[cause || '?'] = (G.damage[cause || '?'] || 0) + 1;
     if (p.shield) { p.shield = false; p.invuln = 1.2; A.play('pop'); toast('Tarcza cię obroniła!', 1.2); return; }
     G.hearts--; G.hits++; A.play('hurt'); p.invuln = 1.6; p.hurtT = 0.25; G.shake = 0.25;

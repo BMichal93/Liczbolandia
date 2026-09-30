@@ -127,7 +127,7 @@
       let v = null;
       if (Math.abs(sx) > HOME_R + 16 && !BIOMES[biomeAt(sx)].lake && !BIOMES[biomeAt(sx + 2)].lake) {
         const deep = hash(k, 6, s0) < 0.45 ? 1 : 0;
-        v = { x: sx, top: Math.min(surf(sx), surf(sx + 1), surf(sx + 2)), bottom: tunnelC(sx + 1, deep) + tunnelH(sx + 1, deep) };
+        v = { x: sx, deep, top: Math.min(surf(sx), surf(sx + 1), surf(sx + 2)), bottom: tunnelC(sx + 1, deep) + tunnelH(sx + 1, deep) };
       }
       shaftCache.set(k, v); return v;
     }
@@ -208,8 +208,9 @@
       return '#';
     }
     // the ground something can stand on near column x: not in a bay or a lava pool
-    function standAt(x) {
-      for (let d = 0; d < 12; d++) for (const xx of [x + d, x - d]) {
+    function standAt(x, far) {
+      // (far: keep looking further, for neighbours who must never stand in the middle of a bay)
+      for (let d = 0; d < (far ? 90 : 12); d++) for (const xx of [x + d, x - d]) {
         const s = surf(xx); let y = s - 8;
         while (y < s + 1 && !'#I'.includes(tile(xx, y))) { if ('WLQ'.includes(tile(xx, y))) { y = 999; break; } y++; }
         if (y <= s && tile(xx, y - 1) === '.') return { x: xx, y };
@@ -274,7 +275,7 @@
         const b = bandOf(x);
         if (x % 100 === 50 && Math.abs(x) > 60) { const st = standAt(x); if (inChunk(x, st.y)) defs.push({ t: 'wflag', x: st.x, y: st.y, id: 'f' + st.x + ',' + st.y, name: BIOMES[biomeAt(x)].name + ' ' + Math.abs(Math.round(x / 100)) }); }
         if (x % 100 === 0 && x !== 0) { const st = standAt(x); if (inChunk(x, st.y)) defs.push({ t: 'wsign', x: st.x, y: st.y, text: Math.abs(x) + ' m', dir: x > 0 ? 1 : -1 }); }
-        if (b !== 0 && x === b * BAND - 30) { const st = standAt(x); if (inChunk(x, st.y)) defs.push({ t: 'npc', x: st.x, y: st.y, band: b, biome: biomeKey(b) }); }
+        if (b !== 0 && x === b * BAND - 30) { const st = standAt(x, true); if (inChunk(x, st.y)) defs.push({ t: 'npc', x: st.x, y: st.y, band: b, biome: biomeKey(b) }); }
         if (b !== 0 && x === b * BAND + 40) { const st = standAt(x); if (inChunk(x, st.y)) defs.push({ t: 'landmark', x: st.x, y: st.y, band: b, biome: biomeKey(b) }); }
       }
       // --- shaft bottoms: a flag in the tunnel ---
@@ -312,12 +313,15 @@
         const stk = stalk(Math.floor(x0 / 150)), stk2 = stalk(Math.floor((x0 + CH - 1) / 150));
         for (const q of [stk, stk2]) if (q) add({ t: 'wflag', x: q.x + 2, y: q.top + 1, id: 'f' + (q.x + 2) + ',' + (q.top + 1), name: 'Chmurki ' + Math.abs(Math.round(q.x / 100)) });
       }
+      // add-ons (fun.js) put their own things into the piece: stations, camps...
+      LZ.Ext.each('world', 'chunk', self, cx, cy, x0, y0, add, r);
       // no duplicates (two helpers can add the same flag)
       const seen = new Set(); c = { cols, defs: defs.filter(d => { const k = d.t + (d.id || d.wid || (d.x + ',' + d.y)); if (seen.has(k)) return false; seen.add(k); return true; }), qc };
       if (chunkCache.size > 90) chunkCache.delete(chunkCache.keys().next().value);
       chunkCache.set(key, c); return c;
     }
-    return { seed: s0, surf, biomeAt, bandOf, biomeKey, tile, baseTile, chunk, mods, shaft, stalk, island, chunkCache };
+    const self = { seed: s0, surf, biomeAt, bandOf, biomeKey, tile, baseTile, chunk, mods, shaft, stalk, island, chunkCache, tunnelC, tunnelH, inTunnel, standAt, SEA, SKY, BAND, HOME_R, isLake: x => !!BIOMES[biomeAt(x)].lake };
+    return self;
   }
 
   /* ================= save data ================= */
@@ -356,6 +360,8 @@
       if (d.t === 'witem' && ws.got[d.id]) continue;  // items already picked up
       out.push(Object.assign({}, d, { x: d.x - G.ox, y: d.y - G.oy }));
     }
+    // things whose state changes (garden plots, a treasure spot) come from the add-ons each time
+    LZ.Ext.each('world', 'defs', G, cx, cy, d => out.push(Object.assign({}, d, { x: d.x - G.ox, y: d.y - G.oy })), W);
     return out;
   }
   const inWin = (G, x, y) => x > -T * 2 && x < G.W * T + T * 2 && y > -T * 4 && y < G.H * T + T * 4;
@@ -380,6 +386,7 @@
     now.forEach(k => { if (!G.wl.loaded.has(k)) { const [cx, cy] = k.split(',').map(Number); fresh.push(...defsFor(G, cx, cy)); } });
     G.wl.loaded = now;
     LZ.Game._build(fresh);
+    LZ.Ext.each('world', 'shifted', G);
   }
   // put the window around a world tile (start, teleport)
   function placeWindow(G, wx, wy) {
@@ -401,6 +408,7 @@
     G.checkpoint = { x: p.x, y: p.y };
     G.cam.x = p.x - LZ.Game.view.w * 0.4; G.cam.y = p.y - LZ.Game.view.h * 0.55;
     LZ.Game._clampCam();
+    LZ.Ext.each('world', 'placed', G);
   }
 
   /* ================= building the run ================= */
@@ -421,8 +429,10 @@
     init(G) {
       G.wl = { loaded: new Set(), band: null, lastSave: 0, standHouse: 0, modal: false };
       G.hearts = G.maxHearts;
+      LZ.Ext.each('world', 'init', G, W);
       placeWindow(G, G.lvl.startAt.x, G.lvl.startAt.y);
       bandToast(G, true);
+      LZ.Fun.bar('world', true);
     },
     tick(G, dt) {
       const p = G.player;
@@ -457,6 +467,7 @@
       if (G.wl.standHouse > 0.7) { G.wl.standHouse = -99; goHome(); }
       // save now and then (position isn't saved, but what she found is)
       G.wl.lastSave += dt; if (G.wl.lastSave > 20) { G.wl.lastSave = 0; S.save(); }
+      LZ.Ext.each('world', 'tick', G, dt, W);
     },
     buildEnt(G, e, px, py) {
       const ws = G.prof.world;
@@ -468,6 +479,7 @@
         case 'npc': G.ents.push({ k: 'npc', x: px + T / 2, y: py, band: e.band, biome: e.biome, bob: Math.random() * 6 }); break;
         case 'landmark': G.ents.push({ k: 'landmark', x: px + T / 2, y: py, band: e.band, biome: e.biome }); break;
         case 'house': G.ents.push({ k: 'house', x: px + T / 2, y: py }); break;
+        default: LZ.Ext.first('world', 'buildEnt', G, e, px, py, W);
       }
     },
     updateEnt(G, e, i, dt, pc) {
@@ -500,6 +512,7 @@
           if (!ws.landmarks[e.band] && near(140, 260)) discoverLandmark(G, e);
           break;
         }
+        default: return LZ.Ext.first('world', 'updateEnt', G, e, i, dt, pc, W);
       }
     },
     drawEnt(ctx, e, t, G) {
@@ -512,7 +525,7 @@
         case 'landmark': drawLandmark(ctx, e, t, G); return true;
         case 'house': drawHouse(ctx, e, t, G); return true;
       }
-      return false;
+      return LZ.Ext.first('world', 'drawEnt', ctx, e, t, G, W);
     },
     worldAt(G, x, y) { return worldFor(x + G.ox, y + G.oy); },
     drawBack(ctx, G, cam, vw, vh, t) {
@@ -533,6 +546,7 @@
         Art.drawCave(ctx, depth > 45 ? DEEP_WORLD : CAVE_WORLD, camWX, vw, vh, t);
         ctx.globalAlpha = 1;
       }
+      LZ.Ext.each('world', 'drawBack', ctx, G, cam, vw, vh, t, W, depth);
     },
     drawFront(ctx, G, x0, x1, y0, y1, t) {
       // water and lava pools in front of whoever is in them
@@ -549,9 +563,11 @@
           else { ctx.fillStyle = '#8b5a3c'; ctx.fillRect(x * T - 0.3, y * T - 0.3, T + 0.6, T + 0.6); }
         }
       }
+      LZ.Ext.each('world', 'drawFront', ctx, G, t, W);
     },
     drawHUD(ctx, G, vw, vh, t, text) {
       const pad = 14, p = G.prof, ws = p.world;
+      LZ.Ext.each('world', 'drawSky', ctx, G, vw, vh, t, W);   // night and weather, over the world but under the HUD
       for (let i = 0; i < G.maxHearts; i++) Art.drawHeart(ctx, pad + 18 + i * 36, pad + 22, 15, i < G.hearts);
       const cx = pad + 18 + G.maxHearts * 36 + 18;
       Art.drawCoin(ctx, cx, pad + 20, 0, 13);
@@ -569,12 +585,14 @@
       const px = cx + 110; const pl = G.player;
       [['magnet', pl.magnetT], ['boots', pl.bootsT], ['rainbow', pl.rainbowT]].forEach(([k, v], i) => { if (v > 0) Art.drawPowerup(ctx, k, px + i * 40, pad + 22, 0); });
       if (G.wl.standHouse > 0.1) text(ctx, 'Wracam do domku...', vw / 2, vh * 0.3, 30, '#fff', '#7a5ce6');
+      LZ.Ext.each('world', 'drawHUD', ctx, G, vw, vh, t, text, W);
       return true;
     },
     outOfHearts(G) {
       // no game over: back to the last flag she touched (or home) with full hearts
       const to = G.wl.lastFlag || { x: 3, y: W.surf(3) - 1 };
       G.hearts = G.maxHearts;
+      LZ.Ext.each('world', 'respawn', G);
       placeWindow(G, to.x, to.y);
       G.player.invuln = 2;
       LZ.Game._toast('Nic się nie stało! Wracasz do flagi.', 2);
@@ -583,7 +601,8 @@
     },
     onBlock(G, tx, ty, c) { const ws = G.prof.world; const k = (tx + G.ox) + ',' + (ty + G.oy); ws.mods[k] = c; W.mods[k] = c; const ck = Math.floor((tx + G.ox) / CH) + ',' + Math.floor((ty + G.oy) / CH); W.chunkCache.delete(ck); },
     onCoin(G, e) { G.prof.world.got[e.wid] = 1; },
-    quit(G) { S.save(); },
+    onKill(G, e, stomp) { LZ.Ext.each('world', 'kill', G, e, stomp, W); },
+    quit(G) { LZ.Fun.bar('world', false); LZ.Ext.each('world', 'quit', G); S.save(); },
   };
   function worldFor(wx, wy) {
     const s = W.surf(wx);
@@ -609,6 +628,7 @@
     // special finds first: the mole friend in the deep, the upstairs blueprint
     if (tier === 3 && !ws.mole) { ws.mole = true; loot.push({ kind: 'char', id: 'mole' }); return loot; }
     if (tier === 3 && !ws.plans.includes('plan4')) { ws.plans.push('plan4'); loot.push({ kind: 'plan', name: 'Plan: Piętro na górze' }); return loot; }
+    if (LZ.Ext.first('world', 'loot', p, tier, loot)) return loot;   // seeds, a treasure map...
     const missing = D.STICKERS.filter(s => !(p.stickers || []).includes(s.id));
     if (missing.length && Math.random() < 0.2) { const st = U.pick(Math.random, missing); (p.stickers = p.stickers || []).push(st.id); loot.push({ kind: 'sticker', name: st.name }); return loot; }
     const id = U.pick(Math.random, CHEST_FINDS[tier]);
@@ -649,6 +669,7 @@
         l.kind === 'furn' ? ['🛋 ', h('b', null, l.name), ' - do domku!'] :
         l.kind === 'char' ? ['🐾 Nowa przyjaciółka: ', h('b', null, 'Kret Grzebuś'), '! Czeka w garderobie.'] :
         l.kind === 'plan' ? ['📜 ', h('b', null, l.name), ' - możesz rozbudować domek!'] :
+        l.kind === 'bag' ? [LZ.Bag.icon(l.id, 28), ' ', h('b', null, LZ.Bag.name(l.id, l.n)), ' - do plecaka!'] :
         ['⭐ Naklejka: ', h('b', null, l.name)]))));
       if (!first) box.appendChild(h('p.note', null, 'Monety są za dobrą odpowiedź od razu, ale skarb jest twój!'));
       if (badges.length) box.appendChild(h('p', null, ['Nowe odznaki: ', h('b', null, badges.map(b => b.name).join(', '))]));
@@ -692,6 +713,7 @@
     const close = () => { m.close(); G.wl.modal = false; LZ.In.reset(); };
     const box = h('div');
     const m = LZ.UI._modal([h('div.npchead', null, [LZ.UI._preview({ id: npc.char, variant: npc.v }, 80), h('h2', null, npc.name)]), box], { dismiss: false });
+    LZ.Ext.each('world', 'npc', G, e, m);   // e.g. giving her a cake (kitchen.js)
     if (q && q.state === 'done') {
       box.appendChild(h('p', null, 'Dziękuję jeszcze raz! Mój prezent dobrze ci służy?'));
       box.appendChild(h('button.btn.mid.primary', { onclick: close }, 'Pa pa!'));
@@ -829,5 +851,5 @@
     g.fillStyle = '#7a5ce6'; g.font = '800 18px "Baloo 2", sans-serif'; g.textAlign = 'center'; g.fillText('DOM ' + (G.prof.name || '').toUpperCase(), x, y - 4.3 * T);
   }
 
-  LZ.World = { _place: (G, x, y) => placeWindow(G, x, y), hooks, buildLevel, travelMenu, goHome, makeWorld, BIOMES, NPCS, ITEMS, LANDMARKS, worldSave, _gen: gen, CH, SKY, TUNNELS };
+  LZ.World = { _place: (G, x, y) => placeWindow(G, x, y), gen: () => W, drawItem, checkBadges, activeQuest, WALKERS, FLYERS, CAVE_WORLD, DEEP_WORLD, hooks, buildLevel, travelMenu, goHome, makeWorld, BIOMES, NPCS, ITEMS, LANDMARKS, worldSave, _gen: gen, CH, SKY, TUNNELS };
 })();

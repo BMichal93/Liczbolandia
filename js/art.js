@@ -388,6 +388,29 @@
         [[-10, 8, '#5ccfff'], [1, 13, '#ff85c8'], [12, 8, '#9d7bff']].forEach(([dx, hh, c]) => { ctx.beginPath(); ctx.moveTo(hx + dx - 4, top + 2); ctx.lineTo(hx + dx, top + 2 - hh); ctx.lineTo(hx + dx + 4, top + 2); ctx.closePath(); fs(ctx, c, '#fff', 1.2); });
         break;
       }
+      case 'strawhat': {
+        // wide straw hat with a flower - for the gardener
+        ell(ctx, hx + 1, top + 4, 26, 6); fs(ctx, '#f3d98a', '#b8963a', 1.8);
+        ctx.beginPath(); ctx.ellipse(hx + 1, top + 2, 14, 11, 0, Math.PI, 0); ctx.closePath(); fs(ctx, '#f7e3a0', '#b8963a', 1.8);
+        U.rr(ctx, hx - 13, top - 2, 28, 4, 2); fs(ctx, '#7be08a');
+        for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; ell(ctx, hx + 11 + Math.cos(a) * 3, top - 2 + Math.sin(a) * 3, 2.4, 2.4); fs(ctx, '#ff85c8'); }
+        ell(ctx, hx + 11, top - 2, 1.8, 1.8); fs(ctx, '#ffe066');
+        break;
+      }
+      case 'chef': {
+        // tall puffy chef's hat - for the baker
+        U.rr(ctx, hx - 11, top - 4, 24, 9, 3); fs(ctx, '#ffffff', '#b8b0c8', 1.6);
+        for (const [dx, dy, r] of [[-7, -10, 8], [2, -14, 9], [10, -9, 7]]) { ell(ctx, hx + dx, top + dy, r, r); fs(ctx, '#ffffff', '#b8b0c8', 1.6); }
+        U.rr(ctx, hx - 10, top - 6, 22, 6, 2); fs(ctx, '#ffffff');
+        break;
+      }
+      case 'fishhat': {
+        // bucket hat with a little fish on the side - for the fisher
+        ctx.beginPath(); ctx.moveTo(hx - 20, top + 6); ctx.lineTo(hx - 12, top - 10); ctx.lineTo(hx + 14, top - 10); ctx.lineTo(hx + 22, top + 6); ctx.closePath(); fs(ctx, '#7ab8a0', '#3a7a60', 1.8);
+        U.rr(ctx, hx - 13, top - 3, 28, 4, 2); fs(ctx, '#3a7a60');
+        ell(ctx, hx + 6, top - 5, 5, 3); fs(ctx, '#ffb347', '#c4621c', 1); tri(ctx, hx + 1, top - 5, hx - 3, top - 8, hx - 3, top - 2); fs(ctx, '#ff8a3d');
+        break;
+      }
       case 'laurel': {
         // golden laurel wreath - 30 medals
         for (let side = -1; side <= 1; side += 2) for (let k = 0; k < 5; k++) {

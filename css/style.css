@@ -288,7 +288,9 @@ textarea.code.copied { border-color: var(--green); }
 /* ---------- Mój domek ---------- */
 .hubbtns .bigrow { gap: 10px; }
 .hubbtns .bigrow .btn { flex: 1; }
-#btn-deco { position: absolute; top: calc(10px * var(--hudz, 1)); right: calc(74px * var(--hudz, 1)); height: calc(46px * var(--hudz, 1)); padding: 0 14px; border: 0; border-radius: 16px; background: rgba(255,255,255,.9); color: var(--purple-d); font: 800 calc(17px * var(--hudz, 1)) "Baloo 2", sans-serif; box-shadow: 0 4px 0 rgba(60,30,120,.3); pointer-events: auto; }
+#sbbar { position: absolute; top: calc(10px * var(--hudz, 1)); right: calc(74px * var(--hudz, 1)); display: flex; gap: calc(8px * var(--hudz, 1)); pointer-events: none; }
+.sbbtn { height: calc(46px * var(--hudz, 1)); padding: 0 calc(12px * var(--hudz, 1)); border: 0; border-radius: 16px; background: rgba(255,255,255,.9); color: var(--purple-d); font: 800 calc(17px * var(--hudz, 1)) "Baloo 2", sans-serif; box-shadow: 0 4px 0 rgba(60,30,120,.3); pointer-events: auto; white-space: nowrap; }
+.sbbtn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(60,30,120,.3); }
 .decolayer { position: fixed; inset: 0; z-index: 6; display: flex; flex-direction: column; justify-content: space-between; touch-action: none; }
 .decotop { display: flex; gap: 8px; align-items: center; padding: 6px 8px; background: rgba(255,255,255,.95); box-shadow: 0 2px 6px rgba(60,30,120,.2); overflow-x: auto; }
 .decotabs { display: flex; gap: 4px; flex: 1; }
@@ -308,7 +310,7 @@ textarea.code.copied { border-color: var(--green); }
 .decoitem .swatch { width: 48px; height: 36px; border-radius: 8px; border: 2px solid rgba(0,0,0,.1); }
 .decoempty { padding: 12px; color: #5a3a8a; font-weight: 700; }
 
-body.decorating #controls, body.decorating #btn-deco, body.decorating #btn-pause { display: none; }
+body.decorating #controls, body.decorating #sbbar, body.decorating #btn-pause { display: none; }
 .decoempty { grid-column: 1 / -1; font-size: 13px; }
 
 /* ---------- main menu (hub) ---------- */
@@ -339,3 +341,34 @@ body.decorating #controls, body.decorating #btn-deco, body.decorating #btn-pause
 /* landscape: the hero and the menu side by side (the menu shrinks rather than wrapping below) */
 @media (orientation: landscape) { .hub .hubmain { flex-wrap: nowrap; } }
 .hubbtn .tag { text-shadow: none; -webkit-text-stroke: 0; }
+
+/* ---------- backpack, pet, garden and other activities (fun.js and friends) ---------- */
+.bagbox { text-align: left; min-width: min(500px, 76vw); }
+.bagcat { margin: 8px 0 4px; color: var(--purple-d); font-size: 17px; }
+.baggrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; }
+.bagitem { background: #f6f2ff; border-radius: 14px; padding: 6px; display: flex; flex-direction: column; align-items: center; text-align: center; font-size: 13px; font-weight: 700; color: #5a3a8a; }
+.bagitem .bagn { font-size: 15px; color: #6b3a00; }
+.bagacts { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; margin-top: 3px; }
+.bagacts .btn.small { padding: 3px 8px; font-size: 13px; }
+.bagico { display: block; }
+.funstep { font-weight: 800; color: var(--purple); margin: 0 0 4px; }
+.funrow { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 8px 0; }
+.funpick { border: 0; border-radius: 14px; background: #f6f2ff; padding: 8px 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; font: 700 14px "Baloo 2", sans-serif; color: #5a3a8a; min-width: 96px; }
+.funpick.sel { background: #ffe680; box-shadow: inset 0 0 0 3px #e0a000; }
+.funpick.dim { opacity: .45; }
+.funpick small { font-weight: 600; color: #8a6aa8; }
+.funinput { font: 700 20px "Baloo 2", sans-serif; padding: 6px 12px; border-radius: 12px; border: 2px solid #c9b8ff; text-align: center; width: 200px; }
+.funbar { height: 14px; border-radius: 8px; background: #eee6ff; overflow: hidden; margin: 6px auto; max-width: 320px; }
+.funbar > i { display: block; height: 100%; background: linear-gradient(90deg, #ff85c8, #ffd23f); border-radius: 8px; }
+.funcanvas { display: block; margin: 6px auto; max-width: 100%; border-radius: 14px; }
+.funlist { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.funline { display: flex; align-items: center; gap: 8px; background: #f6f2ff; border-radius: 12px; padding: 5px 8px; font-weight: 700; color: #5a3a8a; }
+.funline .grow { flex: 1; }
+.funline .btn.small { padding: 4px 10px; }
+.funtabs { display: flex; gap: 4px; justify-content: center; margin-bottom: 6px; flex-wrap: wrap; }
+.funtabs .tab { border: 0; border-radius: 12px; padding: 5px 12px; font: 700 15px "Baloo 2", sans-serif; background: #f1ecff; color: #5a3a8a; }
+.funtabs .tab.on { background: var(--purple); color: #fff; }
+.bookgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; }
+.bookcell { background: #f6f2ff; border-radius: 12px; padding: 4px; text-align: center; font-size: 12px; font-weight: 700; color: #5a3a8a; }
+.bookcell.no { opacity: .5; filter: grayscale(1) brightness(.3); }
+.bookcell canvas { display: block; margin: 0 auto; }

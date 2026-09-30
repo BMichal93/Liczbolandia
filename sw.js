@@ -6,11 +6,13 @@
  * cache in the background so the next launch picks up updates.
  * Bump VERSION whenever files change so old caches get cleaned up.
  */
-const VERSION = 'lz-v14';
+const VERSION = 'lz-v15';
 const FILES = [
   './', 'index.html', 'install.html', 'qr.png', 'manifest.webmanifest', 'css/style.css',
   'js/util.js', 'js/data.js', 'js/mathgen.js', 'js/save.js', 'js/audio.js', 'js/art.js',
-  'js/levelgen.js', 'js/extras.js', 'js/home.js', 'js/world.js', 'js/game.js', 'js/input.js', 'js/ui.js', 'js/editor.js', 'js/main.js',
+  'js/levelgen.js', 'js/extras.js',
+  'js/fun.js', 'js/pets.js', 'js/farm.js', 'js/sky.js', 'js/rides.js', 'js/fishing.js', 'js/treasure.js', 'js/book.js', 'js/kitchen.js', 'js/traders.js',
+  'js/home.js', 'js/world.js', 'js/game.js', 'js/input.js', 'js/ui.js', 'js/editor.js', 'js/main.js',
   'fonts/baloo-2-latin-500-normal.woff2', 'fonts/baloo-2-latin-700-normal.woff2', 'fonts/baloo-2-latin-800-normal.woff2',
   'fonts/baloo-2-latin-ext-500-normal.woff2', 'fonts/baloo-2-latin-ext-700-normal.woff2', 'fonts/baloo-2-latin-ext-800-normal.woff2',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png',

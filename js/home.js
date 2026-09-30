@@ -67,6 +67,11 @@
     { id: 'chocofountain', name: 'Czekoladowa fontanna', w: 1.5, h: 1.8, top: 0, price: 0 },
     { id: 'cloudbed', name: 'Chmurkowe łóżko', w: 3, h: 1.4, top: 0.9, price: 0 },
     { id: 'treasure', name: 'Skrzynia skarbów', w: 1.5, h: 1.2, top: 1.0, price: 0 },
+    // the pet's bed comes with the pet; the oven is a gift for baking (kitchen.js)
+    { id: 'petbed', name: 'Legowisko', w: 1.5, h: 0.7, top: 0, price: 60 },
+    { id: 'oven', name: 'Piekarnik', w: 1.5, h: 2, top: 1.95, price: 0, desc: 'Stań przy nim, żeby upiec ciasto' },
+    { id: 'owlstatue', name: 'Posąg Strażnika', w: 1.5, h: 2.4, top: 0, price: 0 },
+    { id: 'fishtrophy', name: 'Złoty karp na ścianie', w: 2, h: 1.2, wall: true, top: 0, price: 0 },
   ];
   const FURN_BY = {}; FURN.forEach(f => { FURN_BY[f.id] = f; });
 
@@ -133,6 +138,8 @@
       spawnFurniture(G);
       G.home = { standDoor: 0, standMap: 0 };
       showHomeButtons(true);
+      LZ.Ext.each('home', 'init', G);
+      LZ.Fun.bar('home', true, [{ label: '🛋 Urządzaj', fn: () => openDeco() }]);
       // first visit: say what the door and the button do
       const home = homeOf(G.prof);
       if (!home.visited) { home.visited = true; S.save(); setTimeout(() => LZ.Game._toast('Stań w drzwiach, żeby wyruszyć na wyprawę!', 3.5), 2400); }
@@ -148,13 +155,14 @@
       const atMap = map && cx > map.x && cx < map.x + map.w && p.y < map.y + 2 * T && p.grounded && Math.abs(p.vx) < 20;
       G.home.standMap = atMap ? G.home.standMap + dt : 0;
       if (G.home.standMap > 0.9 && G.state === 'play') { G.home.standMap = -99; if (LZ.World) LZ.World.travelMenu(); }
+      LZ.Ext.each('home', 'tick', G, dt);
     },
-    buildEnt(G, e, px, py) { if (e.t === 'hdoor') G.ents.push({ k: 'hdoor', x: px, y: py }); },
-    updateEnt() { return false; },
+    buildEnt(G, e, px, py) { if (e.t === 'hdoor') G.ents.push({ k: 'hdoor', x: px, y: py }); else LZ.Ext.first('home', 'buildEnt', G, e, px, py); },
+    updateEnt(G, e, i, dt, pc) { return LZ.Ext.first('home', 'updateEnt', G, e, i, dt, pc); },
     drawEnt(ctx, e, t, G) {
       if (e.k === 'furn') { drawFurniture(ctx, e.id, e.x, e.y, e.w, t, e.f, G.prof); return true; }
       if (e.k === 'hdoor') { drawDoor(ctx, e.x, e.y, t, G.home && G.home.standDoor > 0 ? Math.min(1, G.home.standDoor / 0.7) : 0); return true; }
-      return false;
+      return LZ.Ext.first('home', 'drawEnt', ctx, e, t, G);
     },
     drawBack(ctx, G, cam, vw, vh, t) {
       // outside the house: a soft evening garden; inside: the wallpaper
@@ -167,8 +175,9 @@
       if (SIZES[home.size].up) { ctx.fillStyle = 'rgba(120,70,30,0.08)'; ctx.fillRect(T, UP * T + 12, (W - 2) * T, 10); }
       ctx.restore();
     },
-    drawFront() {},
+    drawFront(ctx, G, x0, x1, y0, y1, t) { LZ.Ext.each('home', 'drawFront', ctx, G, t); },
     drawHUD(ctx, G, vw, vh, t, text) {
+      LZ.Ext.each('home', 'drawHUD', ctx, G, vw, vh, t, text);
       const d = G.home;
       if (d && d.standDoor > 0.1) text(ctx, 'Wychodzę na przygodę...', vw / 2, vh * 0.3, 30, '#fff', '#7a5ce6');
       if (d && d.standMap > 0.1) text(ctx, 'Mapa świata...', vw / 2, vh * 0.3, 30, '#fff', '#7a5ce6');
@@ -176,7 +185,7 @@
     },
     outOfHearts() { return false; },
     onBlock() {},
-    quit() { showHomeButtons(false); },
+    quit(G) { showHomeButtons(false); LZ.Fun.bar('home', false); LZ.Ext.each('home', 'quit', G); },
   };
   function leaveHouse() {
     if (!LZ.World) return;
@@ -489,7 +498,7 @@
         g.strokeStyle = 'rgba(217,69,138,0.5)'; g.lineWidth = 1.5; for (let i = 1; i < 6; i++) { const a = Math.PI + i * Math.PI / 6; g.beginPath(); g.moveTo(X + w / 2, Y - 50); g.lineTo(X + w / 2 + Math.cos(a) * 20, Y - 50 + Math.sin(a) * 24); g.stroke(); }
         break;
       }
-      default: { rr(g, X, Y - T, w, T, 6); fs(g, '#e8dcff', '#9d7bff', 2); }
+      default: if (!LZ.Ext.first('furn', 'draw', g, id, X, Y, w, t, prof)) { rr(g, X, Y - T, w, T, 6); fs(g, '#e8dcff', '#9d7bff', 2); }
     }
     g.restore();
     function ctxLegs(gg, lx, ly) { gg.fillStyle = '#8a5a32'; gg.fillRect(lx, ly - 8, 6, 8); }
@@ -497,16 +506,22 @@
     function tri(gg, a, b, c, d, e, f) { LZ.Art.tri(gg, a, b, c, d, e, f); }
   }
 
+  /* Put a new piece on the ground floor where nothing stands yet (or in
+     "Moje rzeczy" when the room is full). Returns true when placed. */
+  function autoPlace(p, id) {
+    const home = homeOf(p), f = FURN_BY[id], W = (SIZES[home.size] || SIZES[1]).W;
+    const floorItems = home.items.filter(it => FURN_BY[it.id] && !FURN_BY[it.id].wall && it.y === FLOOR && FURN_BY[it.id].id !== 'rug');
+    // the right end stays free: she comes in there and the door is there
+    for (let x = W - 7.5 - f.w; x >= 1; x -= 0.5) {
+      if (floorItems.every(it => x + f.w <= it.x || x >= it.x + FURN_BY[it.id].w)) { home.items.push({ id, x, y: FLOOR }); return true; }
+    }
+    home.inv[id] = (home.inv[id] || 0) + 1; return false;
+  }
+
   /* ---------------- decorate mode ---------------- */
   let deco = null;   // { tab, pick: {id, fromIdx}, layer }
-  function showHomeButtons(on) {
-    let b = document.getElementById('btn-deco');
-    if (!on) { if (b) b.remove(); closeDeco(); return; }
-    if (b) return;
-    b = document.createElement('button'); b.id = 'btn-deco'; b.textContent = '🛋 Urządzaj';
-    b.addEventListener('click', () => { A.play('click'); openDeco(); });
-    document.getElementById('hud').appendChild(b);
-  }
+  // the Urządzaj button sits in the shared button row (LZ.Fun.bar)
+  function showHomeButtons(on) { if (!on) closeDeco(); }
   function G_() { return LZ.Game._dbg(); }
   function openDeco(tab) {
     const G = G_(); if (!G || G.kind !== 'home') return;
@@ -659,5 +674,5 @@
     const G = G_(); if (G && !silent) { G.decorating = false; LZ.In.reset(); }
   }
 
-  LZ.Home = { FURN, FURN_BY, hooks, buildLevel, homeOf, defaultHome, drawFurniture, openDeco, closeDeco, SIZES, EXPAND, HOME_WORLD, _placeAt: placeAt, _tap: tapRoom };
+  LZ.Home = { FURN, FURN_BY, hooks, buildLevel, homeOf, defaultHome, drawFurniture, openDeco, closeDeco, SIZES, EXPAND, HOME_WORLD, autoPlace, spawnFurniture, FLOOR, CEIL, UP, _placeAt: placeAt, _tap: tapRoom };
 })();

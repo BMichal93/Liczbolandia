@@ -49,12 +49,24 @@ Działa na telefonie, tablecie i laptopie - widok i menu dopasowują się do ekr
   - wielkie pomniki bossów do odkrycia, flagi (punkty powrotu i szybkiej podróży, także z mapy w domku), znaki z odległością od domu,
   - nowe odznaki i czapki: kapelusz odkrywczyni, kask z latarką, gogle lotniczki, kryształowy diadem,
   - monet jest mało - na wyprawie zdobywa się głównie rzeczy do domku. Nie ma przegranej: po utracie serduszek wraca się do ostatniej flagi, a z menu pauzy zawsze można wrócić do domu.
+- **Pupil** - przy pierwszej wizycie w domku pod drzwiami czekają kotek, piesek i króliczek do przygarnięcia (imię i kolor do wyboru, legowisko w pokoju). Codziennie trzeba go nakarmić (zadanie z chrupkami). Najedzony pupil idzie na wyprawę: biegnie za nią, podaje monety i znaleziska z okolicy i wyczuwa najbliższy skarb (strzałka z odległością).
+- **Ogródek** - sześć grządek obok domku. Nasiona z plecaka rosną naprawdę (od 20 minut do 3 godzin), podlane rosną dwa razy szybciej, deszcz podlewa sam. Zbiory z zadaniem: marchewki, pszenica, truskawki, borówki, dynie. Kurka Zosia daje nasiona na start, codziennie jajko i sprzedaje nasiona i mleko.
+- **Pieczenie** - piekarnik w domku (prezent). Sześć przepisów z plonów, jajek i mleka; dwa kroki z liczeniem (odmierz składniki, ustaw piekarnik) i pieczenie. Ciasto można zjeść przed wyprawą (dodatkowe serduszko), dać sąsiadce (każda ma ulubione) albo sprzedać.
+- **Więcej na wyprawie:**
+  - dzień i noc (cały dzień trwa 8 minut; nocą ciemno, świeci się wokół niej, pupila, skrzyń i ognisk, latają świetliki) i pogoda zależna od krainy: deszcz, śnieg, wiatr z piaskiem, czekoladowa posypka, spadające gwiazdy, bańki mydlane; po deszczu tęcza,
+  - przejażdżki: wagonik w tunelu od stacji do stacji (stacje na dnie szybów), balon na wyspy w chmurach, łódka przez zatokę,
+  - wędkowanie z pomostu: 12 ryb (niektóre tylko nocą albo w deszcz), duże ryby wymagają zadania; 5 łowień dziennie, więcej za robaczki,
+  - mapy skarbów: trzeba policzyć, ile metrów od flagi leży skarb, licznik pokazuje przebytą drogę, na miejscu znak X i kopanie,
+  - Strażnicy Głębin (kamienne sowy poniżej 60 m) - trzy zagadki i złota skrzynia,
+  - handlarze na straganach co 250 m: kupno, sprzedaż (z dziennym limitem monet), wymiany i codzienna zagadka z prezentem,
+  - Księga odkryć: stworki, album ryb, ogród i kuchnia, miejsca; co 5 odkryć nagroda,
+  - plecak z wszystkimi zbiorami i nowe odznaki z czapkami: słomkowy kapelusz, czapka kucharza, kapelusz wędkarki.
 - Muzyka i dźwięki w stylu 8-bit (chiptune), generowane na żywo.
 - Osobne profile graczy, automatyczny zapis, kopia zapasowa do pliku lub jako kod.
 
 ## Budowa
 
-Czysty HTML/CSS/JS bez bundlera - pliki w `js/` ładowane jako zwykłe skrypty. Grafika rysowana wektorowo na canvasie, dźwięk syntezowany Web Audio. `sw.js` cache'uje wszystkie pliki (tryb offline); przy każdej zmianie plików podbij `VERSION` w `sw.js`, żeby telefony pobrały nową wersję.
+Czysty HTML/CSS/JS bez bundlera - pliki w `js/` ładowane jako zwykłe skrypty. Zajęcia w domku i na wyprawie (pupil, ogródek, pieczenie, pogoda, przejażdżki, ryby, skarby, handlarze, księga) to osobne pliki dopinane przez `LZ.Ext` z `js/fun.js` - `home.js` i `world.js` wywołują je ze swoich haków. Grafika rysowana wektorowo na canvasie, dźwięk syntezowany Web Audio. `sw.js` cache'uje wszystkie pliki (tryb offline); przy każdej zmianie plików podbij `VERSION` w `sw.js`, żeby telefony pobrały nową wersję.
 
 ## Publikowanie zmian
 
