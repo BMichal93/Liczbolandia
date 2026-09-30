@@ -82,12 +82,19 @@
     pie_pumpkin: { name: 'Placek dyniowy', few: 'Placki dyniowe', many: 'Placków dyniowych', cat: 'cake', sell: 14 },
     bread: { name: 'Koszyk bułeczek', few: 'Koszyki bułeczek', many: 'Koszyków bułeczek', cat: 'cake', sell: 8 },
     cake_rainbow: { name: 'Tort tęczowy', few: 'Torty tęczowe', many: 'Tortów tęczowych', cat: 'cake', sell: 25 },
+    // materials for the smithy and the tailor (gear.js, nature.js)
+    iron: { name: 'Bryłka żelaza', few: 'Bryłki żelaza', many: 'Bryłek żelaza', cat: 'mat', sell: 2 },
+    gem: { name: 'Kryształ', few: 'Kryształy', many: 'Kryształów', cat: 'mat', sell: 4 },
+    gold: { name: 'Złota bryłka', few: 'Złote bryłki', many: 'Złotych bryłek', cat: 'mat', sell: 6 },
+    feather: { name: 'Piórko', few: 'Piórka', many: 'Piórek', cat: 'mat', sell: 2 },
+    star: { name: 'Gwiezdny odłamek', few: 'Gwiezdne odłamki', many: 'Gwiezdnych odłamków', cat: 'mat', sell: 5 },
+    firefly: { name: 'Świetlik w słoiku', few: 'Świetliki w słoikach', many: 'Świetlików w słoikach', cat: 'mat', sell: 0 },
     bait: { name: 'Robaczek', few: 'Robaczki', many: 'Robaczków', cat: 'misc', sell: 0 },
     treat: { name: 'Smakołyk dla pupila', few: 'Smakołyki dla pupila', many: 'Smakołyków dla pupila', cat: 'misc', sell: 0 },
     map: { name: 'Mapa skarbów', few: 'Mapy skarbów', many: 'Map skarbów', cat: 'misc', sell: 0 },
   };
   FISH.forEach(f => { ITEMS[f.id] = { name: f.name, few: f.few, many: f.many, cat: 'fish', sell: f.sell, fish: f }; });
-  const CATS = [['cake', 'Wypieki'], ['crop', 'Z ogródka'], ['seed', 'Nasiona'], ['food', 'Do pieczenia'], ['fish', 'Ryby'], ['misc', 'Różne']];
+  const CATS = [['mat', 'Materiały'], ['cake', 'Wypieki'], ['crop', 'Z ogródka'], ['seed', 'Nasiona'], ['food', 'Do pieczenia'], ['fish', 'Ryby'], ['misc', 'Różne']];
   const itemName = (id, n) => { const it = ITEMS[id]; return n == null ? it.name : n + ' ' + P(n, it.name, it.few, it.many).toLowerCase(); };
 
   const Bag = {
@@ -172,6 +179,36 @@
           break;
         case 'bread':
           for (const [a, b] of [[-6, 3], [6, 3], [0, -4]]) { ell(g, a, b, 8, 6.5); fs(g, '#e0a45a', '#a86c30', 1.2); ell(g, a - 2, b - 2, 3, 1.5); fs(g, 'rgba(255,240,200,0.6)'); }
+          break;
+        case 'iron':
+          g.beginPath(); g.moveTo(-11, 6); g.lineTo(-8, -6); g.lineTo(2, -10); g.lineTo(11, -3); g.lineTo(9, 8); g.lineTo(-2, 11); g.closePath(); fs(g, '#9aa3b5', '#4a5268', 1.5);
+          for (const [a, b] of [[-4, -2], [4, 1], [0, 6]]) { ell(g, a, b, 2.4, 2); fs(g, '#d98a4a'); }
+          ell(g, -3, -6, 3, 1.5, -0.4); fs(g, 'rgba(255,255,255,0.5)');
+          break;
+        case 'gem':
+          g.beginPath(); g.moveTo(0, -13); g.lineTo(8, -4); g.lineTo(5, 11); g.lineTo(-5, 11); g.lineTo(-8, -4); g.closePath(); fs(g, '#8fe6ff', '#2a8fb8', 1.5);
+          g.beginPath(); g.moveTo(0, -13); g.lineTo(2, 11); g.moveTo(-8, -4); g.lineTo(8, -4); g.strokeStyle = 'rgba(255,255,255,0.6)'; g.lineWidth = 1.2; g.stroke();
+          ell(g, -3, -5, 2, 3, -0.4); fs(g, 'rgba(255,255,255,0.8)');
+          break;
+        case 'gold':
+          g.beginPath(); g.moveTo(-10, 5); g.quadraticCurveTo(-11, -6, -2, -8); g.quadraticCurveTo(9, -10, 10, 0); g.quadraticCurveTo(10, 9, 0, 9); g.quadraticCurveTo(-8, 10, -10, 5); fs(g, '#ffd23f', '#b8861c', 1.5);
+          ell(g, -3, -3, 3, 2, -0.4); fs(g, '#fff6c9'); ell(g, 4, 3, 1.5, 1.5); fs(g, '#fff6c9');
+          break;
+        case 'feather':
+          g.save(); g.rotate(-0.6);
+          g.beginPath(); g.moveTo(0, -14); g.quadraticCurveTo(9, -4, 2, 12); g.lineTo(-2, 12); g.quadraticCurveTo(-9, -4, 0, -14); fs(g, '#9fd8ff', '#3a8ac0', 1.3);
+          g.strokeStyle = '#3a8ac0'; g.lineWidth = 1.3; g.beginPath(); g.moveTo(0, -12); g.lineTo(0, 15); g.stroke();
+          g.restore();
+          break;
+        case 'star': {
+          const gr = g.createRadialGradient(0, 0, 2, 0, 0, 16); gr.addColorStop(0, 'rgba(255,240,160,0.8)'); gr.addColorStop(1, 'rgba(255,240,160,0)'); g.fillStyle = gr; g.fillRect(-16, -16, 32, 32);
+          LZ.Art.starPath(g, 0, 0, 11, 5, 5, 0.2); fs(g, '#fff6c9', '#e0a000', 1.5);
+          break;
+        }
+        case 'firefly':
+          rr(g, -8, -9, 16, 20, 5); fs(g, 'rgba(220,245,255,0.55)', '#8aa0c0', 1.5); rr(g, -7, -13, 14, 5, 2); fs(g, '#c98a5a', '#6b4424', 1);
+          { const gr = g.createRadialGradient(0, 2, 1, 0, 2, 9); gr.addColorStop(0, 'rgba(255,250,150,1)'); gr.addColorStop(1, 'rgba(255,250,150,0)'); g.fillStyle = gr; g.fillRect(-9, -7, 18, 18); }
+          ell(g, 0, 2, 2.2, 2.2); fs(g, '#fffbd0');
           break;
         case 'bait':
           g.strokeStyle = '#ff85b0'; g.lineWidth = 5; g.lineCap = 'round';

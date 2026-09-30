@@ -173,6 +173,11 @@
     { id: 'strawhat', name: 'Słomkowy kapelusz', price: 0, badge: 'gardener' },
     { id: 'chef', name: 'Czapka kucharza', price: 0, badge: 'baker' },
     { id: 'fishhat', name: 'Kapelusz wędkarki', price: 0, badge: 'fisher' },
+    // sewn by the tailor in the open world from materials (gear.js); craft marks them
+    { id: 'knight', name: 'Hełm rycerki', price: 0, craft: true },
+    { id: 'featherhat', name: 'Czapka z piórkiem', price: 0, craft: true },
+    { id: 'gemcrown', name: 'Kryształowa korona', price: 0, craft: true },
+    { id: 'starhat', name: 'Gwiezdna czapka', price: 0, craft: true },
   ];
 
   /* Particle trails left while running. */
@@ -185,6 +190,9 @@
     { id: 'rainbow', name: 'Tęcza', price: 0, badge: 'streak10' },
     { id: 'sparkle', name: 'Iskierki', price: 0, badge: 'coins1000' },
     { id: 'gold', name: 'Złoty pył', price: 0, badge: 'medals100' },
+    { id: 'fireflies', name: 'Świetliki', price: 0, craft: true },
+    { id: 'feathers', name: 'Piórka', price: 0, craft: true },
+    { id: 'sparks', name: 'Iskry z kuźni', price: 0, craft: true },
   ];
 
   /*
@@ -310,6 +318,9 @@
     { id: 'fisher', name: 'Wędkarka', desc: 'Złów 6 różnych ryb', check: p => Object.keys((p.fun && p.fun.book && p.fun.book.fish) || {}).length >= 6, reward: 'Kapelusz wędkarki' },
     { id: 'riddles', name: 'Mądra głowa', desc: 'Rozwiąż zagadki Strażnika Głębin', check: p => Object.keys((p.fun && p.fun.guards) || {}).length >= 1 },
     { id: 'xmarks', name: 'X oznacza skarb', desc: 'Wykop skarb z mapy', check: p => ((p.fun && p.fun.maps) || 0) >= 1 },
+    { id: 'forge1', name: 'U kowalki', desc: 'Wykuj pierwsze narzędzie w kuźni', check: p => Object.keys((p.fun && p.fun.gear) || {}).length >= 1 },
+    { id: 'strong', name: 'Siłaczka', desc: 'Ulepsz wszystko w kuźni do trzech gwiazdek', check: p => ['heart', 'speed', 'jump'].every(k => ((p.fun && p.fun.up) || {})[k] >= 3) },
+    { id: 'racer', name: 'Sprinterka', desc: 'Wygraj wyścigi Liska w 3 krainach', check: p => ((p.fun && p.fun.raceWins) || 0) >= 3 },
     { id: 'book30', name: 'Wielka księga', desc: 'Zapisz 30 odkryć w Księdze odkryć', check: p => !!(LZ.Book && LZ.Book.found(p) >= 30) },
     { id: 'stickers12', name: 'Pół albumu', desc: 'Zbierz 12 naklejek', check: p => (p.stickers || []).length >= 12 },
     { id: 'stickersAll', name: 'Kolekcjonerka', desc: 'Zbierz wszystkie naklejki', check: p => (p.stickers || []).length >= STICKERS.length },

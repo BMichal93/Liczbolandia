@@ -115,7 +115,7 @@
         d.fillStyle = gr; d.fillRect(sx - rr, sy - rr, rr * 2, rr * 2);
       };
       const p = G.player;
-      light(p.x + 14, p.y + 20, 250);
+      light(p.x + 14, p.y + 20, LZ.Gear && LZ.Gear.has(G.prof, 'lantern') ? 400 : 250);
       for (const e of G.ents) {
         if (e.x < cam.x - 300 || e.x > cam.x + vw + 300) continue;
         if (e.k === 'pupil') light(e.x, e.y - 20, 90, 0.7);
@@ -135,6 +135,16 @@
     if (n > 0.5 && depth < 4 && sk.kind !== 'rain' && sk.kind !== 'snow') {
       while (sk.flies.length < 14) sk.flies.push({ x: cam.x + Math.random() * vw, y: cam.y + vh * (0.3 + Math.random() * 0.6), ph: Math.random() * 6, vx: (Math.random() - 0.5) * 30 });
     } else if (sk.flies.length) sk.flies.length = 0;
+    // touching a firefly puts it in a jar (for the lantern and the tailor), up to 12 a day
+    const pl = G.player, f2 = Fun.state(G.prof);
+    if (!f2.flyDay || f2.flyDay.d !== Fun.today()) f2.flyDay = { d: Fun.today(), n: 0 };
+    for (let i = sk.flies.length - 1; i >= 0; i--) {
+      const fl = sk.flies[i];
+      if (f2.flyDay.n < 12 && Math.abs(fl.x - (pl.x + 14)) < 34 && Math.abs(fl.y - (pl.y + 20)) < 40) {
+        sk.flies.splice(i, 1); f2.flyDay.n++; LZ.Bag.add(G.prof, 'firefly'); LZ.S.save();
+        LZ.A.play('coin'); LZ.Game._floatText(fl.x, fl.y - 10, '+1 świetlik', '#fffbd0', 18);
+      }
+    }
     for (const fl of sk.flies) {
       fl.ph += 0.03; fl.x += fl.vx / 60; fl.y += Math.sin(fl.ph) * 0.6;
       if (fl.x < cam.x - 60 || fl.x > cam.x + vw + 60) { fl.x = cam.x + Math.random() * vw; }

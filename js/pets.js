@@ -272,7 +272,7 @@
     }
     // fetch: coins and finds near the pet fly to her
     for (const o of G.ents) {
-      if (o.k !== 'coin' && o.k !== 'witem') continue;
+      if (o.k !== 'coin' && o.k !== 'witem' && !(o.k === 'mat' && !o.fall)) continue;
       const ox = o.x, oy = o.y, d = Math.hypot(ox - e.x, oy - (e.y - 20));
       if (d < 3 * T) { const tx2 = pcx - ox, ty2 = p.y + 20 - oy, dd = Math.hypot(tx2, ty2) || 1; o.x += tx2 / dd * 420 * dt; o.y += ty2 / dd * 420 * dt; }
     }

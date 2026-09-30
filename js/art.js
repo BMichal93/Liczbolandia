@@ -388,6 +388,40 @@
         [[-10, 8, '#5ccfff'], [1, 13, '#ff85c8'], [12, 8, '#9d7bff']].forEach(([dx, hh, c]) => { ctx.beginPath(); ctx.moveTo(hx + dx - 4, top + 2); ctx.lineTo(hx + dx, top + 2 - hh); ctx.lineTo(hx + dx + 4, top + 2); ctx.closePath(); fs(ctx, c, '#fff', 1.2); });
         break;
       }
+      case 'knight': {
+        // shiny helmet with a visor slit and a red plume
+        ctx.beginPath(); ctx.ellipse(hx + 1, top + 6, 17, 16, 0, Math.PI, 0); ctx.closePath(); fs(ctx, '#c9d0de', '#5a6388', 2);
+        U.rr(ctx, hx - 16, top + 2, 34, 5, 2); fs(ctx, '#9aa3b5', '#5a6388', 1.2);
+        ell(ctx, hx - 4, top - 4, 3, 5, -0.3); fs(ctx, 'rgba(255,255,255,0.6)');
+        ctx.save(); ctx.translate(hx + 1, top - 9);
+        for (let i = 0; i < 4; i++) { ell(ctx, -5 - i * 4, -2 - i * 2 + Math.sin(t * 4 + i) * 1.2, 5, 4); fs(ctx, i % 2 ? '#ff85b0' : '#ff5e7e'); }
+        ctx.restore();
+        break;
+      }
+      case 'featherhat': {
+        // little green cap with a long blue feather
+        ctx.beginPath(); ctx.ellipse(hx + 1, top + 5, 16, 12, 0, Math.PI, 0); ctx.closePath(); fs(ctx, '#5cc15a', '#2f7a2a', 1.8);
+        U.rr(ctx, hx - 15, top + 2, 32, 5, 2); fs(ctx, '#2f7a2a');
+        ctx.save(); ctx.translate(hx - 8, top - 2); ctx.rotate(-0.9 + Math.sin(t * 3) * 0.08);
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(-6, -14, 0, -30); ctx.quadraticCurveTo(7, -14, 0, 0); fs(ctx, '#9fd8ff', '#3a8ac0', 1.3);
+        ctx.restore();
+        break;
+      }
+      case 'gemcrown': {
+        // silver circlet with crystals that twinkle
+        U.rr(ctx, hx - 13, top - 2, 28, 7, 3); fs(ctx, '#e6ebf5', '#8a9ab0', 1.5);
+        [[-8, '#ff85c8', 6], [1, '#8fe6ff', 9], [10, '#b8ff9a', 6]].forEach(([dx, c, hh]) => { ctx.beginPath(); ctx.moveTo(hx + dx - 4, top - 1); ctx.lineTo(hx + dx, top - 1 - hh); ctx.lineTo(hx + dx + 4, top - 1); ctx.closePath(); fs(ctx, c, '#6a7a90', 1.2); });
+        if (Math.sin(t * 3) > 0.6) { starPath(ctx, hx + 3, top - 10, 4, 1, 4, 0); fs(ctx, '#fff'); }
+        break;
+      }
+      case 'starhat': {
+        // midnight-blue cap with a glowing star on top
+        ctx.beginPath(); ctx.moveTo(hx - 15, top + 5); ctx.quadraticCurveTo(hx - 8, top - 16, hx + 6, top - 18); ctx.quadraticCurveTo(hx + 16, top - 6, hx + 17, top + 5); ctx.closePath(); fs(ctx, '#2a2f7a', '#141840', 1.8);
+        for (const [dx, dy] of [[-6, -2], [4, -8], [9, 1]]) { ell(ctx, hx + dx, top + dy, 1.2, 1.2); fs(ctx, '#fff6c9'); }
+        const sg = ctx.createRadialGradient(hx + 6, top - 20, 1, hx + 6, top - 20, 12); sg.addColorStop(0, 'rgba(255,240,160,0.7)'); sg.addColorStop(1, 'rgba(255,240,160,0)'); ctx.fillStyle = sg; ctx.fillRect(hx - 6, top - 32, 24, 24);
+        starPath(ctx, hx + 6, top - 20, 6, 2.6, 5, t * 0.5); fs(ctx, '#ffe066', '#c99a12', 1);
+        break;
+      }
       case 'strawhat': {
         // wide straw hat with a flower - for the gardener
         ell(ctx, hx + 1, top + 4, 26, 6); fs(ctx, '#f3d98a', '#b8963a', 1.8);
@@ -581,6 +615,9 @@
       case 'rainbow': ell(ctx, p.x, p.y, s, s); fs(ctx, RAINBOW[p.ci % RAINBOW.length]); break;
       case 'sparkle': starPath(ctx, p.x, p.y, s * 1.2, s * 0.25, 4, p.rot); fs(ctx, '#ffffff'); break;
       case 'gold': starPath(ctx, p.x, p.y, s * 1.1, s * 0.3, 4, p.rot); fs(ctx, '#ffd23f', '#b8861c', 0.8); ell(ctx, p.x + s, p.y - s * 0.6, s * 0.3, s * 0.3); fs(ctx, '#fff6c9'); break;
+      case 'fireflies': { const gr = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, s * 1.8); gr.addColorStop(0, 'rgba(255,250,150,0.9)'); gr.addColorStop(1, 'rgba(255,250,150,0)'); ctx.fillStyle = gr; ctx.fillRect(p.x - s * 2, p.y - s * 2, s * 4, s * 4); ell(ctx, p.x, p.y, s * 0.35, s * 0.35); fs(ctx, '#fffbd0'); break; }
+      case 'feathers': ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot + p.life * 3); ctx.beginPath(); ctx.moveTo(0, -s * 1.3); ctx.quadraticCurveTo(s * 0.7, 0, 0, s * 1.3); ctx.quadraticCurveTo(-s * 0.7, 0, 0, -s * 1.3); fs(ctx, '#9fd8ff', '#3a8ac0', 0.8); ctx.restore(); break;
+      case 'sparks': ell(ctx, p.x, p.y, s * 0.45, s * 0.45); fs(ctx, p.ci % 2 ? '#ffb020' : '#ff6a2a'); ell(ctx, p.x - s * 0.6, p.y + s * 0.4, s * 0.2, s * 0.2); fs(ctx, '#ffe066'); break;
       default: ell(ctx, p.x, p.y, s, s); fs(ctx, p.col || '#fff');
     }
     ctx.globalAlpha = 1;

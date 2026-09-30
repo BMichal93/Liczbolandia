@@ -61,6 +61,13 @@ Działa na telefonie, tablecie i laptopie - widok i menu dopasowują się do ekr
   - handlarze na straganach co 250 m: kupno, sprzedaż (z dziennym limitem monet), wymiany i codzienna zagadka z prezentem,
   - Księga odkryć: stworki, album ryb, ogród i kuchnia, miejsca; co 5 odkryć nagroda,
   - plecak z wszystkimi zbiorami i nowe odznaki z czapkami: słomkowy kapelusz, czapka kucharza, kapelusz wędkarki.
+- **Kuźnia i krawcowa** (tuż za domkiem w prawo) - postać staje się silniejsza na wyprawie:
+  - narzędzia: kilof (wydobywanie rudy), latarnia (większe światło nocą), parasolka (szybowanie), złota wędka (więcej łowień i rzadkie ryby), magnes, skrzydełka (podwójny skok),
+  - ulepszenia po 3 poziomy: mocne serce (+1 serduszko), szybkie buty, sprężynki (wyższy skok) - działają na wyprawie, poziomy misji zostają bez zmian,
+  - krawcowa szyje czapki i ślady, których nie ma w sklepie: hełm rycerki, czapka z piórkiem, kryształowa korona, gwiezdna czapka, ślady ze świetlików, piórek i iskier,
+  - każda robota zaczyna się zadaniem z liczenia.
+- **Materiały na wyprawie:** skały z rudą w jaskiniach (żelazo płytko, kryształy głębiej, złoto w głębinach; odrastają po 8 godzinach), piórka na wyspach w chmurach, świetliki łapane nocą do słoików, gwiezdne odłamki z nocnego deszczu meteorów.
+- **Wyścigi Liska** w każdej krainie: 60 m na czas, medale 🥇🥈🥉, rekordy i nagrody.
 - Muzyka i dźwięki w stylu 8-bit (chiptune), generowane na żywo.
 - Osobne profile graczy, automatyczny zapis, kopia zapasowa do pliku lub jako kod.
 

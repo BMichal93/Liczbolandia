@@ -28,6 +28,7 @@
     return el;
   }
   const coinIcon = () => h('span.coin-ico');
+  const CRAFT_TEXT = 'Uszyje ją Krawcowa Tosia - jej pracownia stoi na wyprawie, tuż za domkiem w prawo. Potrzebne są materiały z wyprawy.';
   const starIcon = (on) => h('span.star-ico' + (on === false ? '.off' : ''));
 
   function show(el) {
@@ -546,10 +547,11 @@
         const owned = S.ownsHat(p, x.id) || x.id === 'none', promo = promoFor('hat', x.id);
         const badge = x.badge && D.BADGES.find(b => b.id === x.badge);
         items.push(card({
-          pic: preview({ id: eq.char, variant: eq.variant, hat: x.id }, 84), name: x.name, equipped: eq.hat === x.id, locked: !owned && !!badge, promo: !owned && promo,
-          action: owned ? (eq.hat === x.id ? 'Założone' : 'Załóż') : badge ? 'Odznaka: ' + badge.name : priceTag(x.price, promo),
+          pic: preview({ id: eq.char, variant: eq.variant, hat: x.id }, 84), name: x.name, equipped: eq.hat === x.id, locked: !owned && (!!badge || !!x.craft), promo: !owned && promo,
+          action: owned ? (eq.hat === x.id ? 'Założone' : 'Załóż') : x.craft ? '🧵 U krawcowej' : badge ? 'Odznaka: ' + badge.name : priceTag(x.price, promo),
           onclick: () => {
             if (owned) { eq.hat = x.id; S.save(); wardrobe(tab); }
+            else if (x.craft) alertBox(x.name, CRAFT_TEXT);
             else if (badge) alertBox(x.name, 'Zdobądź odznakę „' + badge.name + '”: ' + badge.desc.toLowerCase() + '.');
             else buy({ price: x.price, name: x.name, promo }, () => { p.owned.hats.push(x.id); eq.hat = x.id; }, tab);
           },
@@ -560,10 +562,11 @@
         const owned = S.ownsTrail(p, x.id) || x.id === 'none', promo = promoFor('trail', x.id);
         const badge = x.badge && D.BADGES.find(b => b.id === x.badge);
         items.push(card({
-          pic: trailPic(x.id), name: x.name, equipped: eq.trail === x.id, locked: !owned && !!badge, promo: !owned && promo,
-          action: owned ? (eq.trail === x.id ? 'Założone' : 'Załóż') : badge ? 'Odznaka: ' + badge.name : priceTag(x.price, promo),
+          pic: trailPic(x.id), name: x.name, equipped: eq.trail === x.id, locked: !owned && (!!badge || !!x.craft), promo: !owned && promo,
+          action: owned ? (eq.trail === x.id ? 'Założone' : 'Załóż') : x.craft ? '🧵 U krawcowej' : badge ? 'Odznaka: ' + badge.name : priceTag(x.price, promo),
           onclick: () => {
             if (owned) { eq.trail = x.id; S.save(); wardrobe(tab); }
+            else if (x.craft) alertBox(x.name, CRAFT_TEXT);
             else if (badge) alertBox(x.name, 'Zdobądź odznakę „' + badge.name + '”: ' + badge.desc.toLowerCase() + '.');
             else buy({ price: x.price, name: x.name, promo }, () => { p.owned.trails.push(x.id); eq.trail = x.id; }, tab);
           },

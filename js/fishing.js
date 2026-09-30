@@ -17,12 +17,14 @@
   function castsLeft(p) {
     const f = Fun.state(p);
     if (!f.fishDay || f.fishDay.d !== Fun.today()) f.fishDay = { d: Fun.today(), n: 0 };
-    return Math.max(0, FREE - f.fishDay.n);
+    const free = FREE + (LZ.Gear && LZ.Gear.has(p, 'rod') ? 3 : 0);   // the golden rod bites more
+    return Math.max(0, free - f.fishDay.n);
   }
   function roll(G) {
     const night = LZ.Sky ? LZ.Sky.isNight(G.prof) : false, rain = LZ.Sky ? LZ.Sky.weatherNow(G) === 'rain' : false;
     const pool = Bag.FISH.filter(f => (!f.night || night) && (!f.rain || rain));
-    return U.wpick(Math.random, pool.map(f => [WEIGHT[f.r] * (f.night && night ? 2 : 1) * (f.rain && rain ? 3 : 1), f]));
+    const gold = LZ.Gear && LZ.Gear.has(G.prof, 'rod');
+    return U.wpick(Math.random, pool.map(f => [WEIGHT[f.r] * (f.night && night ? 2 : 1) * (f.rain && rain ? 3 : 1) * (gold && f.r >= 3 ? 2 : 1), f]));
   }
 
   function open(G) {
