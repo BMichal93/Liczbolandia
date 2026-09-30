@@ -20,7 +20,7 @@ Działa na telefonie, tablecie i laptopie - widok i menu dopasowują się do ekr
 
 ## Co jest w grze
 
-- 9 światów × (7 poziomów + boss) = 72 poziomy, w każdym świecie nowa mechanika: sprężyny, lód, pływanie, grzyby-trampoliny, znikające chmurki i wiatr, czekoladowa lawa i spadające platformy, taśmociągi w Zabawkowej Fabryce, niska grawitacja w Kosmicznej Galaktyce i ruchome piaski na Złotej Pustyni. Poziomy są długie, z jednym punktem kontrolnym w połowie.
+- 9 światów × (7 poziomów + boss) = 72 poziomy, w każdym świecie nowa mechanika: sprężyny, lód, pływanie, grzyby-trampoliny, znikające chmurki i wiatr, czekoladowa lawa i spadające platformy, taśmociągi w Zabawkowej Fabryce, niska grawitacja w Kosmicznej Galaktyce i ruchome piaski na Złotej Pustyni. Poziomy są długie i wymagające (dużo skakania, przepaści i przeciwników), z jednym punktem kontrolnym w połowie. Upadek w przepaść cofa do flagi (albo na start), a utrata wszystkich serduszek zaczyna poziom od nowa i zabiera monety zebrane w tej próbie.
 - Każdy poziom ma swój motyw (Słoneczna ścieżka, Las pniaków, Ceglane miasteczko, Podniebne schody, Twierdza armatek) i teren w stylu Mario: dziuple-pnie z kłapaczami, cegły do rozbijania (niektóre z wieloma monetami), armatki, piramidy schodów, tunele, dwie trasy (góra/dół), windy, dwa punkty kontrolne. W każdym poziomie jest **tajny pień** - stań na nim chwilę, a trafisz do podziemnej kryjówki z monetami i gwiazdką.
 - Matematyka wpleciona w rozgrywkę:
   - **bramy** - skocz głową w klocek z dobrą odpowiedzią,

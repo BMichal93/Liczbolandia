@@ -200,7 +200,8 @@
   function update(dt) {
     if (!G) return;
     G.t += dt;
-    if (G.decorating) { updateParticles(dt); return; }   // home decorate mode: the room stands still, the camera is moved by dragging
+    if (G.decorating) { updateParticles(dt); return; }
+    if (G.state === 'dead') { G.deadT -= dt; updateParticles(dt); if (G.deadT <= 0) restartAfterDeath(); return; }   // home decorate mode: the room stands still, the camera is moved by dragging
     const p = G.player;
     for (const k in G.bumps) { G.bumps[k] -= dt * 4; if (G.bumps[k] <= 0) delete G.bumps[k]; }
 
@@ -878,21 +879,37 @@
     (G.pitAt = G.pitAt || {})[Math.floor(p.x / T)] = (G.pitAt[Math.floor(p.x / T)] || 0) + 1;   // where falls happen (for tests)
     G.hearts--; G.hits++; A.play('fall');   // long 'whistle down' for a pit instead of the ouch sound
     if (G.hearts <= 0) { outOfHearts(); return; }
-    const s = p.lastSafe || G.checkpoint;
-    p.x = s.x; p.y = s.y; p.vx = 0; p.vy = 0; p.invuln = 1.6;
-    toast('Hopsa! Uważaj na dziury', 1.3);
+    // a fall costs the way back: to the checkpoint flag, or the start if she hasn't reached it
+    const soft = G.sb || LZ.Game.lenient;   // lenient: only for the automated test bot
+    const s = soft ? (p.lastSafe || G.checkpoint) : G.checkpoint;
+    p.x = s.x; p.y = s.y; p.vx = 0; p.vy = 0; p.invuln = 1.6; p.lastSafe = null;
+    toast(soft ? 'Hopsa! Uważaj na dziury' : 'Hopsa! Wracasz do flagi', 1.4);
     G.state = 'respawn'; G.respawnT = 0.4;
   }
   /* No "game over": back to the last flag with full hearts. */
   function outOfHearts() {
     if (G.sb && G.sb.outOfHearts(G)) return;
-    const p = G.player;
-    G.hearts = G.maxHearts;
-    p.x = G.checkpoint.x; p.y = G.checkpoint.y; p.vx = 0; p.vy = 0; p.invuln = 2; p.lastSafe = null;
-    G.projectiles = [];
-    if (G.boss) { G.boss.phase = 'attack'; G.boss.phaseT = 0; }
-    toast('Nic się nie stało! Próbujemy jeszcze raz', 2.2);
-    G.state = 'respawn'; G.respawnT = 0.6;
+    /*
+     * Out of hearts in a level: it starts again from the beginning and the
+     * coins picked up on this try are lost (they went into the piggy bank as
+     * she collected them, so they come back out).
+     */
+    if (LZ.Game.lenient) {   // the test bot checks the levels play through: keep the old gentle rule for it
+      const p = G.player; G.hearts = G.maxHearts;
+      p.x = G.checkpoint.x; p.y = G.checkpoint.y; p.vx = 0; p.vy = 0; p.invuln = 2; p.lastSafe = null;
+      G.projectiles = []; if (G.boss) { G.boss.phase = 'attack'; G.boss.phaseT = 0; }
+      G.state = 'respawn'; G.respawnT = 0.6; return;
+    }
+    // (the restart itself waits for the next frame: we may be in the middle of the enemy loop)
+    G.state = 'dead'; G.deadT = 1.0; G.projectiles = [];
+    A.play('fall'); G.shake = 0.3;
+  }
+  function restartAfterDeath() {
+    if (!G.noCoins && G.coins > 0) G.prof.coins = Math.max(0, G.prof.coins - G.coins);
+    const lost = G.noCoins ? 0 : G.coins;
+    S.save();
+    start(G.wi, G.li, G.mode);
+    toast(lost > 0 ? 'Koniec serduszek! Od początku - ' + lost + ' ' + U.plural(lost, 'moneta przepadła', 'monety przepadły', 'monet przepadło') + '.' : 'Koniec serduszek! Poziom od początku.', 3);
   }
 
   /* =================================================================
@@ -1752,6 +1769,7 @@
     get kind() { return G && G.kind; },
     get view() { return { w: viewW, h: viewH, scale }; },
     _dbg: () => G,   // used by the automated tests only
+    lenient: false,  // tests only: falls and lost hearts don't send the bot back (see fallOut/outOfHearts)
     // for the open world (world.js), which streams the map in pieces
     _build: list => buildEntities(list), _computeMasks: () => computeMasks(), _clampCam: () => clampCam(),
     _drawVisual: (ctx, v, x, y) => drawVisual(ctx, v, x, y), _toast: (t, d) => toast(t, d), _confetti: (x, y, n) => confetti(x, y, n), _floatText: (x, y, t, c, s) => floatText(x, y, t, c, s),

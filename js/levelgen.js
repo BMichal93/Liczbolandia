@@ -74,7 +74,9 @@
     const has = f => world.features.includes(f);
     const water = has('water');
     // ramps up more gently inside a world now that each world has 7 levels
-    let diff = bonus ? 0.5 : (wi - 1) * 0.42 + (li - 1) * 0.18;   // 0 .. ~4.4
+    // harder from the start and a steeper climb (0.8 .. ~6.2): the gentle
+    // training versions of chunks (diff < 0.8) are now only in the bonus level
+    let diff = bonus ? 0.5 : 0.8 + (wi - 1) * 0.5 + (li - 1) * 0.2;
     if (opt.hard) diff += 0.6;   // about 1.5 worlds harder; +0.9 made the last night worlds a wall of cannons
     const theme = daily ? U.pick(U.rng(opt.daily * 13 + 1), Object.keys(THEMES).filter(k => wi > 1 || k !== 'fort')) : themeFor(wi, li);
     const cols = [];
@@ -433,7 +435,10 @@
       },
       // Mario staircase pyramid; later levels put a gap between the two halves
       pyramid() {
-        const top = Math.min(4, gh - 3), gap = diff < 0.6 ? 0 : U.ri(r, 1, 2);
+        // no pyramids up on high ground: squeezed under the top of the screen they
+        // turned into awkward hops (the test bot kept falling there); walk down instead
+        if (gh < 8) return C.steps();
+        const top = Math.min(4, gh - 4), gap = diff < 0.6 ? 0 : U.ri(r, 1, 2);
         ground(x, gh); ground(x + 1, gh); x += 2;
         for (let k = 1; k <= top; k++) { ground(x, gh); for (let y = gh - k; y < gh; y++) set(x, y, '='); if (k === top) coin(x, gh - k - 1); x++; }
         for (let i = 0; i < gap; i++) { pit(x); coin(x, gh - top - 2); x++; }
@@ -534,10 +539,11 @@
     for (let i = 0; i < 8; i++) ground(i, gh);
     x = 8;
     ents.push({ t: 'sign', x: 5, y: gh });
-    // Long levels (about 1.35x the previous size) with a single checkpoint
-    // halfway: a pit only costs a heart and puts you back at the last safe
-    // spot, so the flag matters only when all hearts are gone.
-    const length = bonus ? 130 : 290 + wi * 18 + li * 11;
+    // Long levels (about 1.45x the previous size) with a single checkpoint
+    // halfway. Falling in a pit sends her back to that flag (or the start),
+    // and running out of hearts restarts the level (game.js), so the length
+    // is what makes a mistake cost something.
+    const length = bonus ? 130 : 400 + wi * 25 + li * 15;
     const pool = Object.entries(THEMES[theme].w).map(([k, v]) => [v, k]);
     if (diff > 0.5 && !THEMES[theme].w.thorns) pool.push([0.8, 'thorns']);
     if (!THEMES[theme].w.parade) pool.push([0.8, 'parade']);
@@ -553,6 +559,8 @@
     if (has('lowgrav')) pool.forEach(p => { if (['floating', 'gap', 'pyramid'].includes(p[1])) p[0] *= 1.6; });   // floaty jumps: more air time
     if (water) { pool.push([3, 'reef']); pool.forEach(p => { if (['spring', 'thorns', 'elevator'].includes(p[1])) p[0] = 0; }); }
     if (!has('moving') && wi >= 2) pool.push([1, 'moving']);
+    // fewer easy walks, more jumping and dodging
+    if (!bonus) pool.forEach(p => { if (p[1] === 'flat') p[0] *= 0.4; if (['gap', 'floating', 'pillars', 'pyramid', 'elevator', 'moving', 'spring', 'steps', 'valley', 'twoRoutes', 'thorns'].includes(p[1])) p[0] *= 1.4; });
 
     if (bonus) pool.forEach(p => { if (['blocks', 'spring', 'floating'].includes(p[1])) p[0] *= 2.5; if (['parade', 'thorns', 'gap'].includes(p[1])) p[0] *= 0.3; });
     const specials = [
@@ -572,7 +580,7 @@
       let name = U.wpick(r, pool);
       if (name === last) name = U.wpick(r, pool);  // avoid the same chunk twice in a row
       last = name;
-      coinOn = r() < (bonus ? 0.6 : 0.42);
+      coinOn = r() < (bonus ? 0.6 : 0.3);   // longer levels, so a smaller share of chunks keep their coins
       C[name]();
       coinOn = true;
     }
