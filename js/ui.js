@@ -179,7 +179,10 @@
       h('div.hubmain', null, [
         h('div.hero', null, [preview({ id: p.equip.char, variant: p.equip.variant, hat: p.equip.hat, walk: true }, 190)]),
         h('div.hubbtns', null, [
-          h('button.btn.big.primary', { onclick: () => worlds() }, 'Graj'),
+          h('div.row.bigrow', null, [
+            h('button.btn.big.primary', { onclick: () => worlds() }, 'Graj'),
+            h('button.btn.big.green', { onclick: () => play(0, 0, { kind: 'home' }) }, '🏠 Mój domek'),
+          ]),
           h('div.row', null, [
             h('button.btn.mid.orange', { onclick: dailyScreen }, [p.daily && p.daily.last === LZ.X.dateKey() ? '✓ ' : '', 'Poziom dnia', p.daily && p.daily.streak > 1 && p.daily.last >= LZ.X.dateKey(new Date(Date.now() - 86400000)) ? h('span.streak', null, ' ' + p.daily.streak + ' dni') : null]),
             h('button.btn.mid.purple', { onclick: () => workshop() }, 'Pracownia'),
@@ -268,7 +271,7 @@
     document.getElementById('hud').classList.remove('hidden');
     LZ.In.reset();
     const kind = mode ? mode.kind : 'normal';
-    exitTo = kind === 'daily' ? hub : kind === 'custom' ? () => (mode.test ? LZ.Editor.open(mode.id) : workshop()) : kind === 'hard' ? () => levels(wi, true) : () => levels(wi);
+    exitTo = kind === 'daily' || kind === 'home' || kind === 'world' ? hub : kind === 'custom' ? () => (mode.test ? LZ.Editor.open(mode.id) : workshop()) : kind === 'hard' ? () => levels(wi, true) : () => levels(wi);
     LZ.Game.start(wi, li, mode);
     tryFullscreen();
   }
@@ -292,8 +295,11 @@
       h('h2', null, 'Pauza'),
       h('div.col', null, [
         h('button.btn.big.primary', { onclick: () => { m.close(); } }, 'Graj dalej'),
-        h('button.btn.mid', { onclick: () => { m.close(); LZ.Game.restart(); } }, 'Zacznij poziom od nowa'),
-        h('button.btn.mid', { onclick: () => { m.close(); LZ.Game.quit(); exitTo(); } }, 'Wyjdź'),
+        // open world: go home or jump to a flag instead of restarting a level
+        LZ.Game.kind === 'world' ? h('button.btn.mid.green', { onclick: () => { m.close(); LZ.World.goHome(); } }, '🏠 Wróć do domu') : null,
+        LZ.Game.kind === 'world' ? h('button.btn.mid', { onclick: () => { m.close(); LZ.World.travelMenu(); } }, '🚩 Skocz do flagi') : null,
+        LZ.Game.kind === 'world' || LZ.Game.kind === 'home' ? null : h('button.btn.mid', { onclick: () => { m.close(); LZ.Game.restart(); } }, 'Zacznij poziom od nowa'),
+        h('button.btn.mid', { onclick: () => { m.close(); LZ.Game.quit(); exitTo(); } }, LZ.Game.kind === 'world' || LZ.Game.kind === 'home' ? 'Wyjdź do menu' : 'Wyjdź'),
         h('div.row', null, [
           h('button.btn.small' + (set.music ? '.on' : ''), { onclick: (e) => { set.music = set.music ? 0 : 0.6; A.applyVolumes(); S.save(); e.target.classList.toggle('on'); } }, 'Muzyka'),
           h('button.btn.small' + (set.sfx ? '.on' : ''), { onclick: (e) => { set.sfx = set.sfx ? 0 : 0.8; A.applyVolumes(); S.save(); e.target.classList.toggle('on'); } }, 'Dźwięki'),
@@ -796,7 +802,7 @@
   LZ.UI = {
     album,
     title, profiles, hub, worlds, levels, play, levelComplete, togglePause, workshop, dailyScreen, importLevel,
-    _h: h, _modal: (c, o) => modal(c, o), _alert: (a, b, c) => alertBox(a, b, c), _confirm: (a, b, c, d) => confirmBox(a, b, c, d), _show: el => show(el), _hide: () => hide(),
+    _preview: (o, sz) => preview(o, sz), _h: h, _modal: (c, o) => modal(c, o), _alert: (a, b, c) => alertBox(a, b, c), _confirm: (a, b, c, d) => confirmBox(a, b, c, d), _show: el => show(el), _hide: () => hide(),
     isPaused: () => paused || !!document.querySelector('.modal-back'),
     previews,
   };

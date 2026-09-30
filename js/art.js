@@ -181,6 +181,8 @@
     } else if (id === 'guinea') {
       ell(ctx, hx - 15, hy - 5, 5.5, 7.5, -0.9); fs(ctx, '#f6b3a8', oc, lw);
       ell(ctx, hx + 17, hy - 5, 5.5, 7.5, 0.9); fs(ctx, '#f6b3a8', oc, lw);
+    } else if (id === 'mole') {
+      ell(ctx, hx - 12, hy - 11, 4, 3.5); fs(ctx, pal.body, oc, lw); ell(ctx, hx + 14, hy - 11, 4, 3.5); fs(ctx, pal.body, oc, lw);
     } else if (id === 'owl') {
       // feather tufts
       tri(ctx, hx - 15, hy - 6, hx - 13, hy - 22, hx - 5, hy - 13); fs(ctx, pal.body, oc, lw);
@@ -258,6 +260,7 @@
     // nose / beak / mouth
     if (id === 'penguin') { tri(ctx, hx + 3, hy + 3, hx + 11, hy + 3, hx + 7, hy + 9); fs(ctx, pal.accent, U.shade(pal.accent, -0.3), 1.5); return; }
     if (id === 'owl') { tri(ctx, hx + 1, hy + 3, hx + 7, hy + 3, hx + 4, hy + 9); fs(ctx, '#ffb84d', '#b8741c', 1.2); return; }
+    if (id === 'mole') { for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; ell(ctx, hx + 5 + Math.cos(a) * 3.6, hy + 5 + Math.sin(a) * 3.2, 2.4, 2.4); fs(ctx, pal.accent); } ell(ctx, hx + 5, hy + 5, 2.6, 2.4); fs(ctx, U.shade(pal.accent, -0.2)); ctx.strokeStyle = U.shade(pal.eye, 0.1); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(hx + 5, hy + 10, 2.4, 0.3, Math.PI - 0.3); ctx.stroke(); return; }
     if (id === 'fox' || id === 'cat' || id === 'hamster' || id === 'panda' || id === 'guinea' || id === 'bunny') { ell(ctx, hx + 4, hy + 4, 2, 1.5); fs(ctx, id === 'fox' ? '#2b1a12' : '#ff6f91'); }
     if (id === 'dragon') { ell(ctx, hx + 8, hy + 3, 1, 1); fs(ctx, oc); ell(ctx, hx + 4, hy + 3, 1, 1); fs(ctx, oc); }
     ctx.strokeStyle = U.shade(pal.eye, 0.1); ctx.lineWidth = 1.8; ctx.lineCap = 'round';
@@ -355,6 +358,34 @@
         ell(ctx, hx, hy + 1, 23, 22); ctx.fillStyle = 'rgba(190,230,255,0.28)'; ctx.fill(); ctx.strokeStyle = '#d9e2f0'; ctx.lineWidth = 3; ctx.stroke();
         ell(ctx, hx - 9, hy - 10, 5, 3, -0.6); fs(ctx, 'rgba(255,255,255,0.8)');
         ctx.strokeStyle = '#9aa3c5'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx + 12, hy - 18); ctx.lineTo(hx + 16, hy - 28); ctx.stroke(); ell(ctx, hx + 16, hy - 29, 2.6, 2.6); fs(ctx, '#ff5e7e');
+        break;
+      }
+      case 'explorer': {
+        // safari hat with a band - for the first big statue found
+        ell(ctx, hx + 1, top + 4, 25, 6); fs(ctx, '#d9b878', '#8a6a3a', 1.8);
+        ctx.beginPath(); ctx.ellipse(hx + 1, top + 2, 15, 13, 0, Math.PI, 0); ctx.closePath(); fs(ctx, '#e8c890', '#8a6a3a', 1.8);
+        U.rr(ctx, hx - 14, top - 3, 30, 5, 2); fs(ctx, '#8a5a32');
+        break;
+      }
+      case 'miner': {
+        // helmet with a lamp that lights the way - 40 m underground
+        ctx.beginPath(); ctx.ellipse(hx + 1, top + 5, 17, 15, 0, Math.PI, 0); ctx.closePath(); fs(ctx, '#ff8a3d', '#b8561c', 2);
+        U.rr(ctx, hx - 19, top + 3, 40, 5, 2.5); fs(ctx, '#e0701c', '#b8561c', 1.5);
+        ell(ctx, hx + 1, top - 3, 6, 6); fs(ctx, '#fff6c9', '#b8861c', 1.5);
+        const lg = ctx.createRadialGradient(hx + 1, top - 3, 2, hx + 1, top - 3, 26); lg.addColorStop(0, 'rgba(255,250,200,0.55)'); lg.addColorStop(1, 'rgba(255,250,200,0)'); ctx.fillStyle = lg; ctx.fillRect(hx - 25, top - 29, 52, 52);
+        break;
+      }
+      case 'aviator': {
+        // leather cap and round goggles - for reaching the sky islands
+        ctx.beginPath(); ctx.ellipse(hx + 1, top + 6, 17, 15, 0, Math.PI, 0); ctx.closePath(); fs(ctx, '#a8704a', '#6b4424', 2);
+        for (const gx of [hx - 6, hx + 9]) { ell(ctx, gx, top + 4, 6.5, 6); fs(ctx, 'rgba(160,220,255,0.85)', '#5a6388', 2); }
+        ctx.strokeStyle = '#5a6388'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx - 1, top + 4); ctx.lineTo(hx + 3, top + 4); ctx.stroke();
+        break;
+      }
+      case 'crystal': {
+        // tiara of glowing crystals - 25 treasure chests
+        U.rr(ctx, hx - 14, top + 1, 30, 5, 2.5); fs(ctx, '#d9e2f0', '#8a9ab0', 1.2);
+        [[-10, 8, '#5ccfff'], [1, 13, '#ff85c8'], [12, 8, '#9d7bff']].forEach(([dx, hh, c]) => { ctx.beginPath(); ctx.moveTo(hx + dx - 4, top + 2); ctx.lineTo(hx + dx, top + 2 - hh); ctx.lineTo(hx + dx + 4, top + 2); ctx.closePath(); fs(ctx, c, '#fff', 1.2); });
         break;
       }
       case 'laurel': {
@@ -600,6 +631,16 @@
   function paintTile(g, world, code, mask) {
     const p = world.pal;
     const top = mask & 1, right = mask & 2, bottom = mask & 4, left = mask & 8;
+    if (world.home && code === '#') {
+      // the house: warm wooden planks, with a polished edge where you walk
+      g.fillStyle = p.dirt; g.fillRect(0, 0, T, T);
+      g.fillStyle = p.dirtDark;
+      for (let i = 1; i < 4; i++) g.fillRect(0, i * 12 - 1, T, 2);
+      g.fillRect((mask * 7) % 30 + 8, 0, 2, 12); g.fillRect((mask * 13) % 30 + 4, 24, 2, 12);
+      g.fillStyle = 'rgba(255,255,255,0.12)'; g.fillRect(0, 1, T, 3);
+      if (top) { g.fillStyle = p.grass; g.fillRect(0, 0, T, 7); g.fillStyle = p.grassDark; g.fillRect(0, 7, T, 2); }
+      return;
+    }
     if (code === '#' || code === 'I') {
       const ice = code === 'I';
       const r = 12;
@@ -1391,6 +1432,16 @@
     if (rightEnd) { ctx.fillStyle = 'rgba(170,110,40,0.35)'; ctx.fillRect(x + T - 3, top, 3, T - 6); }
   }
 
+  /* Climbing vine (open world): a green stem with leaves, flower on the top piece. */
+  function drawVine(ctx, x, y, t, isTop) {
+    const cx = x + T / 2, sw = Math.sin(t * 1.5 + y * 0.05) * 2;
+    ctx.strokeStyle = '#3f8a2a'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(cx + sw, y); ctx.quadraticCurveTo(cx - 6, y + T / 2, cx + sw, y + T); ctx.stroke();
+    ctx.strokeStyle = '#7ed957'; ctx.lineWidth = 2.5; ctx.stroke();
+    for (const [dy, d] of [[12, -1], [34, 1]]) { ell(ctx, cx + d * 10 + sw, y + dy, 9, 5, d * 0.5); fs(ctx, '#5cc15a', '#2f7a2a', 1.5); }
+    if (isTop) { for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; ell(ctx, cx + Math.cos(a) * 6, y + 2 + Math.sin(a) * 6, 4, 4); fs(ctx, '#ff85c8'); } ell(ctx, cx, y + 2, 3, 3); fs(ctx, '#ffe066'); }
+  }
+
   /* A toothed gear (toy factory decoration, boss projectile). */
   function drawGear(ctx, x, y, r, rot, col) {
     ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
@@ -1537,6 +1588,6 @@
 
   LZ.Art = {
     drawCharacter, drawHat, drawTrailParticle, drawCoin, drawStar, drawHeart, drawPowerup, getTile, drawQBlock, drawLava,
-    drawEnemy, drawBoss, drawBackground, clearCaches, drawPet, drawSticker, drawStump, drawCannon, drawCave, drawGear, drawConveyor, drawQuicksand, nightWorld, starPath, heartPath, ell, fs, tri, RAINBOW,
+    drawEnemy, drawBoss, drawBackground, clearCaches, drawPet, drawSticker, drawStump, drawCannon, drawCave, drawGear, drawConveyor, drawQuicksand, drawVine, nightWorld, starPath, heartPath, ell, fs, tri, RAINBOW,
   };
 })();

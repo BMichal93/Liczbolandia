@@ -332,7 +332,10 @@
         for (let i = 0; i < n; i++) ground(x + i, gh);
         for (let i = 3; i < 3 + w; i++) set(x + i, gh, 'Q');
         arc(x + 2, w + 1, gh - 2);
-        if (r() < 0.5) ents.push({ t: 'enemy', type: walker(), x: x + n - 1, y: gh });
+        // (no creature right after the pool any more: climbing out with the weaker
+        // sand jump straight into one knocked her into the next pit. The r() call
+        // stays so the rest of every level keeps its layout.)
+        r();
         x += n;
       },
       // a long sand sea with stone pillars sticking out: hop pillar to pillar,

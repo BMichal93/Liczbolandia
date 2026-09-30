@@ -41,8 +41,14 @@
     const prof = S.active();
     mode = mode || null;
     const kind = mode ? mode.kind : 'normal';
+    // home and world are "sandbox" runs: a module (G.sb) builds the level and
+    // adds its own behaviour through the hooks called below (sb.init, sb.tick...)
+    const sb = kind === 'home' ? LZ.Home.hooks : kind === 'world' ? LZ.World.hooks : null;
     const lvl = kind === 'custom' ? LZ.X.toLevel(mode.data)
+      : kind === 'home' ? LZ.Home.buildLevel(prof)
+      : kind === 'world' ? LZ.World.buildLevel(prof, mode)
       : LZ.Gen.generate(wi, li, kind === 'hard' ? { hard: true } : kind === 'daily' ? { daily: mode.info.day } : null);
+    if (sb) { wi = lvl.wi; li = lvl.li; }
     if (kind === 'hard') lvl.world = Art.nightWorld(lvl.world);
     if (kind === 'custom') { wi = lvl.wi; li = 1; }
     const ch = D.CHARACTERS.find(c => c.id === prof.equip.char) || D.CHARACTERS[0];
@@ -67,6 +73,7 @@
       par: LZ.X.parTime(lvl.W),
       noCoins: kind === 'custom',   // built levels can't be a coin farm: coins there are just for fun
       speedMul: kind === 'hard' ? 1.15 : 1,
+      sb,
     };
     if (kind === 'daily') G.dailyTarget = LZ.X.dailyGoalText(mode.info, lvl);
     G.player = {
@@ -90,10 +97,11 @@
     G.cam.x = G.player.x - viewW * 0.35; G.cam.y = (G.H * T - viewH);
     clampCam(true);
     A.playMusic(lvl.world.music + (lvl.boss ? 100 : 0));
-    const title = kind === 'daily' ? 'Poziom dnia: ' + G.dailyTarget.text
+    if (sb) sb.init(G);
+    const title = sb ? lvl.themeName : kind === 'daily' ? 'Poziom dnia: ' + G.dailyTarget.text
       : kind === 'custom' ? lvl.themeName
       : (kind === 'hard' ? 'Noc ' : '') + (lvl.boss ? lvl.boss.name + '!' : lvl.themeName && wi !== D.BONUS_ID ? wi + '-' + li + ': ' + lvl.themeName : lvl.world.name + ' ' + wi + '-' + li);
-    toast(title, kind === 'daily' ? 3.5 : 2.2);
+    if (title) toast(title, kind === 'daily' ? 3.5 : 2.2);
     // secret room bounds in world units (the room sits past the castle)
     G.room = lvl.room ? { x0: lvl.room.x0 * T, x1: lvl.room.x1 * T, spawn: { x: lvl.room.spawn.x * T, y: lvl.room.spawn.y * T } } : null;
     G.secret = lvl.secret || null;
@@ -116,11 +124,13 @@
   }
   const tileAt = (tx, ty) => (tx < 0 || tx >= G.W) ? '#' : (ty < 0 || ty >= G.H) ? '.' : G.grid[tx][ty];
 
-  function buildEntities() {
-    for (const e of G.lvl.ents) {
+  // list: entity definitions in window tile coordinates (the open world passes
+  // the pieces of map it streams in; normal levels build everything at start)
+  function buildEntities(list) {
+    for (const e of list || G.lvl.ents) {
       const px = e.x * T, py = e.y * T;
       switch (e.t) {
-        case 'coin': G.ents.push({ k: 'coin', x: px + T / 2, y: py + T / 2, r: 12, loose: true }); G.looseTotal++; break;
+        case 'coin': G.ents.push({ k: 'coin', x: px + T / 2, y: py + T / 2, r: 12, loose: true, wid: e.wid }); G.looseTotal++; break;
         case 'star': G.ents.push({ k: 'star', x: px + T / 2, y: py + T / 2, idx: e.idx }); break;
         case 'spring': G.ents.push({ k: 'spring', x: px + 6, y: py - 26, w: T - 12, h: 26, comp: 0 }); break;
         case 'mushroom': G.ents.push({ k: 'mushroom', x: px - 20, y: py - 38, w: T + 40, h: 38, comp: 0 }); break;
@@ -150,7 +160,8 @@
           break;
         }
         case 'challenge': G.ents.push({ k: 'challenge', zone: [e.zone[0] * T, e.zone[1] * T], spots: e.spots.map(s => [s[0] * T + T / 2, s[1] * T + T / 2]), chest: { x: e.chest[0] * T, y: e.chest[1] * T - 34, w: 44, h: 34, open: 0 }, c: null, state: 'idle', bubbles: [] }); break;
-        case 'enemy': spawnEnemy(e.type, px, py); break;
+        case 'enemy': { const en = spawnEnemy(e.type, px, py); if (e.wid) en.wid = e.wid; break; }
+        default: if (G.sb && G.sb.buildEnt) G.sb.buildEnt(G, e, px, py);
       }
     }
   }
@@ -175,6 +186,7 @@
   function update(dt) {
     if (!G) return;
     G.t += dt;
+    if (G.decorating) { updateParticles(dt); return; }   // home decorate mode: the room stands still, the camera is moved by dragging
     const p = G.player;
     for (const k in G.bumps) { G.bumps[k] -= dt * 4; if (G.bumps[k] <= 0) delete G.bumps[k]; }
 
@@ -186,6 +198,7 @@
       updateEnemies(dt);
       if (G.boss) updateBoss(dt);
       updateProjectiles(dt);
+      if (G.sb) G.sb.tick(G, dt);
     } else if (G.state === 'goal') {
       // slide down the pole, then walk to the castle
       G.goalT += dt;
@@ -217,7 +230,7 @@
   /* ---------------- player ---------------- */
   function updatePlayer(dt) {
     const p = G.player, In = LZ.In, ab = G.ab;
-    const water = G.lvl.water;
+    const water = G.lvl.water || !!G.inWater;   // open world: lakes are 'W' tiles (sb.tick sets inWater)
     const onIce = p.grounded && p.groundTile === 'I';
     const speed = (water ? P.wRun : P.run) * (ab.speed || 1) * (p.rainbowT > 0 ? 1.25 : 1);
     const want = (In.right ? 1 : 0) - (In.left ? 1 : 0);
@@ -271,8 +284,20 @@
     if (p.padLaunch && (p.vy >= 0 || p.grounded)) p.padLaunch = false;
     if (!water && !In.jump && p.vy < -300 && !p.padLaunch) p.vy += 3200 * dt;
 
+    /*
+     * Vines ('H', open world): hold jump to climb up, let go to slide down
+     * slowly. Only three buttons on a touch screen, so climbing reuses jump.
+     */
+    const cx0 = Math.floor((p.x + PW / 2) / T), onVine = tileAt(cx0, Math.floor((p.y + PH / 2) / T)) === 'H' || tileAt(cx0, Math.floor((p.y + PH - 4) / T)) === 'H';
+    // grab a vine only on purpose (holding jump, not in the rising part of a jump):
+    // otherwise a jump over a shaft got caught by its vine and slid her down
+    p.climb = onVine && !water && (p.climb || (In.jump && p.vy > -150));
+    if (p.climb) {
+      p.vy = In.jump ? -240 : Math.min(p.vy + 900 * dt, 110);
+      p.jumps = 0; p.coyote = P.coyote;
+    }
     // space: gravity x0.55 with a softer jump = about 10% higher and much floatier
-    const grav = water ? P.wGrav : P.grav * (G.lowgrav ? 0.55 : 1);
+    const grav = p.climb ? 0 : water ? P.wGrav : P.grav * (G.lowgrav ? 0.55 : 1);
     p.vy += grav * dt;
     p.glide = false;
     if (!water && ab.glide && In.jump && p.vy > 110 && !p.grounded) { p.vy = 110; p.glide = true; }
@@ -408,6 +433,7 @@
 
   function hitBlock(tx, ty, c) {
     const key = tx + ',' + ty;
+    if (G.sb) setTimeout(() => G && G.sb && G.sb.onBlock(G, tx, ty, G.grid[tx][ty]), 0);   // after the change below
     if (c === '?') {
       G.grid[tx][ty] = 'U';
       G.bumps[key] = 1;
@@ -684,6 +710,7 @@
           e.bubbles.forEach(b => { if (b.pop > 0) b.pop -= dt * 3; });
           break;
         }
+        default: if (G.sb) G.sb.updateEnt(G, e, i, dt, pc);
       }
     }
     if (G.boss && G.boss.phase === 'question') bannerSet = { kind: 'boss', ref: G.boss };
@@ -693,6 +720,7 @@
   function collectCoin(i, e) {
     G.ents.splice(i, 1);
     G.coins++; if (e.loose) G.looseGot++;
+    if (e.wid && G.sb && G.sb.onCoin) G.sb.onCoin(G, e);   // the open world remembers collected coins
     if (!G.noCoins) { G.prof.coins++; G.prof.stats.totalCoins++; }
     A.play('coin');
     for (let k = 0; k < 4; k++) G.particles.push({ x: e.x, y: e.y, vx: (Math.random() - 0.5) * 120, vy: -Math.random() * 120, life: 0.35, max: 0.35, size: 3, kind: 'sparkle', rot: Math.random() * 3, grav: 0 });
@@ -835,6 +863,7 @@
   }
   /* No "game over": back to the last flag with full hearts. */
   function outOfHearts() {
+    if (G.sb && G.sb.outOfHearts(G)) return;
     const p = G.player;
     G.hearts = G.maxHearts;
     p.x = G.checkpoint.x; p.y = G.checkpoint.y; p.vx = 0; p.vy = 0; p.invuln = 2; p.lastSafe = null;
@@ -1109,7 +1138,7 @@
     if (w.t < 0.7) return 0; if (w.t < 1.0) return (w.t - 0.7) / 0.3; if (w.t < 1.3) return 1 - (w.t - 1.0) / 0.3; return 0;
   }
 
-  function quit() { if (G) { S.save(); } G = null; LZ.Speech.stop(); }
+  function quit() { if (G) { S.save(); if (G.sb && G.sb.quit) G.sb.quit(G); } G = null; LZ.Speech.stop(); }
   function restart() { if (G) start(G.wi, G.li, G.mode); }
 
   /* =================================================================
@@ -1177,7 +1206,8 @@
     if (!G) return;
     const t = G.t, world = G.lvl.world;
     ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
-    if (G.inRoom) Art.drawCave(ctx, world, G.cam.x, viewW, viewH, t);
+    if (G.sb) G.sb.drawBack(ctx, G, G.cam, viewW, viewH, t);
+    else if (G.inRoom) Art.drawCave(ctx, world, G.cam.x, viewW, viewH, t);
     else Art.drawBackground(ctx, world, G.cam.x, G.cam.y, viewW, viewH, t);
 
     const sx = G.shake > 0 ? (Math.random() - 0.5) * 8 : 0, sy = G.shake > 0 ? (Math.random() - 0.5) * 8 : 0;
@@ -1195,11 +1225,14 @@
     for (let x = x0; x <= x1; x++) {
       for (let y = y0; y <= y1; y++) {
         const c = G.grid[x][y];
-        if (c === '.' || c === 'L' || c === 'T' || c === 'C' || c === 'Q') continue;   // stumps and cannons are drawn as entities, quicksand in front of the player
+        if (c === '.' || c === 'L' || c === 'T' || c === 'C' || c === 'Q' || c === 'W') continue;   // stumps and cannons are drawn as entities, quicksand/water in front of the player
+        if (c === 'H') { Art.drawVine(ctx, x * T, y * T, t, tileAt(x, y - 1) !== 'H'); continue; }
         if (c === '?') { Art.drawQBlock(ctx, x * T, y * T, t + x * 0.3, G.bumps[x + ',' + y] || 0); continue; }
-        if (c === '>' || c === '<') { Art.drawConveyor(ctx, x * T, y * T, c === '>' ? 1 : -1, t, world, tileAt(x - 1, y) !== c, tileAt(x + 1, y) !== c); continue; }
+        // the open world changes scenery along the way: each tile uses the look of its own place
+        const tw = G.sb && G.sb.worldAt ? G.sb.worldAt(G, x, y) : world;
+        if (c === '>' || c === '<') { Art.drawConveyor(ctx, x * T, y * T, c === '>' ? 1 : -1, t, tw, tileAt(x - 1, y) !== c, tileAt(x + 1, y) !== c); continue; }
         const bump = G.bumps[x + ',' + y] || 0;
-        const img = Art.getTile(world, c, (c === '#' || c === 'I') ? G.mask[x][y] : 0);
+        const img = Art.getTile(tw, c, (c === '#' || c === 'I') ? G.mask[x][y] : 0);
         ctx.drawImage(img, x * T - 0.3, y * T - 0.3 - bump * 8, T + 0.6, T + 0.6);
       }
     }
@@ -1234,13 +1267,14 @@
 
     // projectiles
     for (const q of G.projectiles) drawProjectile(ctx, q, t);
+    if (G.sb) G.sb.drawFront(ctx, G, x0, x1, y0, y1, t);
 
     // quicksand in front of the player, so she looks knee-deep in it
     for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) if (G.grid[x][y] === 'Q') Art.drawQuicksand(ctx, x * T, y * T, t, tileAt(x - 1, y) !== 'Q', tileAt(x + 1, y) !== 'Q');
 
     // chocolate lava in front of things that fall into it
     let run = -1;
-    for (let x = x0; x <= x1 + 1; x++) {
+    if (!G.sb) for (let x = x0; x <= x1 + 1; x++) {
       let ly = -1;
       if (x <= x1) for (let y = 0; y < G.H; y++) if (G.grid[x][y] === 'L') { ly = y; break; }
       if (ly >= 0 && run < 0) run = x;
@@ -1276,7 +1310,8 @@
   }
 
   function drawEntity(ctx, e, t, world) {
-    if (e.x !== undefined && (e.x < G.cam.x - 200 || e.x > G.cam.x + viewW + 200) && e.k !== 'gate' && e.k !== 'challenge' && e.k !== 'plat') return;
+    const cull = e.k === 'landmark' || e.k === 'house' ? 520 : 200;   // the open world's statues and the house are wide
+    if (e.x !== undefined && (e.x < G.cam.x - cull || e.x > G.cam.x + viewW + cull) && e.k !== 'gate' && e.k !== 'challenge' && e.k !== 'plat') return;
     switch (e.k) {
       case 'coin': Art.drawCoin(ctx, e.x, e.y, t + e.x * 0.01); break;
       case 'star': Art.drawStar(ctx, e.x, e.y + Math.sin(t * 3) * 4, 18, t); break;
@@ -1300,6 +1335,7 @@
         break;
       }
       case 'plat': {
+        if (e.sub === 'furn') break;   // the furniture itself is drawn, this is just its top surface
         if (e.sub === 'cloud') {
           if (e.gone > 0) { if (e.gone < 0.6) ctx.globalAlpha = 1 - e.gone / 0.6; else break; }
           const a = e.timer >= 0 ? 0.5 + 0.5 * (e.timer / 0.75) : 1;
@@ -1363,6 +1399,7 @@
       }
       case 'ans': if (e.active || e.label) drawAnswerBlock(ctx, e, t); else { U.rr(ctx, e.x + 1, e.y + 1, T - 2, T - 2, 9); Art.fs(ctx, '#d6d0e8', '#9a92b5', 2); } break;
       case 'challenge': drawChallenge(ctx, e, t); break;
+      default: if (G.sb) G.sb.drawEnt(ctx, e, t, G);
     }
   }
 
@@ -1524,15 +1561,16 @@
   /* ---------------- HUD & maths banner (screen space) ---------------- */
   function drawHUD(ctx, t) {
     const pad = 14;
+    if (G.sb && G.sb.drawHUD(ctx, G, viewW, viewH, t, outlinedText)) return;
     // hearts
     for (let i = 0; i < G.maxHearts; i++) Art.drawHeart(ctx, pad + 18 + i * 36, pad + 22, 15, i < G.hearts);
     // coins
     const cx = pad + 18 + G.maxHearts * 36 + 18;
     Art.drawCoin(ctx, cx, pad + 20, 0, 13);
-    outlinedText(ctx, String(G.coins), cx + 20, pad + 22, 28, '#fff', '#5a3a8a', 'left');
-    if (G.rew > 1) { ctx.font = '800 28px "Baloo 2", sans-serif'; const w = ctx.measureText(String(G.coins)).width; outlinedText(ctx, '×' + String(G.rew).replace('.', ','), cx + 26 + w, pad + 24, 18, '#ffd23f', '#8a5a00', 'left'); }
+    outlinedText(ctx, String(G.sb ? G.prof.coins : G.coins), cx + 20, pad + 22, 28, '#fff', '#5a3a8a', 'left');   // at home: the piggy bank
+    if (G.rew > 1 && !G.sb) { ctx.font = '800 28px "Baloo 2", sans-serif'; const w = ctx.measureText(String(G.coins)).width; outlinedText(ctx, '×' + String(G.rew).replace('.', ','), cx + 26 + w, pad + 24, 18, '#ffd23f', '#8a5a00', 'left'); }
     // stars
-    for (let i = 0; i < 3; i++) {
+    if (!G.lvl.noStars) for (let i = 0; i < 3; i++) {
       const sx = cx + 100 + i * 34;
       Art.starPath(ctx, sx, pad + 20, 14, 6.5, 5, 0);
       Art.fs(ctx, G.stars[i] ? '#ffd23f' : 'rgba(255,255,255,0.35)', G.stars[i] ? '#d98a0b' : 'rgba(90,60,120,0.5)', 2);
@@ -1645,7 +1683,11 @@
     start, update, render, resize, quit, restart,
     get active() { return !!G; },
     get state() { return G && G.state; },
+    get kind() { return G && G.kind; },
     get view() { return { w: viewW, h: viewH, scale }; },
     _dbg: () => G,   // used by the automated tests only
+    // for the open world (world.js), which streams the map in pieces
+    _build: list => buildEntities(list), _computeMasks: () => computeMasks(), _clampCam: () => clampCam(),
+    _drawVisual: (ctx, v, x, y) => drawVisual(ctx, v, x, y), _toast: (t, d) => toast(t, d), _confetti: (x, y, n) => confetti(x, y, n), _floatText: (x, y, t, c, s) => floatText(x, y, t, c, s),
   };
 })();

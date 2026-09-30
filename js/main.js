@@ -123,6 +123,9 @@
   function frame(now) {
     let dt = (now - last) / 1000; last = now;
     if (dt > 0.1) dt = 0.1;   // after a tab switch don't simulate a huge jump
+    // the first frame's timestamp can be a little older than performance.now()
+    // at start-up; a negative step picked "world -1" for the menu backdrop and crashed
+    if (!(dt > 0)) dt = 0;
     if (LZ.Game.active) {
       if (!LZ.UI.isPaused()) {
         acc += dt;

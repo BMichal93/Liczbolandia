@@ -112,6 +112,16 @@
       ],
     },
     {
+      // found in a golden chest deep underground in the open world
+      id: 'mole', name: 'Kret Grzebuś', desc: 'Mieszka głęboko pod ziemią. Znaleziony na wyprawie!',
+      ability: { hearts: 4, magnet: 2.4 }, abilityText: '4 serduszka + magnes', price: 0, unlock: { badge: 'moleFound' },
+      variants: [
+        { name: 'Aksamitny', pal: { body: '#6a5a7a', belly: '#b8a8c8', accent: '#ff9ec0', eye: '#1a1022' } },
+        { name: 'Złoty', pal: { body: '#d9a84a', belly: '#fff0c0', accent: '#ff9ec0', eye: '#2a1a0a' } },
+        { name: 'Śnieżny', pal: { body: '#e8e8f0', belly: '#ffffff', accent: '#ff9ec0', eye: '#1a1022' } },
+      ],
+    },
+    {
       id: 'unicorn', name: 'Jednorożka Tęcza', desc: 'Magiczny podwójny skok! Nagroda za bossa Świata 3.',
       ability: { doubleJump: true }, abilityText: 'Podwójny skok', price: 0, unlock: { boss: 3 },
       variants: [
@@ -156,6 +166,10 @@
     { id: 'nightcap', name: 'Szlafmyca', price: 0, badge: 'night1' },
     { id: 'sunhat', name: 'Słomkowy kapelusz', price: 0, badge: 'streak7' },
     { id: 'hardhat', name: 'Kask budowniczki', price: 0, badge: 'builder' },
+    { id: 'explorer', name: 'Kapelusz odkrywczyni', price: 0, badge: 'landmark1' },
+    { id: 'miner', name: 'Kask z latarką', price: 0, badge: 'deep40' },
+    { id: 'aviator', name: 'Gogle lotniczki', price: 0, badge: 'skyhigh' },
+    { id: 'crystal', name: 'Kryształowy diadem', price: 0, badge: 'chests25' },
   ];
 
   /* Particle trails left while running. */
@@ -274,6 +288,17 @@
     // level editor
     { id: 'builder', name: 'Budowniczka', desc: 'Zbuduj poziom i przejdź go sama', check: p => (p.stats.built || 0) >= 1, reward: 'Kask budowniczki' },
     { id: 'guest', name: 'W gościach', desc: 'Przejdź poziom zbudowany przez kogoś innego', check: p => (p.stats.guest || 0) >= 1 },
+    // the open world (Wyprawa)
+    { id: 'walk100', name: 'Pierwsza wyprawa', desc: 'Odejdź 100 m od domku', check: p => ((p.world || {}).maxDist || 0) >= 100 },
+    { id: 'walk1000', name: 'Podróżniczka', desc: 'Odejdź 1 km od domku', check: p => ((p.world || {}).maxDist || 0) >= 1000 },
+    { id: 'landmark1', name: 'Odkrywczyni', desc: 'Znajdź pierwszy wielki pomnik', check: p => Object.keys((p.world || {}).landmarks || {}).length >= 1, reward: 'Kapelusz odkrywczyni' },
+    { id: 'landmarks7', name: 'Wszystkie pomniki', desc: 'Znajdź 7 różnych pomników', check: p => new Set(Object.values((p.world || {}).landmarks || {})).size >= 7 },
+    { id: 'deep40', name: 'Grotołazka', desc: 'Zejdź 40 m pod ziemię', check: p => ((p.world || {}).maxDepth || 0) >= 40, reward: 'Kask z latarką' },
+    { id: 'skyhigh', name: 'W chmurach', desc: 'Wespnij się na latające wyspy', check: p => !!(p.world || {}).sky, reward: 'Gogle lotniczki' },
+    { id: 'chests10', name: 'Poszukiwaczka skarbów', desc: 'Otwórz 10 skrzyń', check: p => ((p.world || {}).chestCount || 0) >= 10 },
+    { id: 'chests25', name: 'Łowczyni skarbów', desc: 'Otwórz 25 skrzyń', check: p => ((p.world || {}).chestCount || 0) >= 25, reward: 'Kryształowy diadem' },
+    { id: 'quests3', name: 'Dobra sąsiadka', desc: 'Pomóż 3 sąsiadom', check: p => ((p.world || {}).questCount || 0) >= 3 },
+    { id: 'moleFound', name: 'Przyjaciółka kreta', desc: 'Znajdź kreta w złotej skrzyni', check: p => !!(p.world || {}).mole, reward: 'Postać: Kret Grzebuś' },
     { id: 'stickers12', name: 'Pół albumu', desc: 'Zbierz 12 naklejek', check: p => (p.stickers || []).length >= 12 },
     { id: 'stickersAll', name: 'Kolekcjonerka', desc: 'Zbierz wszystkie naklejki', check: p => (p.stickers || []).length >= STICKERS.length },
     { id: 'firstPet', name: 'Mam pupila!', desc: 'Kup pupila za gwiazdki', check: p => (p.starItems || []).some(i => i.startsWith('pet_')) },
