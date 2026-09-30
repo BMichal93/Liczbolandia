@@ -133,6 +133,7 @@
       Bag.add(p, 'seed_carrot', 3); Bag.add(p, 'seed_wheat', 2); Bag.add(p, 'seed_straw', 2);
       say.push('Ko ko! Jestem Zosia, twoja sąsiadka. To twój ogródek! Masz tu nasiona na początek: 3 marchewki, 2 pszenice i 2 truskawki. Posadź je w grządkach - stań przy grządce, a zobaczysz.');
     }
+    LZ.Ext.each('world', 'henTalk', G, say);   // e.g. the story quest (story.js)
     if (Fun.onceToday(p, 'egg')) {
       const n = 1 + (Math.random() < 0.4 ? 1 : 0);
       Bag.add(p, 'egg', n);

@@ -388,6 +388,39 @@
         [[-10, 8, '#5ccfff'], [1, 13, '#ff85c8'], [12, 8, '#9d7bff']].forEach(([dx, hh, c]) => { ctx.beginPath(); ctx.moveTo(hx + dx - 4, top + 2); ctx.lineTo(hx + dx, top + 2 - hh); ctx.lineTo(hx + dx + 4, top + 2); ctx.closePath(); fs(ctx, c, '#fff', 1.2); });
         break;
       }
+      case 'dragoncrown': {
+        // crystal crown with a tiny dragon wing on each side - for beating the Crystal Dragon
+        ctx.beginPath(); ctx.moveTo(hx - 13, top + 3); ctx.lineTo(hx - 14, top - 10); ctx.lineTo(hx - 6, top - 3); ctx.lineTo(hx + 1, top - 16); ctx.lineTo(hx + 8, top - 3); ctx.lineTo(hx + 16, top - 10); ctx.lineTo(hx + 15, top + 3); ctx.closePath();
+        fs(ctx, '#8fe6ff', '#2a8fb8', 1.8);
+        for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(hx + s * 14, top - 2); ctx.lineTo(hx + s * 24, top - 12); ctx.lineTo(hx + s * 21, top - 2); ctx.lineTo(hx + s * 25, top + 2); ctx.closePath(); fs(ctx, 'rgba(200,240,255,0.9)', '#2a8fb8', 1.2); }
+        ell(ctx, hx + 1, top - 6, 2.6, 2.6); fs(ctx, '#ff85c8');
+        if (Math.sin(t * 3) > 0.5) { starPath(ctx, hx + 8, top - 12, 4, 1, 4, 0); fs(ctx, '#fff'); }
+        break;
+      }
+      case 'royal': {
+        // tall golden crown with red velvet - for bringing the Princess her crown back
+        ctx.beginPath(); ctx.ellipse(hx + 1, top - 2, 13, 9, 0, Math.PI, 0); ctx.closePath(); fs(ctx, '#e0305a', '#8a1a38', 1.5);
+        ctx.beginPath(); ctx.moveTo(hx - 14, top + 3); ctx.lineTo(hx - 15, top - 12); ctx.lineTo(hx - 7, top - 5); ctx.lineTo(hx + 1, top - 17); ctx.lineTo(hx + 9, top - 5); ctx.lineTo(hx + 17, top - 12); ctx.lineTo(hx + 16, top + 3); ctx.closePath(); fs(ctx, '#ffd84a', '#c99a12', 1.8);
+        U.rr(ctx, hx - 14, top - 1, 30, 5, 2); fs(ctx, '#fff6c9', '#c99a12', 1);
+        for (const [dx, c] of [[-8, '#5ccfff'], [1, '#ff5e7e'], [10, '#7be08a']]) { ell(ctx, hx + dx, top + 1.5, 2, 2); fs(ctx, c); }
+        ell(ctx, hx + 1, top - 18, 2.5, 2.5); fs(ctx, '#fff');
+        break;
+      }
+      case 'pumpkinhat': {
+        // a little pumpkin with a smiling face and a green stalk
+        for (const [dx, w] of [[-7, 8], [7, 8], [0, 9]]) { ell(ctx, hx + 1 + dx, top - 2, w, 10); fs(ctx, '#ff9a3d', '#c4621c', 1.5); }
+        ctx.fillStyle = '#6b2a0a'; tri(ctx, hx - 6, top - 5, hx - 2, top - 5, hx - 4, top - 9); ctx.fill(); tri(ctx, hx + 4, top - 5, hx + 8, top - 5, hx + 6, top - 9); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(hx - 5, top + 1); ctx.quadraticCurveTo(hx + 1, top + 6, hx + 7, top + 1); ctx.strokeStyle = '#6b2a0a'; ctx.lineWidth = 2; ctx.stroke();
+        U.rr(ctx, hx - 1, top - 16, 4, 6, 2); fs(ctx, '#4f8a3a');
+        break;
+      }
+      case 'santahat': {
+        // red cap with a white rim, drooping to one side with a pompom
+        ctx.beginPath(); ctx.moveTo(hx - 15, top + 3); ctx.quadraticCurveTo(hx - 6, top - 22, hx + 18, top - 14); ctx.quadraticCurveTo(hx + 10, top - 4, hx + 16, top + 3); ctx.closePath(); fs(ctx, '#e0303a', '#8a1a20', 1.8);
+        U.rr(ctx, hx - 16, top, 34, 7, 3.5); fs(ctx, '#ffffff', '#c9c0d0', 1.2);
+        ell(ctx, hx + 19, top - 13, 4.5, 4.5); fs(ctx, '#ffffff', '#c9c0d0', 1);
+        break;
+      }
       case 'knight': {
         // shiny helmet with a visor slit and a red plume
         ctx.beginPath(); ctx.ellipse(hx + 1, top + 6, 17, 16, 0, Math.PI, 0); ctx.closePath(); fs(ctx, '#c9d0de', '#5a6388', 2);
@@ -1139,6 +1172,21 @@
         ell(ctx, 22, -44, 9, 6); fs(ctx, 'rgba(74,138,184,0.25)'); ell(ctx, -26, -40, 6, 4); fs(ctx, 'rgba(74,138,184,0.25)');
         face(0, -64, mood);
         ctx.beginPath(); ctx.moveTo(-26, -112); ctx.lineTo(-30, -134); ctx.lineTo(-14, -122); ctx.lineTo(0, -140); ctx.lineTo(14, -122); ctx.lineTo(30, -134); ctx.lineTo(26, -112); ctx.closePath(); fs(ctx, '#ffe066', '#c99a12', 3);
+        break;
+      }
+      case 'crystaldragon': {
+        // the final boss of the crystal lair: an icy-blue dragon with crystal spikes and see-through wings
+        const f = Math.sin(t * 4) * 0.25;
+        for (const s of [-1, 1]) { ctx.save(); ctx.translate(-10 * s, -84); ctx.scale(s, 1); ctx.rotate(-0.4 - f);
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-64, -52); ctx.lineTo(-52, -16); ctx.lineTo(-78, -10); ctx.lineTo(-44, 8); ctx.lineTo(-56, 28); ctx.closePath(); fs(ctx, 'rgba(160,230,255,0.75)', '#2a8fb8', 3); ctx.restore(); }
+        for (let i = 0; i < 4; i++) tri(ctx, -38 + i * 16, -72 + Math.abs(i - 1.5) * 4, -30 + i * 16, -98 + Math.abs(i - 1.5) * 6, -22 + i * 16, -72 + Math.abs(i - 1.5) * 4), fs(ctx, ['#ff9ecf', '#8fe6ff', '#b8ff9a', '#e8dcff'][i], '#5a6388', 2);
+        ell(ctx, 0, -44, 52, 42); fs(ctx, '#5ab8e6', '#1f5a88', 4);
+        ell(ctx, 8, -36, 32, 27); fs(ctx, '#d6f4ff');
+        ell(ctx, 26, -100, 38, 31); fs(ctx, '#5ab8e6', '#1f5a88', 4);
+        ell(ctx, 50, -90, 19, 15); fs(ctx, '#7ecbf0', '#1f5a88', 3);
+        tri(ctx, 6, -124, 12, -150, 20, -126); fs(ctx, '#e8dcff', '#6a5a9a', 2); tri(ctx, 30, -128, 44, -152, 44, -124); fs(ctx, '#e8dcff', '#6a5a9a', 2);
+        ell(ctx, 30, -150, 6, 6); fs(ctx, 'rgba(255,255,255,' + (0.4 + 0.4 * Math.sin(t * 3)) + ')');
+        face(22, -104, mood);
         break;
       }
       case 'chocodragon': {

@@ -14,7 +14,7 @@
   const CROPS = ['carrot', 'wheat', 'straw', 'blue', 'pumpkin'];
   const CAKES = ['bread', 'cake_carrot', 'cake_straw', 'muffin', 'pie_pumpkin', 'cake_rainbow'];
   const LANDS = ['meadow', 'ice', 'forest', 'desert', 'beach', 'volcano', 'factory', 'moon'];
-  const OTHER = [['sky', 'Wyspy w chmurach'], ['deep', 'Głębia 40 m'], ['guard', 'Strażnik Głębin'], ['dig', 'Wykopany skarb'], ['cart', 'Jazda wagonikiem'], ['boat', 'Rejs łódką'], ['balloon', 'Lot balonem'], ['ore', 'Wydobyta ruda'], ['race', 'Wygrany wyścig'], ['meteor', 'Deszcz meteorów']];
+  const OTHER = [['sky', 'Wyspy w chmurach'], ['deep', 'Głębia 40 m'], ['guard', 'Strażnik Głębin'], ['dig', 'Wykopany skarb'], ['cart', 'Jazda wagonikiem'], ['boat', 'Rejs łódką'], ['balloon', 'Lot balonem'], ['ore', 'Wydobyta ruda'], ['race', 'Wygrany wyścig'], ['meteor', 'Deszcz meteorów'], ['giant', 'Pokonany olbrzym'], ['statue', 'Ożywiony pomnik'], ['dragon', 'Kryształowy Smok'], ['temple', 'Przebyta świątynia'], ['pony', 'Własny kucyk'], ['build', 'Postawiony klocek']];
   const stickerName = id => (D.STICKERS.find(s => s.id === id) || { name: id }).name;
 
   // every discovery, as [page, key, done]
@@ -28,7 +28,7 @@
     CAKES.forEach(id => out.push(['farm', id, !!b.cakes[id]]));
     LANDS.forEach(id => out.push(['place', 'b_' + id, !!b.places['b_' + id]]));
     Object.keys(LZ.World.LANDMARKS).forEach(id => out.push(['place', 'lm_' + id, lm.includes(id)]));
-    const other = { sky: !!ws.sky, deep: (ws.maxDepth || 0) >= 40, guard: !!b.places.guard, dig: (f.maps || 0) > 0, cart: !!b.places.cart, boat: !!b.places.boat, balloon: !!b.places.balloon, ore: !!b.places.ore, race: !!b.places.race, meteor: !!b.places.meteor };
+    const other = { sky: !!ws.sky, deep: (ws.maxDepth || 0) >= 40, guard: !!b.places.guard, dig: (f.maps || 0) > 0, cart: !!b.places.cart, boat: !!b.places.boat, balloon: !!b.places.balloon, ore: !!b.places.ore, race: !!b.places.race, meteor: !!b.places.meteor, giant: !!b.places.giant, statue: !!b.places.statue, dragon: !!b.places.dragon, temple: !!b.places.temple, pony: !!f.pony, build: !!f.built };
     OTHER.forEach(([id]) => out.push(['place', id, other[id]]));
     return out;
   }
@@ -108,7 +108,7 @@
       if (id.startsWith('lm_')) { g.save(); g.translate(32, 40); g.scale(0.22, 0.22); Art.drawBoss(g, { kind: LZ.World.LANDMARKS[bk].boss, x: -55, y: -150, w: 110, h: 150, dir: 1, flash: 0, phase: 'intro', look: 0 }, 0); g.restore(); }
       return;
     }
-    const icons = { sky: '☁️', deep: '💎', guard: '🦉', dig: '❌', cart: '🚃', boat: '⛵', balloon: '🎈', ore: '⛏️', race: '🏁', meteor: '🌠' };
+    const icons = { sky: '☁️', deep: '💎', guard: '🦉', dig: '❌', cart: '🚃', boat: '⛵', balloon: '🎈', ore: '⛏️', race: '🏁', meteor: '🌠', giant: '👑', statue: '🗿', dragon: '🐉', temple: '🏛️', pony: '🐴', build: '🧱' };
     U.rr(g, 2, 2, 60, 48, 8); g.fillStyle = '#e8dcff'; g.fill();
     g.font = '28px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(icons[id] || '?', 32, 27);
   }

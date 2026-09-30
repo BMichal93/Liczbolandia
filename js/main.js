@@ -170,9 +170,11 @@
       navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => reg.update()).catch(e => console.warn('SW failed', e));
       // when a new version takes over, reload once so the whole game is the new version
       // (otherwise the page keeps running the old files until it is closed)
+      // (on the very first visit there was no old version, so nothing to reload)
       let reloaded = false;
+      const hadOld = !!navigator.serviceWorker.controller;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (reloaded || (LZ.Game && LZ.Game.active)) return;   // never yank her out of a level
+        if (!hadOld || reloaded || (LZ.Game && LZ.Game.active)) return;   // never yank her out of a level
         reloaded = true; location.reload();
       });
     }

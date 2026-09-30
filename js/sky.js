@@ -36,6 +36,8 @@
   // the weather in a landscape (band) at a moment of play time
   function weatherAt(W, band, clock, seed) {
     const bk = W.biomeKey(band), k = KINDS[bk];
+    // winter holidays: snow almost everywhere (not in the desert or by the volcano)
+    if (LZ.Seasons && LZ.Seasons.now() === 'winter' && bk !== 'desert' && bk !== 'volcano') return hash(Math.floor(clock / SLOT) * 7 + band, seed) < 0.6 ? 'snow' : null;
     if (!k) return null;
     return hash(Math.floor(clock / SLOT) * 7 + band, seed) < k[1] ? k[0] : null;
   }
@@ -126,6 +128,7 @@
         else if (e.k === 'guard') light(e.x, e.y - 60, 140, 0.8);
         else if (e.k === 'station' || e.k === 'dock' || e.k === 'balloon') light(e.x, e.y - 60, 120, 0.7);
         else if (e.k === 'digspot') light(e.x, e.y - 10, 80, 0.7);
+        else if (e.glow) light(e.x, e.y - 20, e.glow, 0.85);   // anything that says it glows (pumpkins, trees, the lair door...)
       }
       for (const fl of sk.flies) light(fl.x, fl.y, 40, 0.5);
       g.drawImage(c, 0, 0, vw, vh);

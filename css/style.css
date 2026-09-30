@@ -372,3 +372,7 @@ body.decorating #controls, body.decorating #sbbar, body.decorating #btn-pause { 
 .bookcell { background: #f6f2ff; border-radius: 12px; padding: 4px; text-align: center; font-size: 12px; font-weight: 700; color: #5a3a8a; }
 .bookcell.no { opacity: .5; filter: grayscale(1) brightness(.3); }
 .bookcell canvas { display: block; margin: 0 auto; }
+#buildbar { position: absolute; top: calc(66px * var(--hudz, 1)); left: 50%; transform: translateX(-50%); display: flex; gap: 6px; align-items: center; background: rgba(255,255,255,.92); border-radius: 16px; padding: 5px 8px; box-shadow: 0 4px 0 rgba(60,30,120,.25); pointer-events: auto; z-index: 3; }
+.bbtn { border: 0; border-radius: 12px; padding: 6px 10px; font: 800 15px "Baloo 2", sans-serif; background: #f1ecff; color: #5a3a8a; white-space: nowrap; }
+.bbtn.on { background: var(--purple); color: #fff; }
+.bcount { display: inline-flex; align-items: center; gap: 2px; font-weight: 800; color: #5a3a8a; padding: 0 4px; }

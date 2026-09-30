@@ -6,12 +6,13 @@
  * cache when there is no internet.
  * Bump VERSION whenever files change so old caches get cleaned up.
  */
-const VERSION = 'lz-v17';
+const VERSION = 'lz-v18';
 const FILES = [
   './', 'index.html', 'install.html', 'qr.png', 'manifest.webmanifest', 'css/style.css',
   'js/util.js', 'js/data.js', 'js/mathgen.js', 'js/save.js', 'js/audio.js', 'js/art.js',
   'js/levelgen.js', 'js/extras.js',
-  'js/fun.js', 'js/pets.js', 'js/farm.js', 'js/sky.js', 'js/rides.js', 'js/fishing.js', 'js/treasure.js', 'js/book.js', 'js/kitchen.js', 'js/traders.js', 'js/gear.js', 'js/nature.js',
+  'js/fun.js', 'js/pets.js', 'js/farm.js', 'js/sky.js', 'js/rides.js', 'js/fishing.js', 'js/treasure.js', 'js/book.js', 'js/kitchen.js', 'js/traders.js', 'js/gear.js', 'js/nature.js', 'js/giants.js', 'js/bosses.js',
+  'js/temples.js', 'js/build.js', 'js/stable.js', 'js/story.js', 'js/seasons.js', 'js/villages.js',
   'js/home.js', 'js/world.js', 'js/game.js', 'js/input.js', 'js/ui.js', 'js/editor.js', 'js/main.js',
   'fonts/baloo-2-latin-500-normal.woff2', 'fonts/baloo-2-latin-700-normal.woff2', 'fonts/baloo-2-latin-800-normal.woff2',
   'fonts/baloo-2-latin-ext-500-normal.woff2', 'fonts/baloo-2-latin-ext-700-normal.woff2', 'fonts/baloo-2-latin-ext-800-normal.woff2',

@@ -89,6 +89,8 @@
     feather: { name: 'Piórko', few: 'Piórka', many: 'Piórek', cat: 'mat', sell: 2 },
     star: { name: 'Gwiezdny odłamek', few: 'Gwiezdne odłamki', many: 'Gwiezdnych odłamków', cat: 'mat', sell: 5 },
     firefly: { name: 'Świetlik w słoiku', few: 'Świetliki w słoikach', many: 'Świetlików w słoikach', cat: 'mat', sell: 0 },
+    stone: { name: 'Kamień', few: 'Kamienie', many: 'Kamieni', cat: 'mat', sell: 0 },
+    candy: { name: 'Cukierek', few: 'Cukierki', many: 'Cukierków', cat: 'misc', sell: 0 },
     bait: { name: 'Robaczek', few: 'Robaczki', many: 'Robaczków', cat: 'misc', sell: 0 },
     treat: { name: 'Smakołyk dla pupila', few: 'Smakołyki dla pupila', many: 'Smakołyków dla pupila', cat: 'misc', sell: 0 },
     map: { name: 'Mapa skarbów', few: 'Mapy skarbów', many: 'Map skarbów', cat: 'misc', sell: 0 },
@@ -209,6 +211,17 @@
           rr(g, -8, -9, 16, 20, 5); fs(g, 'rgba(220,245,255,0.55)', '#8aa0c0', 1.5); rr(g, -7, -13, 14, 5, 2); fs(g, '#c98a5a', '#6b4424', 1);
           { const gr = g.createRadialGradient(0, 2, 1, 0, 2, 9); gr.addColorStop(0, 'rgba(255,250,150,1)'); gr.addColorStop(1, 'rgba(255,250,150,0)'); g.fillStyle = gr; g.fillRect(-9, -7, 18, 18); }
           ell(g, 0, 2, 2.2, 2.2); fs(g, '#fffbd0');
+          break;
+        case 'stone':
+          g.beginPath(); g.moveTo(-11, 8); g.lineTo(-9, -5); g.lineTo(0, -10); g.lineTo(10, -5); g.lineTo(11, 7); g.closePath(); fs(g, '#a8a0b8', '#5a5270', 1.5);
+          g.fillStyle = 'rgba(255,255,255,0.3)'; g.beginPath(); g.moveTo(-7, -3); g.lineTo(0, -7); g.lineTo(2, -3); g.closePath(); g.fill();
+          break;
+        case 'candy':
+          g.save(); g.rotate(-0.3);
+          g.beginPath(); g.moveTo(-8, 0); g.lineTo(-15, -6); g.lineTo(-15, 6); g.closePath(); fs(g, '#ff85c8', '#b8467a', 1);
+          g.beginPath(); g.moveTo(8, 0); g.lineTo(15, -6); g.lineTo(15, 6); g.closePath(); fs(g, '#ff85c8', '#b8467a', 1);
+          ell(g, 0, 0, 9, 7); fs(g, '#ff8a3d', '#b8561c', 1.5); g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.moveTo(-4, -6); g.lineTo(3, 6); g.stroke();
+          g.restore();
           break;
         case 'bait':
           g.strokeStyle = '#ff85b0'; g.lineWidth = 5; g.lineCap = 'round';

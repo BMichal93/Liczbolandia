@@ -25,6 +25,7 @@
   const TUNNELS = [24, 52, 80];               // depths of the long cave tunnels
   const SKY = -26;                            // above this row: the sky islands
   const HOME_R = 24;                          // flat, safe ground around the house
+  const GREAT_X = 34;                         // the Great Rift: a shaft right of the house down to the deepest tunnel (bosses.js)
 
   /* ================= noise ================= */
   function hash(a, b, s) {
@@ -178,6 +179,12 @@
     function baseTile(x, y) {
       if (y >= BOTTOM) return 'U';
       const s = surf(x), bk = biomeAt(x), bi = BIOMES[bk];
+      // the Great Rift: 3 wide, a vine on its left, from the surface to the bottom tunnel
+      if (x >= GREAT_X && x <= GREAT_X + 2) {
+        const top = Math.min(surf(GREAT_X), surf(GREAT_X + 1), surf(GREAT_X + 2)), bot = tunnelC(GREAT_X + 1, 2) + tunnelH(GREAT_X + 1, 2);
+        if (y >= top && y <= bot) return x === GREAT_X && y < bot ? 'H' : '.';
+        if (x === GREAT_X && y === top - 1) return 'H';
+      }
       // shafts (a hole with a vine at its left edge)
       const sh = shaft(Math.floor(x / 64));
       if (sh && x >= sh.x && x <= sh.x + 2 && y >= sh.top && y <= sh.bottom) return x === sh.x && y < sh.bottom ? 'H' : '.';
@@ -320,7 +327,7 @@
       if (chunkCache.size > 90) chunkCache.delete(chunkCache.keys().next().value);
       chunkCache.set(key, c); return c;
     }
-    const self = { seed: s0, surf, biomeAt, bandOf, biomeKey, tile, baseTile, chunk, mods, shaft, stalk, island, chunkCache, tunnelC, tunnelH, inTunnel, standAt, SEA, SKY, BAND, HOME_R, isLake: x => !!BIOMES[biomeAt(x)].lake };
+    const self = { seed: s0, surf, biomeAt, bandOf, biomeKey, tile, baseTile, chunk, mods, shaft, stalk, island, chunkCache, tunnelC, tunnelH, inTunnel, standAt, SEA, SKY, BAND, HOME_R, GREAT_X, isLake: x => !!BIOMES[biomeAt(x)].lake };
     return self;
   }
 

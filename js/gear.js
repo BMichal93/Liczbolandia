@@ -68,6 +68,7 @@
     if (has(p, 'umbrella')) ab.glide = true;
     if (has(p, 'wings')) ab.doubleJump = true;
     if (has(p, 'magnet')) ab.magnet = Math.max(ab.magnet || 0, 3.2);
+    if (G.riding) { ab.speed *= 1.3; ab.jump *= 1.12; }   // on the pony (stable.js)
     G.ab = ab;
     const extra = level(p, 'heart');
     const max = G.gearBase.max + extra;

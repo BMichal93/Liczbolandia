@@ -281,7 +281,7 @@
     document.getElementById('hud').classList.remove('hidden');
     LZ.In.reset();
     const kind = mode ? mode.kind : 'normal';
-    exitTo = kind === 'daily' || kind === 'home' || kind === 'world' ? hub : kind === 'custom' ? () => (mode.test ? LZ.Editor.open(mode.id) : workshop()) : kind === 'hard' ? () => levels(wi, true) : () => levels(wi);
+    exitTo = kind === 'wboss' || kind === 'temple' ? () => play(0, 0, { kind: 'world', at: mode.back }) : kind === 'daily' || kind === 'home' || kind === 'world' ? hub : kind === 'custom' ? () => (mode.test ? LZ.Editor.open(mode.id) : workshop()) : kind === 'hard' ? () => levels(wi, true) : () => levels(wi);
     LZ.Game.start(wi, li, mode);
     tryFullscreen();
   }
@@ -326,7 +326,7 @@
     const kind = res.kind || 'normal';
     const night = kind === 'hard';
     const next = () => {
-      if (kind === 'daily' || kind === 'custom') return null;
+      if (kind === 'daily' || kind === 'custom' || kind === 'wboss' || kind === 'temple') return null;
       if (res.wi === D.BONUS_ID) return null;   // bonus level: nothing comes after it
       if (res.li < D.LEVELS_PER_WORLD) return () => play(res.wi, res.li + 1, night ? { kind: 'hard' } : null);
       if (!night && res.wi < D.WORLDS.length) return () => play(res.wi + 1, 1);
@@ -352,6 +352,10 @@
         !d.met ? h('div', null, 'Spróbuj jeszcze raz - masz cały dzień!') : null,
       ]);
     }
+    if (kind === 'wboss' || kind === 'temple') {
+      head = res.wboss.head;
+      top = h('div.dailybox.ok', null, res.wboss.lines.map(l => h('div', null, l)));
+    }
     if (kind === 'custom') {
       head = 'Brawo!';
       top = res.verifiedNow ? h('div.dailybox.ok', null, 'Poziom sprawdzony - da się go przejść! Teraz możesz go wysłać.') : h('p.note', null, 'Monety w zbudowanych poziomach są tylko dla zabawy.');
@@ -372,7 +376,7 @@
       ]),
       ...extras,
       h('div.row', null, [
-        h('button.btn.mid', { onclick: () => { m.close(); LZ.Game.quit(); exitTo(); } }, kind === 'daily' ? 'Menu' : kind === 'custom' ? (res.mode && res.mode.test ? 'Wróć do budowania' : 'Pracownia') : 'Mapa'),
+        h('button.btn.mid' + (kind === 'wboss' || kind === 'temple' ? '.primary' : ''), { onclick: () => { m.close(); LZ.Game.quit(); exitTo(); } }, kind === 'wboss' || kind === 'temple' ? 'Wracam na wyprawę' : kind === 'daily' ? 'Menu' : kind === 'custom' ? (res.mode && res.mode.test ? 'Wróć do budowania' : 'Pracownia') : 'Mapa'),
         h('button.btn.mid', { onclick: () => { m.close(); LZ.Game.quit(); play(res.wi, res.li, res.mode); } }, 'Jeszcze raz'),
         nx ? h('button.btn.mid.primary', { onclick: () => { m.close(); LZ.Game.quit(); nx(); } }, 'Dalej →') : null,
       ]),
@@ -547,11 +551,12 @@
         const owned = S.ownsHat(p, x.id) || x.id === 'none', promo = promoFor('hat', x.id);
         const badge = x.badge && D.BADGES.find(b => b.id === x.badge);
         items.push(card({
-          pic: preview({ id: eq.char, variant: eq.variant, hat: x.id }, 84), name: x.name, equipped: eq.hat === x.id, locked: !owned && (!!badge || !!x.craft), promo: !owned && promo,
-          action: owned ? (eq.hat === x.id ? 'Założone' : 'Załóż') : x.craft ? '🧵 U krawcowej' : badge ? 'Odznaka: ' + badge.name : priceTag(x.price, promo),
+          pic: preview({ id: eq.char, variant: eq.variant, hat: x.id }, 84), name: x.name, equipped: eq.hat === x.id, locked: !owned && (!!badge || !!x.craft || !!x.season), promo: !owned && promo,
+          action: owned ? (eq.hat === x.id ? 'Założone' : 'Załóż') : x.craft ? '🧵 U krawcowej' : x.season ? '🎃 Świąteczna' : badge ? 'Odznaka: ' + badge.name : priceTag(x.price, promo),
           onclick: () => {
             if (owned) { eq.hat = x.id; S.save(); wardrobe(tab); }
             else if (x.craft) alertBox(x.name, CRAFT_TEXT);
+            else if (x.season) alertBox(x.name, x.season + '.');
             else if (badge) alertBox(x.name, 'Zdobądź odznakę „' + badge.name + '”: ' + badge.desc.toLowerCase() + '.');
             else buy({ price: x.price, name: x.name, promo }, () => { p.owned.hats.push(x.id); eq.hat = x.id; }, tab);
           },

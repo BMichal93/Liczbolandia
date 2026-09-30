@@ -47,6 +47,8 @@
     const lvl = kind === 'custom' ? LZ.X.toLevel(mode.data)
       : kind === 'home' ? LZ.Home.buildLevel(prof)
       : kind === 'world' ? LZ.World.buildLevel(prof, mode)
+      : kind === 'wboss' ? Object.assign(LZ.Gen.bossArena(mode.world), { noStars: true })   // a boss from the open world (bosses.js): statue or the crystal lair
+      : kind === 'temple' ? LZ.Temples.level(mode)   // a temple dungeon entered from the open world (temples.js)
       : LZ.Gen.generate(wi, li, kind === 'hard' ? { hard: true } : kind === 'daily' ? { daily: mode.info.day } : null);
     if (sb) { wi = lvl.wi; li = lvl.li; }
     if (kind === 'hard') lvl.world = Art.nightWorld(lvl.world);
@@ -71,8 +73,9 @@
       // run tracking for medals and daily goals
       mode, kind, clock: 0, hits: 0, stompsRun: 0, looseTotal: 0, looseGot: 0,
       par: LZ.X.parTime(lvl.W),
-      noCoins: kind === 'custom',   // built levels can't be a coin farm: coins there are just for fun
-      speedMul: kind === 'hard' ? 1.15 : 1,
+      // built levels can't be a coin farm, and a temple run again the same day gives no coins (temples.js)
+      noCoins: kind === 'custom' || !!(mode && mode.noCoins),
+      speedMul: kind === 'hard' || kind === 'wboss' ? 1.15 : 1,
       sb,
     };
     if (kind === 'daily') G.dailyTarget = LZ.X.dailyGoalText(mode.info, lvl);
@@ -99,8 +102,8 @@
     A.playMusic(lvl.world.music + (lvl.boss ? 100 : 0));
     if (sb) sb.init(G);
     const title = sb ? lvl.themeName : kind === 'daily' ? 'Poziom dnia: ' + G.dailyTarget.text
-      : kind === 'custom' ? lvl.themeName
-      : (kind === 'hard' ? 'Noc ' : '') + (lvl.boss ? lvl.boss.name + '!' : lvl.themeName && wi !== D.BONUS_ID ? wi + '-' + li + ': ' + lvl.themeName : lvl.world.name + ' ' + wi + '-' + li);
+      : kind === 'custom' || kind === 'temple' ? lvl.themeName
+      : (kind === 'hard' || kind === 'wboss' ? 'Noc ' : '') + (lvl.boss ? lvl.boss.name + '!' : lvl.themeName && wi !== D.BONUS_ID ? wi + '-' + li + ': ' + lvl.themeName : lvl.world.name + ' ' + wi + '-' + li);
     if (title) toast(title, kind === 'daily' ? 3.5 : 2.2);
     // secret room bounds in world units (the room sits past the castle)
     G.room = lvl.room ? { x0: lvl.room.x0 * T, x1: lvl.room.x1 * T, spawn: { x: lvl.room.spawn.x * T, y: lvl.room.spawn.y * T } } : null;
@@ -160,12 +163,23 @@
           break;
         }
         case 'challenge': G.ents.push({ k: 'challenge', zone: [e.zone[0] * T, e.zone[1] * T], spots: e.spots.map(s => [s[0] * T + T / 2, s[1] * T + T / 2]), chest: { x: e.chest[0] * T, y: e.chest[1] * T - 34, w: 44, h: 34, open: 0 }, c: null, state: 'idle', bubbles: [] }); break;
-        case 'enemy': { const en = spawnEnemy(e.type, px, py); if (e.wid) en.wid = e.wid; break; }
+        case 'enemy': { const en = spawnEnemy(e.type, px, py); if (e.wid) en.wid = e.wid; if (e.giant) makeGiant(en, e); break; }
         default: if (G.sb && G.sb.buildEnt) G.sb.buildEnt(G, e, px, py);
       }
     }
   }
 
+  /*
+   * A giant (open world, giants.js): the same creature drawn bigger, with a
+   * few hearts. Every hop on its head takes one; the last one knocks it out.
+   * bw/bh keep the normal size for drawing, w/h are the real, bigger body.
+   */
+  function makeGiant(en, d) {
+    const k = d.giant, feet = en.y + en.h, cx = en.x + en.w / 2;
+    en.bw = en.w; en.bh = en.h; en.w = Math.round(en.w * k); en.h = Math.round(en.h * k);
+    en.x = cx - en.w / 2; en.y = feet - en.h; en.ox = en.x; en.oy = en.y;
+    en.giant = k; en.hp = en.maxHp = d.hp || 4; en.gid = d.gid; en.gname = d.gname; en.stompable = true; en.hitT = 0;
+  }
   function spawnEnemy(type, px, py) {
     const size = { slime: [36, 26], bee: [32, 30], hedgehog: [36, 26], snowball: [34, 34], fish: [36, 26], jelly: [30, 34], urchin: [30, 30], shroom: [36, 34], bat: [34, 28], cloudy: [40, 30], firejelly: [30, 34], plant: [34, 46], ball: [30, 30], robot: [34, 38], alien: [34, 32], ufo: [46, 30], scorpion: [40, 28], cactus: [32, 40], vulture: [46, 32] }[type] || [32, 30];
     const e = {
@@ -823,9 +837,14 @@
       if (e.type === 'plant' && e.up < 0.35) continue;   // mostly hidden in its stump: harmless
       const hb = e.type === 'plant' ? { x: e.x + 6, y: e.y + 2, w: e.w - 12, h: Math.max(4, e.stumpTop - e.y - 2) } : { x: e.x + 4, y: e.y + 4, w: e.w - 8, h: e.h - 6 };
       if (U.overlap(p, hb)) {
-        if (p.rainbowT > 0) { killEnemy(e); continue; }
-        const fromAbove = p.vy > 60 && (p.y + PH) - e.y < 22;
-        if (fromAbove && e.stompable) {
+        if (p.rainbowT > 0 && !e.giant) { killEnemy(e); continue; }
+        const fromAbove = p.vy > 60 && (p.y + PH) - e.y < 22 + (e.giant ? 10 : 0);
+        if (fromAbove && e.giant && e.hp > 1) {
+          // a giant loses a heart and throws her high up
+          e.hp--; e.hitT = 0.5; A.play('bosshit'); G.shake = 0.25; p.vy = -P.stomp * 1.5; p.jumps = 1; p.invuln = Math.max(p.invuln, 0.35);
+          floatText(e.x + e.w / 2, e.y - 20, 'Jeszcze ' + e.hp + '!', '#ff6fae', 24);
+          for (let k = 0; k < 10; k++) G.particles.push({ x: e.x + e.w / 2, y: e.y, vx: (Math.random() - 0.5) * 300, vy: -Math.random() * 200, life: 0.5, max: 0.5, size: 6, kind: 'stars', rot: 0, grav: 500 });
+        } else if (fromAbove && e.stompable) {
           killEnemy(e, false, true);
           p.vy = (LZ.In.jump ? -P.stomp * 1.35 : -P.stomp) * (G.ab.stomp || 1); p.jumps = 1; if (G.ab.stomp) p.padLaunch = true;
         } else if (p.invuln <= 0) {
@@ -882,14 +901,15 @@
   function setupBoss() {
     const b = G.lvl.boss;
     const young = G.prof.mathLevel <= 2;   // gentler enemies/bosses on the easier levels
-    const hp = Math.max(3, 3 + Math.floor(G.wi / 2) - (young ? 1 : 0)) + (G.kind === 'hard' ? 2 : 0);
-    const size = { slimeking: [130, 110], snowman: [120, 150], octopus: [130, 120], shroomlord: [140, 120], storm: [150, 100], chocodragon: [150, 150], gearbot: [140, 150], comet: [140, 130], sphinx: [128, 112] }[b.kind];
+    const hp = b.hp || Math.max(3, 3 + Math.floor(G.wi / 2) - (young ? 1 : 0)) + (G.kind === 'hard' ? 2 : G.kind === 'wboss' ? 3 : 0);
+    const size = { slimeking: [130, 110], snowman: [120, 150], octopus: [130, 120], shroomlord: [140, 120], storm: [150, 100], chocodragon: [150, 150], gearbot: [140, 150], comet: [140, 130], sphinx: [128, 112], crystaldragon: [150, 130] }[b.kind];
     G.boss = {
       kind: b.kind, name: b.name, attack: b.attack, x: 19 * T, y: 11 * T - size[1], w: size[0], h: size[1],
       vx: 0, vy: 0, dir: -1, hp, maxHp: hp, phase: 'intro', phaseT: 0, flash: 0, atkT: 1, grounded: true,
       orbs: [], problem: null, wrong: 0, first: true, speed: young ? 0.75 : 1, look: 0,
     };
     if (b.kind === 'storm' || b.kind === 'octopus') G.boss.y = 3.2 * T;
+    if (b.kind === 'crystaldragon') G.boss.y = 2.9 * T;
   }
   function updateBoss(dt) {
     const b = G.boss, p = G.player;
@@ -949,6 +969,23 @@
           b.atkT = 0.8;
           const x = U.clamp(p.x + (Math.random() - 0.5) * 6 * T, 3 * T, (G.W - 3) * T);
           G.projectiles.push({ kind: b.kind === 'comet' ? 'meteor' : 'spore', x, y: -20, vx: 0, vy: b.kind === 'comet' ? 150 : 170, g: 0, r: 13, life: 6 });
+        }
+        break;
+      }
+      case 'crystal': {
+        // the Crystal Dragon of the lair: hovers, throws crystal shards at her
+        // and every other time lets a few fall from the ceiling around her
+        b.x = 13 * T + Math.sin(G.t * 0.55) * 6 * T; b.y = 2.9 * T + Math.sin(G.t * 1.2) * 16; b.dir = p.x < b.x + b.w / 2 ? -1 : 1;
+        if (b.atkT <= 0) {
+          b.atkT = 1.6; b.alt = !b.alt;
+          if (b.alt) {
+            const sx = b.x + b.w / 2, sy = b.y + b.h * 0.6, tx = p.x + PW / 2 + p.vx * 0.4, ty = p.y + PH / 2, ft = 1.2, g = 800;
+            G.projectiles.push({ kind: 'shard', x: sx, y: sy, vx: (tx - sx) / ft, vy: (ty - sy - 0.5 * g * ft * ft) / ft, g, r: 14, life: 4 });
+            A.play('throw');
+          } else {
+            for (let k = -1; k <= 1; k++) G.projectiles.push({ kind: 'shard', x: U.clamp(p.x + PW / 2 + k * 2.6 * T, 3 * T, (G.W - 3) * T), y: -20 - Math.abs(k) * 60, vx: 0, vy: 190, g: 0, r: 13, life: 6 });
+            A.play('pop');
+          }
         }
         break;
       }
@@ -1033,7 +1070,7 @@
       if (q.warn > 0) { q.warn -= dt; continue; }
       if (q.homing) { const dx = p.x + PW / 2 - q.x, dy = p.y + PH / 2 - q.y, d = Math.hypot(dx, dy) || 1; q.vx += dx / d * q.homing * dt; q.vy += dy / d * q.homing * dt; const s = Math.hypot(q.vx, q.vy); if (s > 150) { q.vx *= 150 / s; q.vy *= 150 / s; } }
       q.vy += (q.g || 0) * dt; q.x += q.vx * dt; q.y += q.vy * dt;
-      if ((q.kind === 'spore' || q.kind === 'meteor') && q.y > 11 * T - 12) q.life = 0;
+      if ((q.kind === 'spore' || q.kind === 'meteor' || q.kind === 'shard') && q.y > 11 * T - 12) q.life = 0;
       if ((q.kind === 'snowball' || q.kind === 'fireball' || q.kind === 'gear') && q.y > 11 * T - q.r) { q.y = 11 * T - q.r; if (q.kind !== 'fireball') q.life = Math.min(q.life, 0.05); }
       if (q.x < 2 * T - 20 || q.x > (G.W - 2) * T + 20) q.life = 0;
       let hit = false;
@@ -1086,6 +1123,8 @@
       const info = G.mode.info, met = LZ.X.dailyGoalMet(info, G.dailyTarget, run);
       res.daily = { text: G.dailyTarget.text, met, reward: met ? LZ.X.dailyReward(prof, info) : null, already: prof.daily.last === info.key };
       prof.daily.played = info.key;
+    } else if (G.kind === 'wboss' || G.kind === 'temple') {
+      res.wboss = G.kind === 'temple' ? LZ.Temples.win(prof, G.mode) : LZ.Bosses.win(prof, G.mode);   // rewards and what the results screen says
     } else if (G.kind === 'custom') {
       const lv = (S.data.custom || []).find(x => x.id === G.mode.id);
       if (G.mode.test && lv) { if (!lv.verified) { lv.verified = true; prof.stats.built = (prof.stats.built || 0) + 1; res.verifiedNow = true; } }
@@ -1210,7 +1249,7 @@
     const t = G.t, world = G.lvl.world;
     ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
     if (G.sb) G.sb.drawBack(ctx, G, G.cam, viewW, viewH, t);
-    else if (G.inRoom) Art.drawCave(ctx, world, G.cam.x, viewW, viewH, t);
+    else if (G.inRoom || G.lvl.cave) Art.drawCave(ctx, world, G.cam.x, viewW, viewH, t);
     else Art.drawBackground(ctx, world, G.cam.x, G.cam.y, viewW, viewH, t);
 
     const sx = G.shake > 0 ? (Math.random() - 0.5) * 8 : 0, sy = G.shake > 0 ? (Math.random() - 0.5) * 8 : 0;
@@ -1249,8 +1288,15 @@
       // a plant only shows above the rim of its stump, so it looks like it comes out of the hole
       if (e.type === 'plant' && !e.dead) { if (e.up <= 0.01) { ctx.restore(); continue; } ctx.beginPath(); ctx.rect(e.x - 60, e.stumpTop - 200, e.w + 120, 206); ctx.clip(); }
       if (e.dead) { ctx.translate(e.x + e.w / 2, e.y + e.h / 2); ctx.scale(1, -1); ctx.translate(-(e.x + e.w / 2), -(e.y + e.h / 2)); }
-      Art.drawEnemy(ctx, e, t, world);
+      if (e.giant) {
+        // drawn at the normal size and scaled up around the feet
+        const cx = e.x + e.w / 2, by = e.y + e.h;
+        ctx.translate(cx, by); ctx.scale(e.giant, e.giant); ctx.translate(-cx, -by);
+        if (e.hitT > 0) { e.hitT -= 1 / 60; ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t * 40); }
+        Art.drawEnemy(ctx, Object.assign({}, e, { x: cx - e.bw / 2, y: by - e.bh, w: e.bw, h: e.bh }), t, world);
+      } else Art.drawEnemy(ctx, e, t, world);
       ctx.restore();
+      if (e.giant && !e.dead) drawGiantBar(ctx, e, t);
     }
     if (G.boss) drawBossAll(ctx, t);
     if (G.pet) Art.drawPet(ctx, G.pet.id, G.pet.x, G.pet.y, t, G.pet.facing || 1);
@@ -1262,7 +1308,8 @@
       // while warping, the part of the character below the stump rim is hidden
       if (p.sink != null) { ctx.save(); ctx.beginPath(); ctx.rect(p.x - 100, p.sink - 400, PW + 200, 400); ctx.clip(); }
       if (p.rainbowT > 0) { ctx.save(); ctx.shadowColor = 'hsl(' + (t * 400 % 360) + ',100%,60%)'; ctx.shadowBlur = 18; }
-      Art.drawCharacter(ctx, p.x + PW / 2, p.y + PH + 1, { id: eq.char, variant: eq.variant, hat: eq.hat, gold: G.gold, facing: p.facing, t, state: p.hurtT > 0 ? 'hurt' : p.state, phase: p.phase, squash: p.squash, glide: p.glide });
+      // riding the pony (stable.js) she sits higher; the body she collides with stays on the ground
+      Art.drawCharacter(ctx, p.x + PW / 2, p.y + PH + 1 - (G.riderLift || 0), { id: eq.char, variant: eq.variant, hat: eq.hat, gold: G.gold, facing: p.facing, t, state: p.hurtT > 0 ? 'hurt' : p.state, phase: p.phase, squash: p.squash, glide: p.glide });
       if (p.rainbowT > 0) ctx.restore();
       if (p.shield) { Art.ell(ctx, p.x + PW / 2, p.y + PH / 2 - 4, 34, 36); ctx.fillStyle = 'rgba(140,220,255,0.22)'; ctx.fill(); ctx.strokeStyle = 'rgba(90,190,255,0.8)'; ctx.lineWidth = 2.5; ctx.stroke(); }
       if (p.sink != null) ctx.restore();
@@ -1515,6 +1562,14 @@
     }
     ctx.restore();
   }
+  function drawGiantBar(ctx, e, t) {
+    const cx = e.x + e.w / 2, y = e.y - 26;
+    // a little crown and the hearts it has left
+    ctx.beginPath(); ctx.moveTo(cx - 12, y - 8); ctx.lineTo(cx - 13, y - 20); ctx.lineTo(cx - 6, y - 13); ctx.lineTo(cx, y - 23); ctx.lineTo(cx + 6, y - 13); ctx.lineTo(cx + 13, y - 20); ctx.lineTo(cx + 12, y - 8); ctx.closePath();
+    Art.fs(ctx, '#ffd84a', '#c99a12', 1.5);
+    for (let i = 0; i < e.maxHp; i++) Art.drawHeart(ctx, cx + (i - (e.maxHp - 1) / 2) * 18, y + 2, 7, i < e.hp);
+    if (e.gname) { ctx.font = '800 13px "Baloo 2", sans-serif'; const w = ctx.measureText(e.gname).width + 14; ctx.fillStyle = 'rgba(58,36,110,0.75)'; U.rr(ctx, cx - w / 2, y + 12, w, 18, 7); ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(e.gname, cx, y + 21); }
+  }
   function drawBossAll(ctx, t) {
     const b = G.boss;
     if (b.phase === 'defeat') {
@@ -1552,6 +1607,14 @@
         break;
       case 'magic': Art.drawStar(ctx, q.x, q.y, 16, t * 3, '#ffe066'); break;
       case 'gear': Art.drawGear(ctx, q.x, q.y, q.r + 2, t * 8, '#b8c0d0'); break;
+      case 'shard': {
+        Art.ell(ctx, q.x, 11 * T - 4, q.r, 4); Art.fs(ctx, 'rgba(0,0,0,0.15)');
+        ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(t * 5);
+        ctx.beginPath(); ctx.moveTo(0, -q.r * 1.3); ctx.lineTo(q.r * 0.7, 0); ctx.lineTo(0, q.r * 1.3); ctx.lineTo(-q.r * 0.7, 0); ctx.closePath(); Art.fs(ctx, '#8fe6ff', '#2a8fb8', 2);
+        Art.ell(ctx, -2, -4, 2.5, 4); Art.fs(ctx, 'rgba(255,255,255,0.8)');
+        ctx.restore();
+        break;
+      }
       case 'meteor': {
         for (let i = 1; i <= 4; i++) { Art.ell(ctx, q.x - i * 4, q.y - i * 9, q.r * (1 - i * 0.18), q.r * (1 - i * 0.18)); Art.fs(ctx, 'rgba(255,' + (200 - i * 25) + ',120,' + (0.6 - i * 0.12) + ')'); }
         Art.ell(ctx, q.x, 11 * T - 4, q.r, 4); Art.fs(ctx, 'rgba(0,0,0,0.2)');

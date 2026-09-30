@@ -68,6 +68,16 @@ Działa na telefonie, tablecie i laptopie - widok i menu dopasowują się do ekr
   - każda robota zaczyna się zadaniem z liczenia.
 - **Materiały na wyprawie:** skały z rudą w jaskiniach (żelazo płytko, kryształy głębiej, złoto w głębinach; odrastają po 8 godzinach), piórka na wyspach w chmurach, świetliki łapane nocą do słoików, gwiezdne odłamki z nocnego deszczu meteorów.
 - **Wyścigi Liska** w każdej krainie: 60 m na czas, medale 🥇🥈🥉, rekordy i nagrody.
+- **Bossowie na wyprawie:**
+  - olbrzymy - większe wersje stworków z koroną i 4-6 serduszkami (skok na głowę zabiera jedno), jeden na powierzchni i jeden w tunelu w każdej krainie; rzadkie materiały, wracają następnego dnia,
+  - pomniki bossów budzą się nocą - walka z nocną, silniejszą wersją bossa; pierwsza wygrana daje kryształowy klucz krainy, figurkę bossa do domku i skarby,
+  - Wielka Szczelina tuż za domkiem w prawo prowadzi na dno świata (ok. 80 m), gdzie stoją Kryształowe Wrota z 7 dziurkami na klucze. Za nimi czeka nowy boss finałowy - Kryształowy Smok (Smocza korona i trofeum).
+- **Świątynie** w każdej krainie - długi poziom-loch z bramami z zadaniami i ukrytymi przejściami, skarb raz dziennie, za pierwszym razem starożytna waza do domku.
+- **Budowanie** (🧱): kilofem wykopuje się ziemię (kamienie do plecaka), a kamienie kładzie się z powrotem jako bloki, kładki albo pnącza - w zasięgu 5 kratek od postaci.
+- **Kucyk** ze stajni obok ogródka (oswaja się 5 marchewkami): szybszy bieg i wyższy skok, przycisk 🐴 wsiada i zsiada.
+- **Zaginiona korona** - historia z kilkoma krokami (Królewna Lila, Kurka Zosia, gniazdo sroki, wyspa w chmurach), z panelem „co dalej” i strzałką; nagroda: Królewska korona i złoty tron.
+- **Święta:** w październiku Halloween (świecące dynie z cukierkami, duszki nocą, Czarownica Mela wymienia cukierki na dyniową lampę i czapkę), od grudnia do 6 stycznia zima (śnieg i choinki z codziennym prezentem, Czapka Mikołaja).
+- **Rosnące wioski:** odwiedziny, pomoc i ulubione ciasto dają punkty przyjaźni - przy sąsiadce pojawiają się domki, mieszkańcy, a na końcu studnia z codziennym prezentem.
 - Muzyka i dźwięki w stylu 8-bit (chiptune), generowane na żywo.
 - Osobne profile graczy, automatyczny zapis, kopia zapasowa do pliku lub jako kod.
 

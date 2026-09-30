@@ -72,6 +72,18 @@
     { id: 'oven', name: 'Piekarnik', w: 1.5, h: 2, top: 1.95, price: 0, desc: 'Stań przy nim, żeby upiec ciasto' },
     { id: 'owlstatue', name: 'Posąg Strażnika', w: 1.5, h: 2.4, top: 0, price: 0 },
     { id: 'fishtrophy', name: 'Złoty karp na ścianie', w: 2, h: 1.2, wall: true, top: 0, price: 0 },
+    // figurines of the statue bosses beaten at night, and the final trophy (bosses.js)
+    { id: 'fig_snowman', name: 'Figurka: Bałwan Bubu', w: 1.5, h: 1.6, top: 0, price: 0 },
+    { id: 'fig_shroomlord', name: 'Figurka: Grzybolord', w: 1.5, h: 1.6, top: 0, price: 0 },
+    { id: 'fig_sphinx', name: 'Figurka: Sfinks', w: 1.5, h: 1.6, top: 0, price: 0 },
+    { id: 'fig_octopus', name: 'Figurka: Ośmiornica Ola', w: 1.5, h: 1.6, top: 0, price: 0 },
+    { id: 'fig_chocodragon', name: 'Figurka: Smok Czekoladowy', w: 1.5, h: 1.6, top: 0, price: 0 },
+    { id: 'fig_gearbot', name: 'Figurka: Robot Zębatek', w: 1.5, h: 1.6, top: 0, price: 0 },
+    { id: 'fig_comet', name: 'Figurka: Królowa Komet', w: 1.5, h: 1.6, top: 0, price: 0 },
+    { id: 'dragontrophy', name: 'Kryształowy Smok (trofeum)', w: 2.5, h: 2.4, top: 0, price: 0 },
+    { id: 'relic', name: 'Starożytna waza', w: 1.5, h: 1.5, top: 0, price: 0 },
+    { id: 'pumpkinlamp', name: 'Dyniowa lampa', w: 1, h: 1.1, top: 0, price: 0 },
+    { id: 'xmastree', name: 'Choinka', w: 2, h: 2.6, top: 0, price: 0 },
   ];
   const FURN_BY = {}; FURN.forEach(f => { FURN_BY[f.id] = f; });
 

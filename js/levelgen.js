@@ -660,10 +660,10 @@
     perches.forEach(([px, py]) => { for (let i = 0; i < 4; i++) cols[px + i][py] = '-'; });
     return {
       world, wi: world.id, li: LZ.D.LEVELS_PER_WORLD, H, W, cols, ents: [], qc: {},
-      start: { x: 4, y: 10 }, water: world.features.includes('water'),
-      boss: { kind: world.boss.id, name: world.boss.name, attack: world.boss.attack, orbs: perches.map(([px, py]) => [px + 2, py - 1.3]) },
+      start: { x: 4, y: 10 }, water: world.features.includes('water'), cave: !!world.cave,
+      boss: { kind: world.boss.id, name: world.boss.name, attack: world.boss.attack, hp: world.boss.hp, orbs: perches.map(([px, py]) => [px + 2, py - 1.3]) },
     };
   }
 
-  LZ.Gen = { generate, H, themeFor, THEMES };
+  LZ.Gen = { generate, H, themeFor, THEMES, bossArena };
 })();

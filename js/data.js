@@ -178,6 +178,11 @@
     { id: 'featherhat', name: 'Czapka z piórkiem', price: 0, craft: true },
     { id: 'gemcrown', name: 'Kryształowa korona', price: 0, craft: true },
     { id: 'starhat', name: 'Gwiezdna czapka', price: 0, craft: true },
+    { id: 'dragoncrown', name: 'Smocza korona', price: 0, badge: 'legend' },
+    { id: 'royal', name: 'Królewska korona', price: 0, badge: 'story1' },
+    // seasonal: from the witch at Halloween and the presents at Christmas (seasons.js)
+    { id: 'pumpkinhat', name: 'Dyniowa czapka', price: 0, season: 'Z Halloween na wyprawie' },
+    { id: 'santahat', name: 'Czapka Mikołaja', price: 0, season: 'Z prezentów na wyprawie zimą' },
   ];
 
   /* Particle trails left while running. */
@@ -321,6 +326,15 @@
     { id: 'forge1', name: 'U kowalki', desc: 'Wykuj pierwsze narzędzie w kuźni', check: p => Object.keys((p.fun && p.fun.gear) || {}).length >= 1 },
     { id: 'strong', name: 'Siłaczka', desc: 'Ulepsz wszystko w kuźni do trzech gwiazdek', check: p => ['heart', 'speed', 'jump'].every(k => ((p.fun && p.fun.up) || {})[k] >= 3) },
     { id: 'racer', name: 'Sprinterka', desc: 'Wygraj wyścigi Liska w 3 krainach', check: p => ((p.fun && p.fun.raceWins) || 0) >= 3 },
+    { id: 'giants5', name: 'Pogromczyni olbrzymów', desc: 'Pokonaj 5 olbrzymów na wyprawie', check: p => ((p.fun && p.fun.giantCount) || 0) >= 5 },
+    { id: 'statue1', name: 'Pierwszy klucz', desc: 'Pokonaj pomnik, który ożył nocą', check: p => Object.keys((p.fun && p.fun.keys) || {}).length >= 1 },
+    { id: 'keys7', name: 'Wszystkie klucze', desc: 'Zdobądź 7 kryształowych kluczy', check: p => Object.keys((p.fun && p.fun.keys) || {}).length >= 7 },
+    { id: 'legend', name: 'Legenda Liczbolandii', desc: 'Pokonaj Kryształowego Smoka', check: p => !!(p.fun && p.fun.dragon), reward: 'Smocza korona' },
+    { id: 'story1', name: 'Królewska pomocnica', desc: 'Odnajdź zaginioną koronę Królewny', check: p => ((p.fun && p.fun.story) || {}).step >= 5, reward: 'Królewska korona' },
+    { id: 'temples3', name: 'Poszukiwaczka świątyń', desc: 'Przejdź świątynie w 3 krainach', check: p => Object.keys((p.fun && p.fun.relics) || {}).length >= 3 },
+    { id: 'rider', name: 'Na kucyku', desc: 'Oswój kucyka w stajni', check: p => !!(p.fun && p.fun.pony) },
+    { id: 'builder2', name: 'Architektka', desc: 'Postaw 50 klocków na wyprawie', check: p => ((p.fun && p.fun.built) || 0) >= 50 },
+    { id: 'village3', name: 'Dobra sąsiadka', desc: 'Pomóż wiosce urosnąć do końca', check: p => Object.values((p.fun && p.fun.vlevel) || {}).some(v => v >= 3) },
     { id: 'book30', name: 'Wielka księga', desc: 'Zapisz 30 odkryć w Księdze odkryć', check: p => !!(LZ.Book && LZ.Book.found(p) >= 30) },
     { id: 'stickers12', name: 'Pół albumu', desc: 'Zbierz 12 naklejek', check: p => (p.stickers || []).length >= 12 },
     { id: 'stickersAll', name: 'Kolekcjonerka', desc: 'Zbierz wszystkie naklejki', check: p => (p.stickers || []).length >= STICKERS.length },
