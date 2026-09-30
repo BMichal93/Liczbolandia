@@ -139,6 +139,13 @@
 
   function boot() {
     LZ.S.load();
+    // A shared level link (#poziom=LZ1:...) opened the game: keep the code for
+    // the hub, which offers to add it once a player is chosen, and clean the
+    // address bar so a reload doesn't offer it again.
+    if (location.hash.startsWith('#poziom=')) {
+      try { sessionStorage.setItem('lz_pending_level', decodeURIComponent(location.hash.slice(8))); } catch (e) {}
+      history.replaceState(null, '', location.pathname + location.search);
+    }
     // phones/tablets: show the on-screen buttons from the start
     if (matchMedia('(pointer: coarse)').matches) { document.body.classList.add('touch'); LZ.In.touch = true; }
     LZ.S.requestPersistence();

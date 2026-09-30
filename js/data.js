@@ -20,7 +20,8 @@
    *   magnet        - pulls coins from this radius (in tiles), always on
    *
    * unlock: null = buy in the shop for `price`;
-   *         {boss: n} = given for free after beating world n's boss.
+   *         {boss: n} = given for free after beating world n's boss;
+   *         {badge: id} = given together with that badge.
    */
   const CHARACTERS = [
     {
@@ -100,6 +101,17 @@
       ],
     },
     {
+      // Reward for the night worlds: only players who go back and earn medals
+      // ever see her, so she gets the best mix of abilities after the dragon.
+      id: 'owl', name: 'Sówka Nocka', desc: 'Szybuje cicho jak w nocy. Nagroda za 3 nocnych bossów!',
+      ability: { glide: true, jump: 1.1, magnet: 2 }, abilityText: 'Szybowanie + skok + magnes', price: 0, unlock: { badge: 'nightBoss3' },
+      variants: [
+        { name: 'Płomykówka', pal: { body: '#e8c9a0', belly: '#fff8ee', accent: '#b8835a', eye: '#1e140e' } },
+        { name: 'Śnieżna', pal: { body: '#f4f4fa', belly: '#ffffff', accent: '#b8b8cc', eye: '#1e140e' } },
+        { name: 'Nocna', pal: { body: '#6a5aa8', belly: '#d9d2ff', accent: '#ffd23f', eye: '#120f2a' } },
+      ],
+    },
+    {
       id: 'unicorn', name: 'Jednorożka Tęcza', desc: 'Magiczny podwójny skok! Nagroda za bossa Świata 3.',
       ability: { doubleJump: true }, abilityText: 'Podwójny skok', price: 0, unlock: { boss: 3 },
       variants: [
@@ -140,6 +152,10 @@
     { id: 'gearcap', name: 'Czapka mechanika', price: 0, badge: 'boss7' },
     { id: 'astro', name: 'Hełm kosmonautki', price: 0, badge: 'boss8' },
     { id: 'nemes', name: 'Chusta faraona', price: 0, badge: 'boss9' },
+    { id: 'laurel', name: 'Wieniec mistrzyni', price: 0, badge: 'medals30' },
+    { id: 'nightcap', name: 'Szlafmyca', price: 0, badge: 'night1' },
+    { id: 'sunhat', name: 'Słomkowy kapelusz', price: 0, badge: 'streak7' },
+    { id: 'hardhat', name: 'Kask budowniczki', price: 0, badge: 'builder' },
   ];
 
   /* Particle trails left while running. */
@@ -151,6 +167,7 @@
     { id: 'notes', name: 'Nutki', price: 130 },
     { id: 'rainbow', name: 'Tęcza', price: 0, badge: 'streak10' },
     { id: 'sparkle', name: 'Iskierki', price: 0, badge: 'coins1000' },
+    { id: 'gold', name: 'Złoty pył', price: 0, badge: 'medals100' },
   ];
 
   /*
@@ -242,6 +259,21 @@
     { id: 'boss7', name: 'Mechaniczka', desc: 'Pokonaj Robota Zębatka', check: p => (p.bossWins || []).includes(7), reward: 'Czapka mechanika' },
     { id: 'boss8', name: 'Kosmonautka', desc: 'Pokonaj Królową Komet', check: p => (p.bossWins || []).includes(8), reward: 'Hełm kosmonautki' },
     { id: 'boss9', name: 'Pani Pustyni', desc: 'Pokonaj Sfinksa Mruczka', check: p => (p.bossWins || []).includes(9), reward: 'Chusta faraona' },
+    // medals: three extra goals on every level (time, no hearts lost, 90% of coins)
+    { id: 'medal1', name: 'Pierwszy medal', desc: 'Zdobądź pierwszy medal na poziomie', check: p => medalCount(p) >= 1 },
+    { id: 'medals30', name: 'Medalistka', desc: 'Zdobądź 30 medali', check: p => medalCount(p) >= 30, reward: 'Wieniec mistrzyni' },
+    { id: 'medals100', name: 'Mistrzyni medali', desc: 'Zdobądź 100 medali', check: p => medalCount(p) >= 100, reward: 'Ślad: Złoty pył' },
+    // night worlds (hard versions of beaten worlds)
+    { id: 'night1', name: 'Nocna wędrowniczka', desc: 'Ukończ pierwszy nocny poziom', check: p => Object.keys((p.hard || {}).done || {}).length >= 1, reward: 'Szlafmyca' },
+    { id: 'nightBoss3', name: 'Przyjaciółka sów', desc: 'Pokonaj 3 nocnych bossów', check: p => ((p.hard || {}).boss || []).length >= 3, reward: 'Postać: Sówka Nocka' },
+    { id: 'nightAll', name: 'Królowa Nocy', desc: 'Pokonaj wszystkich nocnych bossów', check: p => ((p.hard || {}).boss || []).length >= WORLDS.length },
+    // level of the day
+    { id: 'daily1', name: 'Poziom dnia', desc: 'Wykonaj pierwsze zadanie dnia', check: p => ((p.daily || {}).total || 0) >= 1 },
+    { id: 'streak7', name: 'Cały tydzień!', desc: 'Zadanie dnia 7 dni z rzędu', check: p => ((p.daily || {}).best || 0) >= 7, reward: 'Słomkowy kapelusz' },
+    { id: 'streak30', name: 'Cały miesiąc!', desc: 'Zadanie dnia 30 dni z rzędu', check: p => ((p.daily || {}).best || 0) >= 30 },
+    // level editor
+    { id: 'builder', name: 'Budowniczka', desc: 'Zbuduj poziom i przejdź go sama', check: p => (p.stats.built || 0) >= 1, reward: 'Kask budowniczki' },
+    { id: 'guest', name: 'W gościach', desc: 'Przejdź poziom zbudowany przez kogoś innego', check: p => (p.stats.guest || 0) >= 1 },
     { id: 'stickers12', name: 'Pół albumu', desc: 'Zbierz 12 naklejek', check: p => (p.stickers || []).length >= 12 },
     { id: 'stickersAll', name: 'Kolekcjonerka', desc: 'Zbierz wszystkie naklejki', check: p => (p.stickers || []).length >= STICKERS.length },
     { id: 'firstPet', name: 'Mam pupila!', desc: 'Kup pupila za gwiazdki', check: p => (p.starItems || []).some(i => i.startsWith('pet_')) },
@@ -303,6 +335,12 @@
     boss: { id: 'slimeking', name: 'Król Glutek', color: '#8fe36b', attack: 'shock' },
   };
 
+  // medals are stored per level as [time, noHearts, coins]
+  function medalCount(p, w) {
+    let n = 0;
+    for (const k in p.medals || {}) if (!w || k.startsWith(w + '-')) n += (p.medals[k] || []).filter(Boolean).length;
+    return n;
+  }
   function countCompleted(p) { return Object.keys(p.done || {}).length; }
   function starBalance(p) { return countStars(p) - (p.starsSpent || 0); }
   function countStars(p) {
@@ -333,5 +371,5 @@
     { id: 4, name: 'Mistrzowski', icon: '👑', desc: 'Cała tabliczka mnożenia i dzielenie do 100', note: '', min: 4.6, max: 5.99, start: 4.8, reward: 3 },
   ];
 
-  LZ.D = { CHARACTERS, VARIANT_PRICES, HATS, TRAILS, WORLDS, LEVELS_PER_WORLD, BADGES, MATH_LEVELS, countStars, countCompleted, starBalance, STAR_ITEMS, PETS, STICKERS, STICKER_PACK_PRICE, BONUS_WORLD, BONUS_ID };
+  LZ.D = { medalCount, CHARACTERS, VARIANT_PRICES, HATS, TRAILS, WORLDS, LEVELS_PER_WORLD, BADGES, MATH_LEVELS, countStars, countCompleted, starBalance, STAR_ITEMS, PETS, STICKERS, STICKER_PACK_PRICE, BONUS_WORLD, BONUS_ID };
 })();

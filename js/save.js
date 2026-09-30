@@ -31,17 +31,21 @@
       starsSpent: 0,      // stars are earned per level and can be spent in the star shop
       starItems: [],      // ids of STAR_ITEMS bought
       stickers: [],       // sticker album
+      medals: {},         // 'w-l' -> [time, noHearts, coins] extra goals per level
+      hard: { done: {}, boss: [] },   // night (hard) versions of worlds
+      daily: { last: null, streak: 0, best: 0, total: 0, played: null },   // level of the day
       badges: [],
       readAloud: ml.id === 1,   // read questions aloud - default on for the youngest level
       mathV2: true,
       levelsV2: true,
       levelsV3: true,
-      stats: { correct: 0, wrong: 0, streak: 0, bestStreak: 0, totalCoins: 0, stomps: 0, jumps: 0, purchases: 0, topics: {} },
+      stats: { correct: 0, wrong: 0, streak: 0, bestStreak: 0, totalCoins: 0, stomps: 0, jumps: 0, purchases: 0, built: 0, guest: 0, topics: {} },
       created: Date.now(), lastPlayed: Date.now(),
     };
   }
 
-  const defaults = () => ({ version: 1, profiles: [], active: null, settings: { music: 0.6, sfx: 0.8 } });
+  // `custom` = levels built in the Pracownia; they belong to the device, so sisters on one tablet share them
+  const defaults = () => ({ version: 1, profiles: [], active: null, settings: { music: 0.6, sfx: 0.8 }, custom: [] });
 
   let data = defaults();
 
@@ -77,6 +81,8 @@
        * "world 7" to id 99 because world 7 is now a real world. Beaten bosses
        * keep counting as beaten; the new levels 4-5 open up in each world.
        */
+      out.hard = Object.assign({ done: {}, boss: [] }, p.hard || {});
+      out.daily = Object.assign({ last: null, streak: 0, best: 0, total: 0, played: null }, p.daily || {});
       if (!p.levelsV2) {
         for (const key of ['done', 'stars', 'best']) {
           const m = out[key] || {}, next = {};
@@ -165,9 +171,24 @@
   function checkBadges(p) {
     const got = [];
     for (const b of D.BADGES) {
-      if (!p.badges.includes(b.id) && b.check(p)) { p.badges.push(b.id); got.push(b); }
+      if (!p.badges.includes(b.id) && b.check(p)) {
+        p.badges.push(b.id); got.push(b);
+        // some characters come with a badge (Sówka Nocka)
+        for (const c of D.CHARACTERS) if (c.unlock && c.unlock.badge === b.id && !p.owned.chars.includes(c.id)) { p.owned.chars.push(c.id); p.owned.variants[c.id] = [0]; }
+      }
     }
     return got;
+  }
+  /*
+   * Night worlds: the hard version of a world opens once its boss is beaten
+   * and she has 7 medals there (a third of the 21). That makes going back for
+   * medals the key to new content, instead of an optional chore.
+   */
+  const NIGHT_MEDALS = 7;
+  function isHardUnlocked(p, w) { return p.bossWins.includes(w) && D.medalCount(p, w) >= NIGHT_MEDALS; }
+  function isHardLevelUnlocked(p, w, l) {
+    if (!isHardUnlocked(p, w)) return false;
+    return l === 1 || !!(p.hard.done || {})[levelKey(w, l - 1)];
   }
   /* Characters given for bosses. */
   function grantBossUnlocks(p) {
@@ -212,6 +233,7 @@
   LZ.S = {
     load, save, requestPersistence, get data() { return data; }, active, setActive, addProfile, removeProfile,
     recordAnswer, mathBand, setMathLevel, levelKey, isLevelUnlocked, isWorldUnlocked, checkBadges, grantBossUnlocks,
+    isHardUnlocked, isHardLevelUnlocked, NIGHT_MEDALS,
     ownsHat, ownsTrail, exportText, importText, exportFile,
   };
 })();

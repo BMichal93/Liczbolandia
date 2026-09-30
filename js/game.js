@@ -30,9 +30,21 @@
   /* =================================================================
    * LEVEL START
    * ================================================================= */
-  function start(wi, li) {
+  /*
+   * mode (optional) says what kind of run this is:
+   *   { kind: 'hard' }                    night version of a world level
+   *   { kind: 'daily', info }             level of the day (info from LZ.X.daily)
+   *   { kind: 'custom', data, test, id }  a level from the Pracownia;
+   *                                        test = the builder checking her own level
+   */
+  function start(wi, li, mode) {
     const prof = S.active();
-    const lvl = LZ.Gen.generate(wi, li);
+    mode = mode || null;
+    const kind = mode ? mode.kind : 'normal';
+    const lvl = kind === 'custom' ? LZ.X.toLevel(mode.data)
+      : LZ.Gen.generate(wi, li, kind === 'hard' ? { hard: true } : kind === 'daily' ? { daily: mode.info.day } : null);
+    if (kind === 'hard') lvl.world = Art.nightWorld(lvl.world);
+    if (kind === 'custom') { wi = lvl.wi; li = 1; }
     const ch = D.CHARACTERS.find(c => c.id === prof.equip.char) || D.CHARACTERS[0];
     const ab = ch.ability || {};
     const si = prof.starItems || [];
@@ -50,7 +62,13 @@
       bumps: {},                   // "x,y" -> bump animation time for ?-blocks
       qc: lvl.qc,
       boss: null,
+      // run tracking for medals and daily goals
+      mode, kind, clock: 0, hits: 0, stompsRun: 0, looseTotal: 0, looseGot: 0,
+      par: LZ.X.parTime(lvl.W),
+      noCoins: kind === 'custom',   // built levels can't be a coin farm: coins there are just for fun
+      speedMul: kind === 'hard' ? 1.15 : 1,
     };
+    if (kind === 'daily') G.dailyTarget = LZ.X.dailyGoalText(mode.info, lvl);
     G.player = {
       x: lvl.start.x * T, y: lvl.start.y * T + (T - PH), vx: 0, vy: 0, w: PW, h: PH,
       facing: 1, grounded: false, coyote: 0, buffer: 0, jumps: 0, invuln: 0,
@@ -72,7 +90,10 @@
     G.cam.x = G.player.x - viewW * 0.35; G.cam.y = (G.H * T - viewH);
     clampCam(true);
     A.playMusic(lvl.world.music + (lvl.boss ? 100 : 0));
-    toast(lvl.boss ? lvl.boss.name + '!' : lvl.themeName && wi !== D.BONUS_ID ? wi + '-' + li + ': ' + lvl.themeName : lvl.world.name + ' ' + wi + '-' + li, 2.2);
+    const title = kind === 'daily' ? 'Poziom dnia: ' + G.dailyTarget.text
+      : kind === 'custom' ? lvl.themeName
+      : (kind === 'hard' ? 'Noc ' : '') + (lvl.boss ? lvl.boss.name + '!' : lvl.themeName && wi !== D.BONUS_ID ? wi + '-' + li + ': ' + lvl.themeName : lvl.world.name + ' ' + wi + '-' + li);
+    toast(title, kind === 'daily' ? 3.5 : 2.2);
     // secret room bounds in world units (the room sits past the castle)
     G.room = lvl.room ? { x0: lvl.room.x0 * T, x1: lvl.room.x1 * T, spawn: { x: lvl.room.spawn.x * T, y: lvl.room.spawn.y * T } } : null;
     G.secret = lvl.secret || null;
@@ -99,7 +120,7 @@
     for (const e of G.lvl.ents) {
       const px = e.x * T, py = e.y * T;
       switch (e.t) {
-        case 'coin': G.ents.push({ k: 'coin', x: px + T / 2, y: py + T / 2, r: 12 }); break;
+        case 'coin': G.ents.push({ k: 'coin', x: px + T / 2, y: py + T / 2, r: 12, loose: true }); G.looseTotal++; break;
         case 'star': G.ents.push({ k: 'star', x: px + T / 2, y: py + T / 2, idx: e.idx }); break;
         case 'spring': G.ents.push({ k: 'spring', x: px + 6, y: py - 26, w: T - 12, h: 26, comp: 0 }); break;
         case 'mushroom': G.ents.push({ k: 'mushroom', x: px - 20, y: py - 38, w: T + 40, h: 38, comp: 0 }); break;
@@ -159,6 +180,7 @@
 
     if (G.state === 'play' || G.state === 'bossdefeat') updatePlatforms(dt);
     if (G.state === 'play') {
+      G.clock += dt;   // play time only: pauses, warps and the flag slide don't count against the par time
       updatePlayer(dt);
       updateEntities(dt);
       updateEnemies(dt);
@@ -514,7 +536,7 @@
       if (!G) return;
       // coins only if there was no mistake; the star is always given for finishing it
       if (!z.mistake) for (let i = 0; i < Math.round(6 * G.rew); i++) popCoin(z.chest.x + 22, z.chest.y, true);
-      if (!G.stars[1]) G.ents.push({ k: 'star', x: z.chest.x + 22, y: z.chest.y - 30, idx: 1, vy: -420, fly: true });
+      if (!G.stars[1] && !G.lvl.noStars) G.ents.push({ k: 'star', x: z.chest.x + 22, y: z.chest.y - 30, idx: 1, vy: -420, fly: true });
     }, 350);
   }
 
@@ -670,7 +692,8 @@
 
   function collectCoin(i, e) {
     G.ents.splice(i, 1);
-    G.coins++; G.prof.coins++; G.prof.stats.totalCoins++;
+    G.coins++; if (e.loose) G.looseGot++;
+    if (!G.noCoins) { G.prof.coins++; G.prof.stats.totalCoins++; }
     A.play('coin');
     for (let k = 0; k < 4; k++) G.particles.push({ x: e.x, y: e.y, vx: (Math.random() - 0.5) * 120, vy: -Math.random() * 120, life: 0.35, max: 0.35, size: 3, kind: 'sparkle', rot: Math.random() * 3, grav: 0 });
   }
@@ -699,7 +722,7 @@
       if (e.x + e.w < camL || e.x > camR) continue;   // sleep off-screen
       e.t += dt;
       const young = G.prof.mathLevel <= 2;   // gentler enemies/bosses on the easier levels
-      const spd = young ? 0.8 : 1;
+      const spd = (young ? 0.8 : 1) * G.speedMul;   // night levels: enemies 15% faster
       switch (e.type) {
         case 'slime': case 'shroom': case 'hedgehog': case 'snowball': case 'robot': case 'alien': case 'scorpion': case 'cactus': {
           const sp = (e.type === 'snowball' ? 115 : e.type === 'hedgehog' ? 55 : e.type === 'robot' ? 80 : e.type === 'scorpion' ? 75 : e.type === 'cactus' ? 0 : 65) * spd;   // a cactus stands still: spiky AND walking was too much for a 7-year-old
@@ -784,7 +807,7 @@
   function killEnemy(e, flip, stomp) {
     e.dead = true; e.vy = -420; e.deadT = 0; e.flip = true;
     A.play('stomp');
-    G.prof.stats.stomps++;
+    G.prof.stats.stomps++; if (stomp) G.stompsRun++;
     for (let i = 0; i < 8; i++) G.particles.push({ x: e.x + e.w / 2, y: e.y + e.h / 2, vx: (Math.random() - 0.5) * 260, vy: -Math.random() * 200, life: 0.5, max: 0.5, size: 5, kind: 'stars', rot: Math.random() * 6, grav: 400 });
     if (stomp) floatText(e.x + e.w / 2, e.y - 10, 'Hop!', '#ff6fae', 22);
     popCoin(e.x + e.w / 2, e.y);
@@ -795,7 +818,7 @@
     if (p.invuln > 0 || G.state !== 'play') return;
     G.damage = G.damage || {}; G.damage[cause || '?'] = (G.damage[cause || '?'] || 0) + 1;
     if (p.shield) { p.shield = false; p.invuln = 1.2; A.play('pop'); toast('Tarcza cię obroniła!', 1.2); return; }
-    G.hearts--; A.play('hurt'); p.invuln = 1.6; p.hurtT = 0.25; G.shake = 0.25;
+    G.hearts--; G.hits++; A.play('hurt'); p.invuln = 1.6; p.hurtT = 0.25; G.shake = 0.25;
     p.vy = -420; p.vx = fromX != null ? (p.x + PW / 2 < fromX ? -260 : 260) : 0;
     if (G.hearts <= 0) outOfHearts();
   }
@@ -803,7 +826,7 @@
     const p = G.player;
     G.damage = G.damage || {}; G.damage.pit = (G.damage.pit || 0) + 1;
     (G.pitAt = G.pitAt || {})[Math.floor(p.x / T)] = (G.pitAt[Math.floor(p.x / T)] || 0) + 1;   // where falls happen (for tests)
-    G.hearts--; A.play('fall');   // long 'whistle down' for a pit instead of the ouch sound
+    G.hearts--; G.hits++; A.play('fall');   // long 'whistle down' for a pit instead of the ouch sound
     if (G.hearts <= 0) { outOfHearts(); return; }
     const s = p.lastSafe || G.checkpoint;
     p.x = s.x; p.y = s.y; p.vx = 0; p.vy = 0; p.invuln = 1.6;
@@ -827,7 +850,7 @@
   function setupBoss() {
     const b = G.lvl.boss;
     const young = G.prof.mathLevel <= 2;   // gentler enemies/bosses on the easier levels
-    const hp = Math.max(3, 3 + Math.floor(G.wi / 2) - (young ? 1 : 0));
+    const hp = Math.max(3, 3 + Math.floor(G.wi / 2) - (young ? 1 : 0)) + (G.kind === 'hard' ? 2 : 0);
     const size = { slimeking: [130, 110], snowman: [120, 150], octopus: [130, 120], shroomlord: [140, 120], storm: [150, 100], chocodragon: [150, 150], gearbot: [140, 150], comet: [140, 130], sphinx: [128, 112] }[b.kind];
     G.boss = {
       kind: b.kind, name: b.name, attack: b.attack, x: 19 * T, y: 11 * T - size[1], w: size[0], h: size[1],
@@ -999,21 +1022,52 @@
   function finish(win) {
     G.finished = true;
     const prof = G.prof, key = S.levelKey(G.wi, G.li);
-    const firstClear = !prof.done[key];
-    prof.done[key] = true;
-    const prevStars = prof.stars[key] || [false, false, false];
-    if (G.lvl.boss) G.stars = [true, true, true];
-    prof.stars[key] = prevStars.map((s, i) => s || G.stars[i]);
-    prof.best[key] = Math.max(prof.best[key] || 0, G.coins);
-    let newChars = [];
-    if (G.lvl.boss && !prof.bossWins.includes(G.wi)) { prof.bossWins.push(G.wi); newChars = S.grantBossUnlocks(prof); }
-    const badges = S.checkBadges(prof);
+    const secs = Math.round(G.clock);
+    const run = { time: G.clock, par: G.par, hits: G.hits, looseTotal: G.looseTotal, looseGot: G.looseGot, coins: G.coins, mathOk: G.mathOk, mathTotal: G.mathTotal, stomps: G.stompsRun };
+    const res = { kind: G.kind, mode: G.mode, bonus: 0, rew: G.rew, bandName: S.mathBand(prof).name, wi: G.wi, li: G.li, coins: G.coins, stars: G.stars.slice(),
+      mathOk: G.mathOk, mathTotal: G.mathTotal, time: secs, par: G.par, firstClear: false, badges: [], newChars: [], boss: !!G.lvl.boss, worldName: G.lvl.world.name,
+      loose: [G.looseGot, G.looseTotal], hits: G.hits };
+    const ownedBefore = prof.owned.chars.slice();
+
+    if (G.kind === 'normal') {
+      const nightBefore = G.wi !== D.BONUS_ID && S.isHardUnlocked(prof, G.wi);
+      res.firstClear = !prof.done[key];
+      prof.done[key] = true;
+      const prevStars = prof.stars[key] || [false, false, false];
+      if (G.lvl.boss) G.stars = [true, true, true];
+      res.stars = G.stars.slice();
+      prof.stars[key] = prevStars.map((s, i) => s || G.stars[i]);
+      prof.best[key] = Math.max(prof.best[key] || 0, G.coins);
+      if (G.lvl.boss && !prof.bossWins.includes(G.wi)) { prof.bossWins.push(G.wi); res.newChars = S.grantBossUnlocks(prof); }
+      // medals only on the ordinary levels (not the boss, not the bonus level)
+      if (!G.lvl.boss && G.wi !== D.BONUS_ID) {
+        const prev = (prof.medals = prof.medals || {})[key] || [false, false, false];
+        const now = LZ.X.medalsFor(run);
+        prof.medals[key] = prev.map((m, i) => m || now[i]);
+        res.medals = { now, prev, all: prof.medals[key] };
+      }
+      if (G.wi !== D.BONUS_ID) res.nightOpened = !nightBefore && S.isHardUnlocked(prof, G.wi);
+    } else if (G.kind === 'hard') {
+      prof.hard.done[key] = true;
+      if (G.lvl.boss && !prof.hard.boss.includes(G.wi)) prof.hard.boss.push(G.wi);
+    } else if (G.kind === 'daily') {
+      const info = G.mode.info, met = LZ.X.dailyGoalMet(info, G.dailyTarget, run);
+      res.daily = { text: G.dailyTarget.text, met, reward: met ? LZ.X.dailyReward(prof, info) : null, already: prof.daily.last === info.key };
+      prof.daily.played = info.key;
+    } else if (G.kind === 'custom') {
+      const lv = (S.data.custom || []).find(x => x.id === G.mode.id);
+      if (G.mode.test && lv) { if (!lv.verified) { lv.verified = true; prof.stats.built = (prof.stats.built || 0) + 1; res.verifiedNow = true; } }
+      else if (lv && lv.author !== prof.name) prof.stats.guest = (prof.stats.guest || 0) + 1;
+    }
+    res.badges = S.checkBadges(prof);
+    // characters that came with a badge (the owl)
+    D.CHARACTERS.forEach(c => { if (prof.owned.chars.includes(c.id) && !ownedBefore.includes(c.id) && !res.newChars.includes(c)) res.newChars.push(c); });
     S.save();
     // difficulty bonus: harder maths levels multiply what you collected
-    const bonus = Math.round(G.coins * (G.rew - 1));
-    if (bonus > 0) { prof.coins += bonus; prof.stats.totalCoins += bonus; S.checkBadges(prof); S.save(); }
-    const secs = Math.round((performance.now() - G.startTime) / 1000);
-    const res = { bonus, rew: G.rew, bandName: S.mathBand(prof).name, wi: G.wi, li: G.li, coins: G.coins, stars: G.stars.slice(), mathOk: G.mathOk, mathTotal: G.mathTotal, time: secs, firstClear, badges, newChars, boss: !!G.lvl.boss, worldName: G.lvl.world.name };
+    if (!G.noCoins) {
+      res.bonus = Math.round(G.coins * (G.rew - 1));
+      if (res.bonus > 0) { prof.coins += res.bonus; prof.stats.totalCoins += res.bonus; res.badges = res.badges.concat(S.checkBadges(prof)); S.save(); }
+    }
     setTimeout(() => LZ.UI.levelComplete(res), 300);
   }
 
@@ -1056,7 +1110,7 @@
   }
 
   function quit() { if (G) { S.save(); } G = null; LZ.Speech.stop(); }
-  function restart() { if (G) start(G.wi, G.li); }
+  function restart() { if (G) start(G.wi, G.li, G.mode); }
 
   /* =================================================================
    * EFFECTS
@@ -1488,6 +1542,20 @@
     [['magnet', p.magnetT, 14], ['boots', p.bootsT, 14], ['rainbow', p.rainbowT, 9]].forEach(([k, v, m]) => {
       if (v > 0) { ctx.globalAlpha = v < 2 && Math.floor(t * 8) % 2 ? 0.4 : 1; Art.drawPowerup(ctx, k, px, pad + 22, 0); ctx.globalAlpha = 1; px += 40; }
     });
+    // run clock with the par time (medal goal) at the top centre
+    const fmt = v => Math.floor(v / 60) + ':' + String(Math.floor(v % 60)).padStart(2, '0');
+    const showClock = !G.boss && G.wi !== D.BONUS_ID && (G.kind === 'normal' || (G.kind === 'daily' && G.mode.info.goal === 'time'));
+    if (showClock) {
+      const par = G.kind === 'daily' ? G.dailyTarget.t : G.par, over = G.clock > par;
+      outlinedText(ctx, '⏱ ' + fmt(G.clock), viewW / 2 - 6, pad + 22, 24, '#fff', '#5a3a8a', 'right');
+      outlinedText(ctx, '/ ' + fmt(par), viewW / 2 + 2, pad + 22, 20, over ? '#ffb3c7' : '#ffe680', '#5a3a8a', 'left');
+    }
+    // level of the day: the goal and how it's going
+    if (G.kind === 'daily') {
+      const info = G.mode.info, tg = G.dailyTarget;
+      const prog = info.goal === 'coins' ? G.coins + '/' + tg.n : info.goal === 'stomp' ? G.stompsRun + '/' + tg.n : info.goal === 'nohit' ? (G.hits ? '✗' : '✓') : info.goal === 'math' ? (G.mathOk === G.mathTotal ? '✓' : '✗') : '';
+      outlinedText(ctx, 'Cel dnia: ' + prog, viewW / 2, pad + (showClock ? 50 : 22), 20, '#ffffff', '#e0629f');
+    }
     // boss hp bar
     if (G.boss && G.boss.phase !== 'defeat') {
       const b = G.boss, w = Math.min(320, viewW * 0.35), x = viewW / 2 - w / 2, y = viewH - 34;

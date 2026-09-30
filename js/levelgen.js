@@ -52,18 +52,31 @@
     return a.concat(b)[li - 1];
   }
 
-  function generate(wi, li) {
-    // world 7 is the star-shop bonus level "Kraina Monet": one replayable level
+  /*
+   * opt (all optional):
+   *   hard: true   - the night version: a different layout (other seed) and
+   *                  about one world's worth harder
+   *   daily: n     - level of the day; n is the date number, which seeds
+   *                  the layout and theme so everyone gets the same level that day
+   * Stars are a fixed currency earned only in normal levels, so night and
+   * daily levels have none.
+   */
+  function generate(wi, li, opt) {
+    opt = opt || {};
+    // the star-shop bonus level "Kraina Monet": one replayable level
     const bonus = wi === D.BONUS_ID;
     const world = bonus ? D.BONUS_WORLD : D.WORLDS[wi - 1];
-    if (!bonus && li === D.LEVELS_PER_WORLD) return bossArena(world);
+    if (!bonus && li === D.LEVELS_PER_WORLD) { const a = bossArena(world); a.hard = !!opt.hard; return a; }
+    const daily = opt.daily != null, special = daily || !!opt.hard;
 
-    const r = bonus ? U.rng(Date.now() & 0xffff) : U.rng(wi * 1009 + li * 37 + 5);   // bonus level is different on every visit
+    const seed = daily ? opt.daily * 7919 + wi * 31 : opt.hard ? wi * 1009 + li * 37 + 50021 : wi * 1009 + li * 37 + 5;
+    const r = bonus ? U.rng(Date.now() & 0xffff) : U.rng(seed);   // bonus level is different on every visit
     const has = f => world.features.includes(f);
     const water = has('water');
     // ramps up more gently inside a world now that each world has 7 levels
-    const diff = bonus ? 0.5 : (wi - 1) * 0.42 + (li - 1) * 0.18;   // 0 .. ~4.4
-    const theme = themeFor(wi, li);
+    let diff = bonus ? 0.5 : (wi - 1) * 0.42 + (li - 1) * 0.18;   // 0 .. ~4.4
+    if (opt.hard) diff += 0.6;   // about 1.5 worlds harder; +0.9 made the last night worlds a wall of cannons
+    const theme = daily ? U.pick(U.rng(opt.daily * 13 + 1), Object.keys(THEMES).filter(k => wi > 1 || k !== 'fort')) : themeFor(wi, li);
     const cols = [];
     const ents = [];
     const qc = {};                                       // "x,y" -> ?-block content
@@ -229,15 +242,17 @@
         for (let i = 0; i < n; i++) ground(x + i, gh, has('ice') && r() < 0.5 ? 'I' : '#');
         // at most one spiky (can't-stomp) enemy per parade, at the front: two of
         // them a few tiles apart left no safe place to land between the jumps
-        enemy(x + 5, gh, true); enemy(x + 10, gh);
-        if (diff > 1.2) enemy(x + 8, gh);
+        // the rest of the parade walks: flyers at head height in a row of walkers
+        // left no gap to jump through (the night space level showed it)
+        enemy(x + 5, gh, true); ents.push({ t: 'enemy', type: walker(), x: x + 10, y: gh });
+        if (diff > 1.2) ents.push({ t: 'enemy', type: walker(), x: x + 8, y: gh });
         for (let i = 2; i < n - 2; i += 2) coin(x + i, gh - 3);
         x += n;
       },
       thorns() {
         for (let i = 0; i < 9; i++) ground(x + i, gh);
         set(x + 4, gh - 1, 'S'); if (diff > 1) set(x + 5, gh - 1, 'S');
-        arc(x + 3, 3, gh - 3);
+        arc(x + 3, 3, gh - 2);   // peak 4 above the ground: an easy full jump, even for the 90%-coins medal
         x += 9;
       },
       /* ---- world-specific chunks ---- */
@@ -285,7 +300,9 @@
         gh = hh; x += 3;
       },
       falling() {
-        ground(x, gh); x++;
+        // 3 tiles of ground first (a step up right before the drop sent jumps into the lava)
+        for (let i = 0; i < 3; i++) ground(x + i, gh);
+        x += 3;
         // two roomy 3-tile platforms with a 1-tile gap: still exciting
         // (they drop!) but doable by a 7-year-old
         const pw = 8;
@@ -620,10 +637,10 @@
     }
     // the bonus level has no stars - stars stay a fixed, earned currency
     // the third star waits in the secret room when there is one - a reward for exploring
-    if (!bonus) { ents.push({ t: 'star', x: s0.x, y: s0.y, idx: 0 }); const st2 = room ? room.star : s2; ents.push({ t: 'star', x: st2.x, y: st2.y, idx: 2 }); }
+    if (!bonus && !special) { ents.push({ t: 'star', x: s0.x, y: s0.y, idx: 0 }); const st2 = room ? room.star : s2; ents.push({ t: 'star', x: st2.x, y: st2.y, idx: 2 }); }
     // star idx 1 lives in the challenge chest (see game.js)
 
-    return { world, wi, li, H, W: cols.length, cols, ents, qc, start: { x: 2, y: 9 }, water, boss: null, theme, themeName: THEMES[theme].name, secret, room };
+    return { world, wi, li, H, W: cols.length, cols, ents, qc, start: { x: 2, y: 9 }, water, boss: null, theme, themeName: THEMES[theme].name, secret, room, hard: !!opt.hard, daily, noStars: special };
   }
 
   /* Boss arena: a closed room, three perches for the answer orbs. */

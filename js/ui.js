@@ -180,7 +180,11 @@
         h('div.hero', null, [preview({ id: p.equip.char, variant: p.equip.variant, hat: p.equip.hat, walk: true }, 190)]),
         h('div.hubbtns', null, [
           h('button.btn.big.primary', { onclick: () => worlds() }, 'Graj'),
-          h('button.btn.big.pink', { onclick: () => wardrobe('chars') }, 'Garderoba i sklep'),
+          h('div.row', null, [
+            h('button.btn.mid.orange', { onclick: dailyScreen }, [p.daily && p.daily.last === LZ.X.dateKey() ? '✓ ' : '', 'Poziom dnia', p.daily && p.daily.streak > 1 && p.daily.last >= LZ.X.dateKey(new Date(Date.now() - 86400000)) ? h('span.streak', null, ' ' + p.daily.streak + ' dni') : null]),
+            h('button.btn.mid.purple', { onclick: () => workshop() }, 'Pracownia'),
+          ]),
+          h('button.btn.mid.pink', { onclick: () => wardrobe('chars') }, 'Garderoba i sklep'),
           h('div.row', null, [
             h('button.btn.mid.blue', { onclick: badges }, 'Odznaki'),
             h('button.btn.mid.gold', { onclick: album }, 'Album'),
@@ -191,6 +195,7 @@
       ]),
     ]));
     if (newBadges.length) celebrateBadges(newBadges);
+    else checkPendingLevel();
   }
 
   /* ================= WORLDS & LEVELS ================= */
@@ -219,36 +224,52 @@
       }, [h('div.wnum', null, 'Tajny poziom'), h('div.wname', null, D.BONUS_WORLD.name), h('div.wsub', null, D.BONUS_WORLD.sub), h('div.wground', { style: 'background:' + D.BONUS_WORLD.pal.grass + ';border-top:6px solid ' + D.BONUS_WORLD.pal.grassDark })])] : [])),
     ]));
   }
-  function levels(wi) {
+  function levels(wi, night) {
     currentWorld = wi;
-    const p = S.active(), w = D.WORLDS[wi - 1];
+    const p = S.active(), w0 = D.WORLDS[wi - 1];
+    const nightOpen = S.isHardUnlocked(p, wi);
+    if (!nightOpen) night = false;
+    const w = night ? LZ.Art.nightWorld(w0) : w0;
     const nodes = [];
     for (let l = 1; l <= D.LEVELS_PER_WORLD; l++) {
-      const key = S.levelKey(wi, l), open = S.isLevelUnlocked(p, wi, l), boss = l === D.LEVELS_PER_WORLD;
-      const st = p.stars[key] || [];
-      nodes.push(h('div.lnode' + (open ? '' : '.locked') + (boss ? '.boss' : '') + (p.done[key] ? '.done' : ''), {
-        onclick: () => { if (open) play(wi, l); },
+      const key = S.levelKey(wi, l), boss = l === D.LEVELS_PER_WORLD;
+      const open = night ? S.isHardLevelUnlocked(p, wi, l) : S.isLevelUnlocked(p, wi, l);
+      const done = night ? !!p.hard.done[key] : !!p.done[key];
+      const st = p.stars[key] || [], md = (p.medals || {})[key] || [];
+      nodes.push(h('div.lnode' + (open ? '' : '.locked') + (boss ? '.boss' : '') + (done ? '.done' : '') + (night ? '.night' : ''), {
+        onclick: () => { if (open) play(wi, l, night ? { kind: 'hard' } : null); },
       }, [
         h('div.lnum', null, boss ? 'BOSS' : String(l)),
-        boss ? h('div.lbossname', null, w.boss.name) : h('div.lstars', null, [0, 1, 2].map(i => starIcon(!!st[i]))),
-        boss ? null : h('div.ltheme', null, LZ.Gen.THEMES[LZ.Gen.themeFor(wi, l)].name),
+        boss ? h('div.lbossname', null, w.boss.name)
+          : night ? h('div.lstars', null, done ? '🌙' : '')
+          : h('div.lstars', null, [0, 1, 2].map(i => starIcon(!!st[i]))),
+        boss || night ? null : h('div.lmedals', null, LZ.X.MEDALS.map((m, i) => h('span.medal' + (md[i] ? '.got' : ''), { title: m.name }, m.icon))),
         !open ? h('div.lock', null, '🔒') : null,
       ]));
     }
-    show(h('div.screen', { style: 'background:linear-gradient(160deg,' + w.pal.skyTop + 'dd,' + w.pal.skyBot + 'dd)' }, [
-      h('div.topbar', null, [h('button.btn.small', { onclick: worlds }, '← Mapa'), h('h1', null, w.name), h('span')]),
+    const medals = D.medalCount(p, wi);
+    const toggle = p.bossWins.includes(wi)
+      ? h('button.btn.small' + (night ? '.gold' : '.night'), { onclick: () => { if (nightOpen) levels(wi, !night); else alertBox('Noc jeszcze zamknięta', 'Zdobądź ' + S.NIGHT_MEDALS + ' medali w tym świecie (masz ' + medals + '), a otworzy się jego nocna, trudniejsza wersja.'); } }, night ? '☀ Dzień' : (nightOpen ? '🌙 Noc' : '🌙 ' + medals + '/' + S.NIGHT_MEDALS))
+      : h('span');
+    show(h('div.screen' + (night ? '.nightscreen' : ''), { style: 'background:linear-gradient(160deg,' + w.pal.skyTop + 'dd,' + w.pal.skyBot + 'dd)' }, [
+      h('div.topbar', null, [h('button.btn.small', { onclick: worlds }, '← Mapa'), h('h1', null, (night ? 'Noc: ' : '') + w.name), toggle]),
       h('div.lpath', null, nodes),
-      h('p.note.center', null, 'Na każdym poziomie są 3 gwiazdki. Jedna czeka w skrzyni za zadanie z liczbami!'),
+      h('p.note.center', null, night ? 'Nocą przeciwnicy są szybsi, a bossowie silniejsi. Gwiazdek tu nie ma, za to są nagrody za nocnych bossów!'
+        : 'Medale: ⏱ zdąż przed czasem, ❤ nie strać serduszka, ● zbierz 90% monet. ' + S.NIGHT_MEDALS + ' medali otwiera noc w tym świecie!'),
     ]));
   }
 
   /* ================= PLAY ================= */
-  function play(wi, li) {
+  // where "Wyjdź" (pause) and "Mapa" (results) lead back to, by run kind
+  let exitTo = () => levels(currentWorld);
+  function play(wi, li, mode) {
     hide();
     paused = false;
     document.getElementById('hud').classList.remove('hidden');
     LZ.In.reset();
-    LZ.Game.start(wi, li);
+    const kind = mode ? mode.kind : 'normal';
+    exitTo = kind === 'daily' ? hub : kind === 'custom' ? () => (mode.test ? LZ.Editor.open(mode.id) : workshop()) : kind === 'hard' ? () => levels(wi, true) : () => levels(wi);
+    LZ.Game.start(wi, li, mode);
     tryFullscreen();
   }
   function tryFullscreen() {
@@ -272,7 +293,7 @@
       h('div.col', null, [
         h('button.btn.big.primary', { onclick: () => { m.close(); } }, 'Graj dalej'),
         h('button.btn.mid', { onclick: () => { m.close(); LZ.Game.restart(); } }, 'Zacznij poziom od nowa'),
-        h('button.btn.mid', { onclick: () => { m.close(); LZ.Game.quit(); levels(currentWorld); } }, 'Wyjdź na mapę'),
+        h('button.btn.mid', { onclick: () => { m.close(); LZ.Game.quit(); exitTo(); } }, 'Wyjdź'),
         h('div.row', null, [
           h('button.btn.small' + (set.music ? '.on' : ''), { onclick: (e) => { set.music = set.music ? 0 : 0.6; A.applyVolumes(); S.save(); e.target.classList.toggle('on'); } }, 'Muzyka'),
           h('button.btn.small' + (set.sfx ? '.on' : ''), { onclick: (e) => { set.sfx = set.sfx ? 0 : 0.8; A.applyVolumes(); S.save(); e.target.classList.toggle('on'); } }, 'Dźwięki'),
@@ -285,36 +306,162 @@
   function resume() { if (pauseModal) pauseModal.close(); paused = false; }
 
   function levelComplete(res) {
-    const p = S.active();
     document.getElementById('hud').classList.add('hidden');
+    const kind = res.kind || 'normal';
+    const night = kind === 'hard';
     const next = () => {
+      if (kind === 'daily' || kind === 'custom') return null;
       if (res.wi === D.BONUS_ID) return null;   // bonus level: nothing comes after it
-      if (res.li < D.LEVELS_PER_WORLD) return () => play(res.wi, res.li + 1);
-      if (res.wi < D.WORLDS.length) return () => play(res.wi + 1, 1);
+      if (res.li < D.LEVELS_PER_WORLD) return () => play(res.wi, res.li + 1, night ? { kind: 'hard' } : null);
+      if (!night && res.wi < D.WORLDS.length) return () => play(res.wi + 1, 1);
       return null;
     };
     const nx = next();
-    const starsRow = h('div.bigstars', null, [0, 1, 2].map(i => h('span.bigstar' + (res.stars[i] ? '.got' : ''), { style: 'animation-delay:' + (0.3 + i * 0.35) + 's' })));
+    const fmt = v => Math.floor(v / 60) + ':' + String(Math.floor(v % 60)).padStart(2, '0');
     const extras = [];
     if (res.newChars.length) res.newChars.forEach(c => extras.push(h('div.unlock', null, [preview({ id: c.id, variant: 0 }, 90), h('div', null, ['Nowa postać: ', h('b', null, c.name), '!'])])));
     if (res.badges.length) extras.push(h('div.unlock', null, ['Nowe odznaki: ', h('b', null, res.badges.map(b => b.name).join(', '))]));
+    if (res.nightOpened) extras.push(h('div.unlock.nightmsg', null, ['🌙 Otworzyła się ', h('b', null, 'noc'), ' w tym świecie! Przełącznik jest na mapie poziomów.']));
+
+    let head = res.boss ? 'Boss pokonany!' : 'Poziom ukończony!', top = null;
+    if (kind === 'normal') top = h('div.bigstars', null, [0, 1, 2].map(i => h('span.bigstar' + (res.stars[i] ? '.got' : ''), { style: 'animation-delay:' + (0.3 + i * 0.35) + 's' })));
+    if (night) head = res.boss ? 'Nocny boss pokonany!' : 'Nocny poziom ukończony!';
+    if (kind === 'daily') {
+      const d = res.daily;
+      head = d.met ? 'Cel dnia wykonany!' : 'Meta! Ale cel dnia jeszcze nie...';
+      top = h('div.dailybox' + (d.met ? '.ok' : ''), null, [
+        h('div', null, (d.met ? '✓ ' : '✗ ') + d.text),
+        d.reward ? h('div.bonus', null, ['Nagroda: ', coinIcon(), ' +' + d.reward.coins, d.reward.sticker ? ' i naklejka „' + d.reward.sticker.name + '”' : '', ' · seria: ' + d.reward.streak + (d.reward.streak === 1 ? ' dzień' : ' dni')]) : null,
+        d.met && !d.reward ? h('div', null, 'Dzisiejsza nagroda jest już odebrana. Jutro nowy poziom!') : null,
+        !d.met ? h('div', null, 'Spróbuj jeszcze raz - masz cały dzień!') : null,
+      ]);
+    }
+    if (kind === 'custom') {
+      head = 'Brawo!';
+      top = res.verifiedNow ? h('div.dailybox.ok', null, 'Poziom sprawdzony - da się go przejść! Teraz możesz go wysłać.') : h('p.note', null, 'Monety w zbudowanych poziomach są tylko dla zabawy.');
+    }
+    const medalRow = res.medals ? h('div.medalrow', null, LZ.X.MEDALS.map((m, i) => h('div.medalbig' + (res.medals.all[i] ? '.got' : '') + (res.medals.now[i] && !res.medals.prev[i] ? '.new' : ''), null, [
+      h('span.mi', null, m.icon), h('span.mn', null, m.name),
+      h('span.mv', null, i === 0 ? fmt(res.time) + ' / ' + fmt(res.par) : i === 1 ? (res.hits ? '−' + res.hits + ' ❤' : 'bez strat') : res.loose[0] + ' / ' + res.loose[1]),
+    ]))) : null;
     const m = modal([
-      h('h2.win', null, res.boss ? 'Boss pokonany!' : 'Poziom ukończony!'),
-      starsRow,
+      h('h2.win', null, head),
+      top,
+      medalRow,
       h('div.results', null, [
         h('div', null, [coinIcon(), ' Monety: ', h('b', null, String(res.coins))]),
         res.bonus > 0 ? h('div.bonus', null, ['Bonus za poziom ' + res.bandName + ' (×' + String(res.rew).replace('.', ',') + '): ', h('b', null, '+' + res.bonus)]) : null,
         h('div', null, ['Zadania: ', h('b', null, res.mathOk + ' / ' + res.mathTotal)]),
-        h('div', null, ['Czas: ', h('b', null, Math.floor(res.time / 60) + ':' + String(res.time % 60).padStart(2, '0'))]),
+        res.medals ? null : h('div', null, ['Czas: ', h('b', null, fmt(res.time))]),
       ]),
       ...extras,
       h('div.row', null, [
-        h('button.btn.mid', { onclick: () => { m.close(); LZ.Game.quit(); levels(res.wi); } }, 'Mapa'),
-        h('button.btn.mid', { onclick: () => { m.close(); LZ.Game.quit(); play(res.wi, res.li); } }, 'Jeszcze raz'),
+        h('button.btn.mid', { onclick: () => { m.close(); LZ.Game.quit(); exitTo(); } }, kind === 'daily' ? 'Menu' : kind === 'custom' ? (res.mode && res.mode.test ? 'Wróć do budowania' : 'Pracownia') : 'Mapa'),
+        h('button.btn.mid', { onclick: () => { m.close(); LZ.Game.quit(); play(res.wi, res.li, res.mode); } }, 'Jeszcze raz'),
         nx ? h('button.btn.mid.primary', { onclick: () => { m.close(); LZ.Game.quit(); nx(); } }, 'Dalej →') : null,
       ]),
     ], { dismiss: false });
     m.box.parentNode.classList.add('levelend');
+  }
+
+  /* ================= LEVEL OF THE DAY ================= */
+  function dailyScreen() {
+    const p = S.active(), info = LZ.X.daily(p);
+    const lvl = LZ.Gen.generate(info.world, 1, { daily: info.day });
+    const goal = LZ.X.dailyGoalText(info, lvl);
+    const w = D.WORLDS[info.world - 1];
+    const doneToday = p.daily.last === info.key;
+    const alive = doneToday || p.daily.last === LZ.X.dateKey(new Date(Date.now() - 86400000));
+    const streak = alive ? p.daily.streak : 0;
+    const toSticker = 3 - (streak % 3);
+    const m = modal([
+      h('h2', null, 'Poziom dnia'),
+      h('div.dailyworld', { style: 'background:linear-gradient(160deg,' + w.pal.skyTop + ',' + w.pal.skyBot + ')' }, [h('b', null, w.name), h('div', null, LZ.Gen.THEMES[lvl.theme].name)]),
+      h('div.dailybox' + (doneToday ? '.ok' : ''), null, [h('div', null, 'Cel: ' + goal.text), doneToday ? h('div', null, '✓ Dziś już wykonane!') : h('div.bonus', null, ['Nagroda: ', coinIcon(), ' 25'])]),
+      h('p.note', null, 'Seria: ' + streak + (streak === 1 ? ' dzień' : ' dni') + ' (najdłuższa: ' + p.daily.best + '). ' +
+        (doneToday ? 'Wróć jutro po nowy poziom!' : 'Jeszcze ' + toSticker + (toSticker === 1 ? ' dzień' : ' dni') + ' do darmowej naklejki. 7 dni z rzędu = kapelusz!')),
+      h('div.row', null, [
+        h('button.btn.mid', { onclick: () => m.close() }, 'Wróć'),
+        h('button.btn.mid.primary', { onclick: () => { m.close(); play(info.world, 1, { kind: 'daily', info }); } }, doneToday ? 'Zagraj jeszcze raz' : 'Graj!'),
+      ]),
+    ]);
+  }
+
+  /* ================= PRACOWNIA (custom levels) ================= */
+  function workshop() {
+    const p = S.active();
+    const list = S.data.custom || [];
+    const cards = list.slice().reverse().map(lv => {
+      const w = D.WORLDS[lv.w - 1] || D.WORLDS[0];
+      const mine = lv.author === p.name && !lv.received;
+      return h('div.wslot', { style: 'background:linear-gradient(160deg,' + w.pal.skyTop + ',' + w.pal.skyBot + ')' }, [
+        h('div.wsname', null, lv.name || 'Poziom'),
+        h('div.wsmeta', null, (lv.author ? 'od: ' + lv.author : '') + (lv.verified ? ' · ✓ sprawdzony' : ' · jeszcze nie sprawdzony')),
+        h('div.row', null, [
+          h('button.btn.small.primary', { onclick: () => play(lv.w, 1, { kind: 'custom', data: lv, id: lv.id, test: mine && !lv.verified }) }, 'Graj'),
+          mine ? h('button.btn.small', { onclick: () => LZ.Editor.open(lv.id) }, 'Edytuj') : h('button.btn.small', { onclick: () => { const c = LZ.Editor.copy(lv.id); LZ.Editor.open(c.id); } }, 'Przerób'),
+          lv.verified ? h('button.btn.small.blue', { onclick: () => shareLevel(lv) }, 'Wyślij') : null,
+          h('button.btn.small.ghost', { onclick: () => confirmBox('Usunąć poziom?', '„' + (lv.name || 'Poziom') + '” zniknie z tego urządzenia.', () => { S.data.custom = S.data.custom.filter(x => x.id !== lv.id); S.save(); workshop(); }) }, '×'),
+        ]),
+      ]);
+    });
+    show(h('div.screen', null, [
+      h('div.topbar', null, [h('button.btn.small', { onclick: hub }, '← Wróć'), h('h1', null, 'Pracownia'), h('button.btn.small', { onclick: () => importLevel() }, 'Wklej kod')]),
+      h('div.wsgrid', null, [h('div.wslot.new', { onclick: newCustomLevel }, [h('div.plus', null, '+'), h('div.wsname', null, 'Zbuduj nowy poziom')])].concat(cards)),
+      h('p.note.center', null, 'Zbuduj poziom, przejdź go sama, a potem wyślij siostrze albo koleżance. Poziomy na tym urządzeniu widzą wszyscy gracze.'),
+    ]));
+  }
+  function newCustomLevel() {
+    const m = modal([
+      h('h2', null, 'Jak długi poziom?'),
+      h('div.col', null, [[60, 'Krótki'], [100, 'Średni'], [150, 'Długi']].map(([W, n]) => h('button.btn.mid', { onclick: () => { m.close(); const lv = LZ.Editor.create(1, W); LZ.Editor.open(lv.id); } }, n))),
+    ]);
+  }
+  function levelLink(lv) {
+    return location.origin + location.pathname.replace(/[^/]*$/, '') + '#poziom=' + encodeURIComponent(LZ.X.encode(lv));
+  }
+  function shareLevel(lv) {
+    const url = levelLink(lv);
+    const text = 'Zagraj w mój poziom „' + (lv.name || 'Poziom') + '” w Liczbolandii!';
+    const box = h('textarea.code', { readonly: true, rows: 4 }); box.value = url;
+    const m = modal([
+      h('h2', null, 'Wyślij poziom'),
+      h('p', null, 'Wyślij ten link (np. przez WhatsApp). Kto go otworzy, dostanie twój poziom w swojej Pracowni.'),
+      box,
+      h('div.row', null, [
+        navigator.share ? h('button.btn.mid.primary', { onclick: () => { navigator.share({ title: 'Liczbolandia', text, url }).catch(() => {}); } }, 'Wyślij...') : null,
+        h('button.btn.mid', { onclick: () => { box.select(); try { navigator.clipboard.writeText(url); } catch (e) { try { document.execCommand('copy'); } catch (e2) {} } box.classList.add('copied'); } }, 'Kopiuj'),
+        h('button.btn.mid', { onclick: () => m.close() }, 'Zamknij'),
+      ]),
+    ]);
+  }
+  function importLevel(prefill) {
+    const box = h('textarea.code', { rows: 4, placeholder: 'Wklej tu link albo kod poziomu' });
+    if (typeof prefill === 'string') box.value = prefill;
+    const m = modal([
+      h('h2', null, typeof prefill === 'string' ? 'Ktoś przysłał ci poziom!' : 'Poziom od kogoś'),
+      box,
+      h('div.row', null, [
+        h('button.btn.mid', { onclick: () => m.close() }, 'Anuluj'),
+        h('button.btn.mid.primary', { onclick: () => {
+          try {
+            let txt = box.value; try { txt = decodeURIComponent(txt); } catch (e) {}
+            const data = LZ.X.decode(txt);
+            // levels from someone else were finished by their builder before sharing
+            const lv = Object.assign(data, { id: 'c' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), verified: true, received: true });
+            (S.data.custom = S.data.custom || []).push(lv); S.save(); m.close(); workshop();
+            alertBox('Nowy poziom!', '„' + (lv.name || 'Poziom') + '” czeka w Pracowni.');
+          } catch (e) { alertBox('Hmm...', e.message || 'Nie udało się odczytać kodu.'); }
+        } }, 'Dodaj'),
+      ]),
+    ]);
+  }
+  // a level link opened the game (#poziom=...): offer it once a player is chosen
+  function checkPendingLevel() {
+    let code = null; try { code = sessionStorage.getItem('lz_pending_level'); } catch (e) {}
+    if (!code) return;
+    try { sessionStorage.removeItem('lz_pending_level'); } catch (e) {}
+    importLevel(code);
   }
 
   // badges are shown one after another (closing one opens the next), never stacked
@@ -357,7 +504,7 @@
         items.push(card({
           pic: preview({ id: c.id, variant: owned && eq.char === c.id ? eq.variant : 0, hat: 'none' }, 84),
           name: c.name, sub: c.abilityText, equipped: eq.char === c.id, locked: !owned && !!c.unlock, promo: !owned && promo,
-          action: owned ? (eq.char === c.id ? 'Wybrana' : 'Wybierz') : c.unlock ? 'Pokonaj bossa Świata ' + c.unlock.boss : priceTag(c.price, promo),
+          action: owned ? (eq.char === c.id ? 'Wybrana' : 'Wybierz') : c.unlock ? (c.unlock.boss ? 'Pokonaj bossa Świata ' + c.unlock.boss : 'Odznaka: ' + ((D.BADGES.find(b => b.id === c.unlock.badge) || {}).name || '')) : priceTag(c.price, promo),
           onclick: () => {
             if (owned) { eq.char = c.id; eq.variant = (p.owned.variants[c.id] || [0]).includes(eq.variant) && eq.char === c.id ? eq.variant : 0; S.save(); wardrobe(tab); }
             else if (!c.unlock) buy({ price: c.price, name: c.name, promo, desc: c.desc }, () => { p.owned.chars.push(c.id); p.owned.variants[c.id] = [0]; eq.char = c.id; eq.variant = 0; }, tab);
@@ -648,7 +795,8 @@
 
   LZ.UI = {
     album,
-    title, profiles, hub, worlds, levels, play, levelComplete, togglePause,
+    title, profiles, hub, worlds, levels, play, levelComplete, togglePause, workshop, dailyScreen, importLevel,
+    _h: h, _modal: (c, o) => modal(c, o), _alert: (a, b, c) => alertBox(a, b, c), _confirm: (a, b, c, d) => confirmBox(a, b, c, d), _show: el => show(el), _hide: () => hide(),
     isPaused: () => paused || !!document.querySelector('.modal-back'),
     previews,
   };

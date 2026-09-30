@@ -35,9 +35,13 @@ Działa na telefonie, tablecie i laptopie - widok i menu dopasowują się do ekr
   - **Trudny** (×2) - do 100 + mnożenie i dzielenie do 50,
   - **Mistrzowski** (×3) - cała tabliczka mnożenia i dzielenie do 100.
   W ramach poziomu gra sama dopasowuje zadania do dziecka.
-- 10 postaci o różnych umiejętnościach (w tym Świnka Kuleczka - wysokie odbicie od przeciwników, i droga Króliczka Hopka - szybka i skoczna), kolory, dodatki, ślady, odznaki.
+- 11 postaci o różnych umiejętnościach (w tym Świnka Kuleczka - wysokie odbicie od przeciwników, i droga Króliczka Hopka - szybka i skoczna), kolory, dodatki, ślady, odznaki.
 - **Sklep za gwiazdki** - gwiazdki to rzadka waluta (w całej grze jest ich 216, tyle kosztuje wszystko w tym sklepie): pupile zbierające monety (Motylek, Rybka w bańce, Świetlik, Mini-smoczek, Robocik, Mini-UFO, Złoty Skarabeusz), dodatkowe serduszka, tarcza, magnes i superskok na start, złota postać i tajny poziom **Kraina Monet**.
 - **Album naklejek** - 35 naklejek ze stworkami, bossami i przedmiotami z gry; paczka kosztuje 80 monet i zawsze daje nową naklejkę.
+- **Medale** - na każdym zwykłym poziomie 3 dodatkowe cele: ⏱ zdąż przed czasem, ❤ nie strać serduszka, ● zbierz 90% monet. Za 30 i 100 medali są nagrody.
+- **Nocne światy** - 7 medali w pokonanym świecie otwiera jego nocną wersję: inne poziomy, szybsi przeciwnicy, silniejszy boss. Za 3 nocnych bossów postać Sówka Nocka.
+- **Poziom dnia** - codziennie nowy poziom z celem (np. bez utraty serduszka). Seria dni z rzędu: co 3. dzień naklejka, 7 dni - kapelusz.
+- **Pracownia** - edytor poziomów: stuka się narzędziem w planszę (ziemia, cegły, monety, stworki, pnie, sprężyny, bramy z zadaniem). Poziom trzeba samemu przejść, zanim da się go wysłać linkiem - kto otworzy link, dostaje poziom w swojej Pracowni. Monety w zbudowanych poziomach nie trafiają do skarbonki.
 - Muzyka i dźwięki w stylu 8-bit (chiptune), generowane na żywo.
 - Osobne profile graczy, automatyczny zapis, kopia zapasowa do pliku lub jako kod.
 

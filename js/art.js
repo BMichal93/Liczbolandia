@@ -150,6 +150,13 @@
       ctx.save(); ctx.translate(-8, -20); ctx.rotate(-1.2 + f); ell(ctx, -6, 0, 9, 3.5); fs(ctx, pal.body, oc, 2); ctx.restore();
     } else if (id === 'hamster') {
       ell(ctx, -14, -9, 3.5, 3); fs(ctx, pal.body, oc, 1.8);
+    } else if (id === 'owl') {
+      // folded wings that open while gliding
+      const open = glide ? 0.9 + Math.sin(t * 20) * 0.25 : 0.15;
+      ctx.save(); ctx.translate(-9, -20); ctx.rotate(-open);
+      ell(ctx, -4, 6, 7, 13); fs(ctx, pal.accent, oc, 2);
+      ctx.strokeStyle = U.shade(pal.accent, -0.3); ctx.lineWidth = 1.4; for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.moveTo(-8 + k * 3, 12); ctx.lineTo(-6 + k * 3, 17); ctx.stroke(); }
+      ctx.restore();
     } else if (id === 'bunny') {
       // fluffy round tail
       ell(ctx, -14, -12, 6, 6); fs(ctx, pal.belly, oc, 1.8);
@@ -174,6 +181,10 @@
     } else if (id === 'guinea') {
       ell(ctx, hx - 15, hy - 5, 5.5, 7.5, -0.9); fs(ctx, '#f6b3a8', oc, lw);
       ell(ctx, hx + 17, hy - 5, 5.5, 7.5, 0.9); fs(ctx, '#f6b3a8', oc, lw);
+    } else if (id === 'owl') {
+      // feather tufts
+      tri(ctx, hx - 15, hy - 6, hx - 13, hy - 22, hx - 5, hy - 13); fs(ctx, pal.body, oc, lw);
+      tri(ctx, hx + 7, hy - 13, hx + 15, hy - 22, hx + 17, hy - 6); fs(ctx, pal.body, oc, lw);
     } else if (id === 'bunny') {
       // long ears that sway a little; the back one flops over at the tip
       const sw = Math.sin(t * 3) * 0.06;
@@ -223,6 +234,7 @@
       ell(ctx, hx + 9, hy + 3, 9.5, 10); fs(ctx, pal.belly);
     }
     if (id === 'fox') { ell(ctx, hx + 6, hy + 7, 10, 7); fs(ctx, pal.belly); }
+    if (id === 'owl') { ell(ctx, ex1, ey, 6.5, 6.5); fs(ctx, pal.belly, U.shade(pal.body, -0.25), 1.2); ell(ctx, ex2, ey, 6.5, 6.5); fs(ctx, pal.belly, U.shade(pal.body, -0.25), 1.2); }
     if (id === 'hamster') { ell(ctx, hx - 8, hy + 7, 7, 6); fs(ctx, pal.belly); ell(ctx, hx + 13, hy + 7, 7, 6); fs(ctx, pal.belly); }
 
     const eyeCol = id === 'panda' ? '#ffffff' : pal.eye;
@@ -245,6 +257,7 @@
 
     // nose / beak / mouth
     if (id === 'penguin') { tri(ctx, hx + 3, hy + 3, hx + 11, hy + 3, hx + 7, hy + 9); fs(ctx, pal.accent, U.shade(pal.accent, -0.3), 1.5); return; }
+    if (id === 'owl') { tri(ctx, hx + 1, hy + 3, hx + 7, hy + 3, hx + 4, hy + 9); fs(ctx, '#ffb84d', '#b8741c', 1.2); return; }
     if (id === 'fox' || id === 'cat' || id === 'hamster' || id === 'panda' || id === 'guinea' || id === 'bunny') { ell(ctx, hx + 4, hy + 4, 2, 1.5); fs(ctx, id === 'fox' ? '#2b1a12' : '#ff6f91'); }
     if (id === 'dragon') { ell(ctx, hx + 8, hy + 3, 1, 1); fs(ctx, oc); ell(ctx, hx + 4, hy + 3, 1, 1); fs(ctx, oc); }
     ctx.strokeStyle = U.shade(pal.eye, 0.1); ctx.lineWidth = 1.8; ctx.lineCap = 'round';
@@ -342,6 +355,39 @@
         ell(ctx, hx, hy + 1, 23, 22); ctx.fillStyle = 'rgba(190,230,255,0.28)'; ctx.fill(); ctx.strokeStyle = '#d9e2f0'; ctx.lineWidth = 3; ctx.stroke();
         ell(ctx, hx - 9, hy - 10, 5, 3, -0.6); fs(ctx, 'rgba(255,255,255,0.8)');
         ctx.strokeStyle = '#9aa3c5'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx + 12, hy - 18); ctx.lineTo(hx + 16, hy - 28); ctx.stroke(); ell(ctx, hx + 16, hy - 29, 2.6, 2.6); fs(ctx, '#ff5e7e');
+        break;
+      }
+      case 'laurel': {
+        // golden laurel wreath - 30 medals
+        for (let side = -1; side <= 1; side += 2) for (let k = 0; k < 5; k++) {
+          const a = Math.PI * (side < 0 ? 1.05 + k * 0.14 : -0.05 - k * 0.14);
+          const lx = hx + 1 + Math.cos(a) * 17, ly = hy - 2 + Math.sin(a) * 15;
+          ell(ctx, lx, ly, 5, 2.6, a + Math.PI / 2 * side); fs(ctx, '#ffd23f', '#b8861c', 1);
+        }
+        break;
+      }
+      case 'nightcap': {
+        // floppy striped nightcap with a pompom, for the first night level
+        ctx.beginPath(); ctx.moveTo(hx - 16, top + 6); ctx.quadraticCurveTo(hx - 4, top - 22, hx + 14, top - 16); ctx.quadraticCurveTo(hx + 26, top - 10, hx + 22, top + 4); ctx.lineTo(hx + 17, top + 6); ctx.closePath();
+        fs(ctx, '#6a5aa8', '#3a2f70', 1.8);
+        ctx.save(); ctx.clip(); ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 3; for (let k = -20; k < 30; k += 9) { ctx.beginPath(); ctx.moveTo(hx + k, top - 30); ctx.lineTo(hx + k - 10, top + 10); ctx.stroke(); } ctx.restore();
+        U.rr(ctx, hx - 17, top + 2, 36, 7, 3.5); fs(ctx, '#fff', '#b8b0d8', 1.2);
+        ell(ctx, hx + 23, top + 6, 5, 5); fs(ctx, '#fff', '#b8b0d8', 1.2);
+        break;
+      }
+      case 'sunhat': {
+        // straw sun hat with a pink ribbon - 7 days in a row
+        ell(ctx, hx + 1, top + 4, 26, 6.5); fs(ctx, '#f7d98a', '#b8923c', 1.8);
+        ctx.beginPath(); ctx.ellipse(hx + 1, top + 2, 14, 12, 0, Math.PI, 0); ctx.closePath(); fs(ctx, '#f7d98a', '#b8923c', 1.8);
+        U.rr(ctx, hx - 13, top - 2, 28, 5, 2); fs(ctx, '#ff6fae');
+        ell(ctx, hx + 12, top, 3, 3); fs(ctx, '#ff85c8');
+        break;
+      }
+      case 'hardhat': {
+        // builder's helmet - for building and finishing your own level
+        ctx.beginPath(); ctx.ellipse(hx + 1, top + 5, 16, 14, 0, Math.PI, 0); ctx.closePath(); fs(ctx, '#ffd23f', '#c99a00', 2);
+        U.rr(ctx, hx - 19, top + 3, 40, 5, 2.5); fs(ctx, '#ffc21a', '#c99a00', 1.5);
+        U.rr(ctx, hx - 2, top - 9, 6, 14, 3); fs(ctx, '#ffe680');
         break;
       }
       case 'nemes': {
@@ -480,6 +526,7 @@
       case 'notes': ctx.fillStyle = p.col || '#9d7bff'; ctx.font = '800 ' + (s * 2.4) + 'px "Baloo 2", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('♪', p.x, p.y); break;
       case 'rainbow': ell(ctx, p.x, p.y, s, s); fs(ctx, RAINBOW[p.ci % RAINBOW.length]); break;
       case 'sparkle': starPath(ctx, p.x, p.y, s * 1.2, s * 0.25, 4, p.rot); fs(ctx, '#ffffff'); break;
+      case 'gold': starPath(ctx, p.x, p.y, s * 1.1, s * 0.3, 4, p.rot); fs(ctx, '#ffd23f', '#b8861c', 0.8); ell(ctx, p.x + s, p.y - s * 0.6, s * 0.3, s * 0.3); fs(ctx, '#fff6c9'); break;
       default: ell(ctx, p.x, p.y, s, s); fs(ctx, p.col || '#fff');
     }
     ctx.globalAlpha = 1;
@@ -1015,7 +1062,7 @@
   const bgCache = new Map();
   const BG_W = 1920; // layers tile horizontally every 1920 world units
   function bgLayer(world, which, viewH) {
-    const key = world.id + which + Math.round(viewH);
+    const key = world.id + (world.night ? 'n' : '') + which + Math.round(viewH);
     let c = bgCache.get(key);
     if (c) return c;
     const res = 1;
@@ -1308,6 +1355,19 @@
     ell(ctx, cx - 10, y + 30, 7, 7); fs(ctx, '#5a5370', '#1f1b2e', 2);
   }
 
+  /*
+   * Night version of a world (the hard levels): same world, same tiles, but
+   * a dark sky and dimmed hills. Only the background colours change, so the
+   * ground stays easy to read.
+   */
+  const nightCache = new Map();
+  function nightWorld(world) {
+    if (nightCache.has(world.id)) return nightCache.get(world.id);
+    const p = world.pal;
+    const nw = Object.assign({}, world, { night: true, pal: Object.assign({}, p, { skyTop: '#120e38', skyBot: U.shade(p.skyBot, -0.6), far: U.shade(p.far, -0.5), mid: U.shade(p.mid, -0.45) }) });
+    nightCache.set(world.id, nw); return nw;
+  }
+
   /* Quicksand, drawn in front of the player: the surface sits a few pixels
      below the tile top and ripples, so she looks like she's wading in it. */
   function drawQuicksand(ctx, x, y, t, leftEnd, rightEnd) {
@@ -1376,11 +1436,19 @@
     // full-screen gradient in the canvas every frame was the single biggest
     // cost on slow tablets. The canvas itself is just cleared.
     const cv = ctx.canvas;
-    if (cv && cv.__sky !== world.id) { cv.__sky = world.id; cv.style.background = 'linear-gradient(' + p.skyTop + ',' + p.skyBot + ')'; }
+    const skyKey = world.id + (world.night ? 'n' : '');
+    if (cv && cv.__sky !== skyKey) { cv.__sky = skyKey; cv.style.background = 'linear-gradient(' + p.skyTop + ',' + p.skyBot + ')'; }
     ctx.clearRect(0, 0, vw, vh);
     const id = world.id;
     // sun / moon
-    if (id === 8) {
+    if (world.night && id !== 8 && id !== 3) {
+      // night version of a world: twinkling stars and a big crescent moon
+      for (let i = 0; i < 55; i++) { const sx = ((i * 173 - camX * 0.03) % vw + vw) % vw, sy = (i * 97) % (vh * 0.6); ctx.globalAlpha = 0.45 + 0.55 * Math.sin(t * 2 + i); ell(ctx, sx, sy, i % 6 === 0 ? 2.2 : 1.4, i % 6 === 0 ? 2.2 : 1.4); fs(ctx, '#fff'); }
+      ctx.globalAlpha = 1;
+      const mg = ctx.createRadialGradient(vw * 0.8, vh * 0.18, 20, vw * 0.8, vh * 0.18, 90); mg.addColorStop(0, 'rgba(255,250,210,0.35)'); mg.addColorStop(1, 'rgba(255,250,210,0)');
+      ctx.fillStyle = mg; ctx.fillRect(vw * 0.8 - 90, vh * 0.18 - 90, 180, 180);
+      ell(ctx, vw * 0.8, vh * 0.18, 36, 36); fs(ctx, '#fff6c9'); ell(ctx, vw * 0.8 + 14, vh * 0.18 - 8, 30, 30); fs(ctx, p.skyTop);
+    } else if (id === 8) {
       // space: starfield and a ringed planet
       for (let i = 0; i < 70; i++) { const sx = ((i * 173 - camX * 0.04) % vw + vw) % vw, sy = (i * 97) % (vh * 0.75); ctx.globalAlpha = 0.45 + 0.55 * Math.sin(t * 2 + i * 1.3); ell(ctx, sx, sy, i % 7 === 0 ? 2.4 : 1.4, i % 7 === 0 ? 2.4 : 1.4); fs(ctx, i % 5 === 0 ? '#ffe066' : '#fff'); }
       ctx.globalAlpha = 1;
@@ -1402,7 +1470,7 @@
       ctx.restore();
     }
     // drifting clouds (not underwater / at night)
-    if (id !== 3 && id !== 4 && id !== 8) {
+    if (id !== 3 && id !== 4 && id !== 8 && !world.night) {
       for (let i = 0; i < 6; i++) {
         const cw = 900 + vw;
         const x = ((i * 380 - camX * 0.08 - t * (8 + i * 2)) % cw + cw) % cw - 200, y = 40 + (i * 53) % (vh * 0.35);
@@ -1469,6 +1537,6 @@
 
   LZ.Art = {
     drawCharacter, drawHat, drawTrailParticle, drawCoin, drawStar, drawHeart, drawPowerup, getTile, drawQBlock, drawLava,
-    drawEnemy, drawBoss, drawBackground, clearCaches, drawPet, drawSticker, drawStump, drawCannon, drawCave, drawGear, drawConveyor, drawQuicksand, starPath, heartPath, ell, fs, tri, RAINBOW,
+    drawEnemy, drawBoss, drawBackground, clearCaches, drawPet, drawSticker, drawStump, drawCannon, drawCave, drawGear, drawConveyor, drawQuicksand, nightWorld, starPath, heartPath, ell, fs, tri, RAINBOW,
   };
 })();
