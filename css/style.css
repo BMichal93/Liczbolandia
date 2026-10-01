@@ -376,3 +376,50 @@ body.decorating #controls, body.decorating #sbbar, body.decorating #btn-pause { 
 .bbtn { border: 0; border-radius: 12px; padding: 6px 10px; font: 800 15px "Baloo 2", sans-serif; background: #f1ecff; color: #5a3a8a; white-space: nowrap; }
 .bbtn.on { background: var(--purple); color: #fff; }
 .bcount { display: inline-flex; align-items: center; gap: 2px; font-weight: 800; color: #5a3a8a; padding: 0 4px; }
+.hubtile.chall { background: linear-gradient(#b8a0ff, #7a5ce6); box-shadow: 0 6px 0 #5a3fbf; position: relative; }
+.hubtile .tag { position: absolute; top: -6px; right: -4px; background: #fff; color: #7a5ce6; border-radius: 999px; padding: 0 8px; font-size: 13px; line-height: 22px; text-shadow: none; -webkit-text-stroke: 0; box-shadow: 0 2px 0 rgba(0,0,0,.15); }
+.hubtile .tag.ok { color: #2a8a4a; }
+.chlist { display: flex; flex-direction: column; gap: 8px; margin: 6px 0 10px; }
+.chcard { border: 0; border-radius: 18px; padding: 10px 14px; display: flex; align-items: center; gap: 12px; text-align: left; color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.2); position: relative; cursor: pointer; }
+.chcard .ti { font-size: 34px; text-shadow: none; }
+.chcard b { font: 800 20px "Baloo 2", sans-serif; display: block; }
+.chcard small { font: 700 13px "Baloo 2", sans-serif; opacity: .95; }
+.chcard .tag { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); }
+.chcard:active { transform: translateY(2px); }
+.chcard.week { background: linear-gradient(120deg, #ff9ecf, #ff6f91); box-shadow: 0 4px 0 #c4456a; }
+.chcard.tower { background: linear-gradient(120deg, #8fb4ff, #5a6ad8); box-shadow: 0 4px 0 #3a4ab8; }
+.chcard.day { background: linear-gradient(120deg, #ffb877, #ff8f3d); box-shadow: 0 4px 0 #c9621c; }
+.wknodes { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 10px 0; }
+.wknode { width: 64px; height: 64px; border-radius: 18px; border: 0; font: 800 24px "Baloo 2", sans-serif; color: #fff; background: linear-gradient(#b8a0ff, #7a5ce6); box-shadow: 0 4px 0 #5a3fbf; position: relative; }
+.wknode.done { background: linear-gradient(#7fdc93, #3fb866); box-shadow: 0 4px 0 #2a8a4a; }
+.wknode.lock { background: #d9d2e8; box-shadow: 0 4px 0 #b0a8c0; color: #8a82a0; }
+.wknode.boss { width: 84px; }
+.arcgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.arccard { border: 0; border-radius: 16px; padding: 10px 6px; background: #f6f2ff; color: #5a3a8a; font: 800 15px "Baloo 2", sans-serif; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.arccard .ti { font-size: 30px; }
+.arccard small { font-weight: 600; font-size: 12px; color: #8a6aa8; }
+.arcbox canvas { touch-action: none; display: block; margin: 0 auto; border-radius: 14px; max-width: 100%; }
+.arcinfo { display: flex; justify-content: space-between; font-weight: 800; color: #5a3a8a; margin: 4px 0; }
+.qline { display: flex; align-items: center; gap: 8px; background: #f6f2ff; border-radius: 12px; padding: 6px 10px; margin: 4px 0; text-align: left; font-weight: 700; color: #5a3a8a; }
+.qline .grow { flex: 1; }
+.qline.done { background: #e2f8e6; }
+.qline .funbar { margin: 3px 0 0; max-width: none; height: 10px; }
+.qlist { margin: 4px 0; }
+.qline .qi { font-size: 26px; }
+.qline .qt { flex: 1; min-width: 0; }
+.qline .qt b { display: block; font-size: 15px; }
+.qline .qt small { font-size: 12px; color: #8a6aa8; }
+.qbar { height: 9px; background: #e2d8f8; border-radius: 6px; overflow: hidden; margin: 3px 0 1px; }
+.qbar i { display: block; height: 100%; background: linear-gradient(90deg, #ff9ecf, #9d7bff); border-radius: 6px; }
+.qline.done .qbar i { background: #3fb866; }
+.qline .qok { font-size: 24px; color: #3fb866; font-weight: 800; }
+.qline button[disabled] { opacity: .5; }
+.qgot { color: #2a8a4a; font-weight: 800; }
+.modal h3 { margin: 8px 0 2px; color: #5a3a8a; font-size: 17px; }
+.towerres { display: flex; align-items: baseline; justify-content: center; gap: 8px; color: #5a3a8a; }
+.towerres b { font: 800 56px "Baloo 2", sans-serif; color: #7a5ce6; }
+.towerres small { font: 800 20px "Baloo 2", sans-serif; }
+.arcmodal { max-width: 440px; }
+.arcmodal h2 { margin: 0 0 2px; }
+.arcmodal .arcinfo { font-size: 16px; gap: 10px; }
+.arcmodal .arcinfo span:first-child { color: #c4456a; }

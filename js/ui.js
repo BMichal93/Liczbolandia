@@ -193,9 +193,10 @@
           h('div.hubtiles', null, [
             h('button.hubtile.mission', { onclick: () => worlds() }, [h('span.ti', null, '🗺️'), h('b', null, 'Misja'), h('small', null, 'Poziomy i bossowie')]),
             h('button.hubtile.trip', { onclick: () => play(0, 0, { kind: 'home' }) }, [h('span.ti', null, '🏠'), h('b', null, 'Wyprawa'), h('small', null, 'Domek i wielki świat')]),
+            h('button.hubtile.chall', { onclick: challenges }, [h('span.ti', null, '🏆'), h('b', null, 'Wyzwania'), h('small', null, 'Tydzień, wieża, dzień'), dailyTag]),
           ]),
           h('div.hubrow', null, [
-            h('button.hubbtn.orange', { onclick: dailyScreen }, [h('span.ti', null, '📅'), 'Poziom dnia', dailyTag]),
+            h('button.hubbtn.orange', { onclick: () => LZ.Quests.open() }, [h('span.ti', null, '📋'), 'Zadania', h('span.tag', null, LZ.Quests.tag(p))]),
             h('button.hubbtn.purple', { onclick: () => workshop() }, [h('span.ti', null, '🔨'), 'Pracownia']),
             h('button.hubbtn.pink', { onclick: () => wardrobe('chars') }, [h('span.ti', null, '👗'), 'Garderoba']),
           ]),
@@ -281,7 +282,7 @@
     document.getElementById('hud').classList.remove('hidden');
     LZ.In.reset();
     const kind = mode ? mode.kind : 'normal';
-    exitTo = kind === 'wboss' || kind === 'temple' ? () => play(0, 0, { kind: 'world', at: mode.back }) : kind === 'daily' || kind === 'home' || kind === 'world' ? hub : kind === 'custom' ? () => (mode.test ? LZ.Editor.open(mode.id) : workshop()) : kind === 'hard' ? () => levels(wi, true) : () => levels(wi);
+    exitTo = kind === 'weekly' ? () => LZ.Weekly.screen() : kind === 'tower' ? () => challenges() : kind === 'wboss' || kind === 'temple' ? () => play(0, 0, { kind: 'world', at: mode.back }) : kind === 'daily' || kind === 'home' || kind === 'world' ? hub : kind === 'custom' ? () => (mode.test ? LZ.Editor.open(mode.id) : workshop()) : kind === 'hard' ? () => levels(wi, true) : () => levels(wi);
     LZ.Game.start(wi, li, mode);
     tryFullscreen();
   }
@@ -326,6 +327,7 @@
     const kind = res.kind || 'normal';
     const night = kind === 'hard';
     const next = () => {
+      if (kind === 'weekly') return res.mode.li < 6 && res.wboss.next ? () => play(res.wi, res.mode.li + 1, Object.assign({}, res.mode, { li: res.mode.li + 1 })) : null;
       if (kind === 'daily' || kind === 'custom' || kind === 'wboss' || kind === 'temple') return null;
       if (res.wi === D.BONUS_ID) return null;   // bonus level: nothing comes after it
       if (res.li < D.LEVELS_PER_WORLD) return () => play(res.wi, res.li + 1, night ? { kind: 'hard' } : null);
@@ -352,7 +354,7 @@
         !d.met ? h('div', null, 'Spróbuj jeszcze raz - masz cały dzień!') : null,
       ]);
     }
-    if (kind === 'wboss' || kind === 'temple') {
+    if (kind === 'wboss' || kind === 'temple' || kind === 'weekly') {
       head = res.wboss.head;
       top = h('div.dailybox.ok', null, res.wboss.lines.map(l => h('div', null, l)));
     }
@@ -376,7 +378,7 @@
       ]),
       ...extras,
       h('div.row', null, [
-        h('button.btn.mid' + (kind === 'wboss' || kind === 'temple' ? '.primary' : ''), { onclick: () => { m.close(); LZ.Game.quit(); exitTo(); } }, kind === 'wboss' || kind === 'temple' ? 'Wracam na wyprawę' : kind === 'daily' ? 'Menu' : kind === 'custom' ? (res.mode && res.mode.test ? 'Wróć do budowania' : 'Pracownia') : 'Mapa'),
+        h('button.btn.mid' + (kind === 'wboss' || kind === 'temple' ? '.primary' : ''), { onclick: () => { m.close(); LZ.Game.quit(); exitTo(); } }, kind === 'wboss' || kind === 'temple' ? 'Wracam na wyprawę' : kind === 'weekly' ? 'Świat tygodnia' : kind === 'daily' ? 'Menu' : kind === 'custom' ? (res.mode && res.mode.test ? 'Wróć do budowania' : 'Pracownia') : 'Mapa'),
         h('button.btn.mid', { onclick: () => { m.close(); LZ.Game.quit(); play(res.wi, res.li, res.mode); } }, 'Jeszcze raz'),
         nx ? h('button.btn.mid.primary', { onclick: () => { m.close(); LZ.Game.quit(); nx(); } }, 'Dalej →') : null,
       ]),
@@ -404,6 +406,24 @@
         h('button.btn.mid', { onclick: () => m.close() }, 'Wróć'),
         h('button.btn.mid.primary', { onclick: () => { m.close(); play(info.world, 1, { kind: 'daily', info }); } }, doneToday ? 'Zagraj jeszcze raz' : 'Graj!'),
       ]),
+    ]);
+  }
+
+  /* ================= WYZWANIA: the challenges that never run out ================= */
+  // World of the week (weekly.js), the endless tower (tower.js) and the level of the day
+  function challenges() {
+    if (!document.querySelector('.screen.hub')) hub();   // the menu stays behind the window
+    const p = S.active(), wk = LZ.Weekly.info(), ws = LZ.Weekly.progress(p), tw = LZ.Tower.best(p);
+    const doneToday = p.daily && p.daily.last === LZ.X.dateKey();
+    const card = (cls, icon, title, sub, tag, fn) => h('button.chcard.' + cls, { onclick: () => { m.close(); fn(); } }, [h('span.ti', null, icon), h('div', null, [h('b', null, title), h('small', null, sub)]), tag ? h('span.tag', null, tag) : null]);
+    const m = modal([
+      h('h2', null, '🏆 Wyzwania'),
+      h('div.chlist', null, [
+        card('week', '🗓️', 'Świat tygodnia', wk.name + ' · ' + wk.twist.name, ws.done + ' / 6', () => LZ.Weekly.screen()),
+        card('tower', '🗼', 'Wieża', tw ? 'Rekord: ' + tw + '. piętro' : 'Wspinaj się jak najwyżej!', null, () => play(0, 0, { kind: 'tower' })),
+        card('day', '📅', 'Poziom dnia', doneToday ? 'Dziś już zrobione!' : 'Nowy poziom z celem', doneToday ? '✓' : null, () => dailyScreen()),
+      ]),
+      h('button.btn.mid', { onclick: () => m.close() }, 'Wróć'),
     ]);
   }
 
@@ -818,7 +838,7 @@
 
   LZ.UI = {
     album,
-    title, profiles, hub, worlds, levels, play, levelComplete, togglePause, workshop, dailyScreen, importLevel,
+    title, profiles, hub, worlds, levels, play, levelComplete, togglePause, workshop, dailyScreen, importLevel, challenges,
     _preview: (o, sz) => preview(o, sz), _h: h, _modal: (c, o) => modal(c, o), _alert: (a, b, c) => alertBox(a, b, c), _confirm: (a, b, c, d) => confirmBox(a, b, c, d), _show: el => show(el), _hide: () => hide(),
     isPaused: () => paused || !!document.querySelector('.modal-back'),
     previews,

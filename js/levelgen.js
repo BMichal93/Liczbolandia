@@ -65,7 +65,8 @@
     opt = opt || {};
     // the star-shop bonus level "Kraina Monet": one replayable level
     const bonus = wi === D.BONUS_ID;
-    const world = bonus ? D.BONUS_WORLD : D.WORLDS[wi - 1];
+    // opt.world: a made-up world (World of the week, weekly.js) built on top of world wi's difficulty
+    const world = opt.world || (bonus ? D.BONUS_WORLD : D.WORLDS[wi - 1]);
     if (!bonus && li === D.LEVELS_PER_WORLD) { const a = bossArena(world); a.hard = !!opt.hard; return a; }
     const daily = opt.daily != null, special = daily || !!opt.hard;
 

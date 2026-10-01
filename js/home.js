@@ -84,6 +84,10 @@
     { id: 'relic', name: 'Starożytna waza', w: 1.5, h: 1.5, top: 0, price: 0 },
     { id: 'pumpkinlamp', name: 'Dyniowa lampa', w: 1, h: 1.1, top: 0, price: 0 },
     { id: 'xmastree', name: 'Choinka', w: 2, h: 2.6, top: 0, price: 0 },
+    // challenges (weekly.js, tower.js) and the arcade machine (arcade.js)
+    { id: 'weekcup', name: 'Puchar tygodnia', w: 1, h: 1.4, top: 0, price: 0 },
+    { id: 'towertrophy', name: 'Puchar szczytu wieży', w: 1.5, h: 1.6, top: 0, price: 0 },
+    { id: 'arcade', name: 'Automat z grami', w: 1.5, h: 2.4, top: 0, price: 0, desc: 'Stań przy nim, żeby zagrać' },
   ];
   const FURN_BY = {}; FURN.forEach(f => { FURN_BY[f.id] = f; });
 

@@ -43,12 +43,14 @@
     const kind = mode ? mode.kind : 'normal';
     // home and world are "sandbox" runs: a module (G.sb) builds the level and
     // adds its own behaviour through the hooks called below (sb.init, sb.tick...)
-    const sb = kind === 'home' ? LZ.Home.hooks : kind === 'world' ? LZ.World.hooks : null;
+    const sb = kind === 'home' ? LZ.Home.hooks : kind === 'world' ? LZ.World.hooks : kind === 'tower' ? LZ.Tower.hooks : null;
     const lvl = kind === 'custom' ? LZ.X.toLevel(mode.data)
       : kind === 'home' ? LZ.Home.buildLevel(prof)
       : kind === 'world' ? LZ.World.buildLevel(prof, mode)
       : kind === 'wboss' ? Object.assign(LZ.Gen.bossArena(mode.world), { noStars: true })   // a boss from the open world (bosses.js): statue or the crystal lair
       : kind === 'temple' ? LZ.Temples.level(mode)   // a temple dungeon entered from the open world (temples.js)
+      : kind === 'weekly' ? LZ.Weekly.level(mode)    // World of the week (weekly.js)
+      : kind === 'tower' ? LZ.Tower.buildLevel(prof) // the endless tower (tower.js)
       : LZ.Gen.generate(wi, li, kind === 'hard' ? { hard: true } : kind === 'daily' ? { daily: mode.info.day } : null);
     if (sb) { wi = lvl.wi; li = lvl.li; }
     if (kind === 'hard') lvl.world = Art.nightWorld(lvl.world);
@@ -1140,13 +1142,14 @@
       const info = G.mode.info, met = LZ.X.dailyGoalMet(info, G.dailyTarget, run);
       res.daily = { text: G.dailyTarget.text, met, reward: met ? LZ.X.dailyReward(prof, info) : null, already: prof.daily.last === info.key };
       prof.daily.played = info.key;
-    } else if (G.kind === 'wboss' || G.kind === 'temple') {
-      res.wboss = G.kind === 'temple' ? LZ.Temples.win(prof, G.mode) : LZ.Bosses.win(prof, G.mode);   // rewards and what the results screen says
+    } else if (G.kind === 'wboss' || G.kind === 'temple' || G.kind === 'weekly') {
+      res.wboss = G.kind === 'temple' ? LZ.Temples.win(prof, G.mode) : G.kind === 'weekly' ? LZ.Weekly.win(prof, G.mode) : LZ.Bosses.win(prof, G.mode);   // rewards and what the results screen says
     } else if (G.kind === 'custom') {
       const lv = (S.data.custom || []).find(x => x.id === G.mode.id);
       if (G.mode.test && lv) { if (!lv.verified) { lv.verified = true; prof.stats.built = (prof.stats.built || 0) + 1; res.verifiedNow = true; } }
       else if (lv && lv.author !== prof.name) prof.stats.guest = (prof.stats.guest || 0) + 1;
     }
+    LZ.Ext.each('game', 'finish', prof, G, run);   // e.g. the quest board counts finished levels (quests.js)
     res.badges = S.checkBadges(prof);
     // characters that came with a badge (the owl)
     D.CHARACTERS.forEach(c => { if (prof.owned.chars.includes(c.id) && !ownedBefore.includes(c.id) && !res.newChars.includes(c)) res.newChars.push(c); });
@@ -1772,6 +1775,6 @@
     lenient: false,  // tests only: falls and lost hearts don't send the bot back (see fallOut/outOfHearts)
     // for the open world (world.js), which streams the map in pieces
     _build: list => buildEntities(list), _computeMasks: () => computeMasks(), _clampCam: () => clampCam(),
-    _drawVisual: (ctx, v, x, y) => drawVisual(ctx, v, x, y), _toast: (t, d) => toast(t, d), _confetti: (x, y, n) => confetti(x, y, n), _floatText: (x, y, t, c, s) => floatText(x, y, t, c, s),
+    _drawVisual: (ctx, v, x, y) => drawVisual(ctx, v, x, y), _toast: (t, d) => toast(t, d), _hurt: (x, c) => hurt(x, c), _setupGate: g => setupGate(g), _confetti: (x, y, n) => confetti(x, y, n), _floatText: (x, y, t, c, s) => floatText(x, y, t, c, s),
   };
 })();

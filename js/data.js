@@ -329,6 +329,12 @@
     { id: 'giants5', name: 'Pogromczyni olbrzymów', desc: 'Pokonaj 5 olbrzymów na wyprawie', check: p => ((p.fun && p.fun.giantCount) || 0) >= 5 },
     { id: 'statue1', name: 'Pierwszy klucz', desc: 'Pokonaj pomnik, który ożył nocą', check: p => Object.keys((p.fun && p.fun.keys) || {}).length >= 1 },
     { id: 'keys7', name: 'Wszystkie klucze', desc: 'Zdobądź 7 kryształowych kluczy', check: p => Object.keys((p.fun && p.fun.keys) || {}).length >= 7 },
+    // challenges: tower, week, quest board, arcade
+    { id: 'tower25', name: 'Wspinaczka', desc: 'Wejdź na 25. piętro Wieży', check: p => ((p.fun && p.fun.towerBest) || 0) >= 25 },
+    { id: 'tower100', name: 'Na szczycie', desc: 'Zdobądź szczyt Wieży (100. piętro)', check: p => ((p.fun && p.fun.towerBest) || 0) >= 100 },
+    { id: 'weekcup', name: 'Mistrzyni tygodnia', desc: 'Przejdź cały Świat tygodnia', check: p => ((p.fun && p.fun.cups) || 0) >= 1 },
+    { id: 'quests20', name: 'Pracowita', desc: 'Wykonaj 20 zadań z tablicy', check: p => ((p.fun && p.fun.questsDone) || 0) >= 20 },
+    { id: 'arcade10', name: 'Mistrzyni automatu', desc: 'Zagraj 10 razy na automacie', check: p => ((p.fun && p.fun.cnt && p.fun.cnt.arcade) || 0) >= 10 },
     { id: 'legend', name: 'Legenda Liczbolandii', desc: 'Pokonaj Kryształowego Smoka', check: p => !!(p.fun && p.fun.dragon), reward: 'Smocza korona' },
     { id: 'story1', name: 'Królewska pomocnica', desc: 'Odnajdź zaginioną koronę Królewny', check: p => ((p.fun && p.fun.story) || {}).step >= 5, reward: 'Królewska korona' },
     { id: 'temples3', name: 'Poszukiwaczka świątyń', desc: 'Przejdź świątynie w 3 krainach', check: p => Object.keys((p.fun && p.fun.relics) || {}).length >= 3 },
