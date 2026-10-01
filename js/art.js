@@ -940,6 +940,50 @@
         ctx.strokeStyle = '#555'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(5, -6 + b, 3.5, Math.PI + 0.4, -0.4); ctx.stroke();
         break;
       }
+      case 'ghost': {
+        // a little sheet ghost; when shy it goes see-through and hides its eyes
+        const b = Math.sin(tt * 3) * 2;
+        ctx.globalAlpha = e.shy ? 0.5 : 0.92;
+        ctx.beginPath(); ctx.moveTo(-17, -4);
+        ctx.bezierCurveTo(-18, -44, 18, -44, 17, -4);
+        for (let i = 0; i < 4; i++) { const x0 = 17 - i * 8.5; ctx.quadraticCurveTo(x0 - 2, 2 + b * (i % 2 ? 1 : -1), x0 - 8.5, -4); }
+        ctx.closePath(); fs(ctx, '#ffffff', '#9d8ad8', 2.2);
+        ell(ctx, -6, -28, 4, 3, -0.4); fs(ctx, 'rgba(220,210,255,0.8)');
+        if (e.shy) {
+          // little hands over the eyes, and a blush
+          ell(ctx, -1, -22, 6, 4.5); fs(ctx, '#ffffff', '#9d8ad8', 1.6); ell(ctx, 10, -22, 6, 4.5); fs(ctx, '#ffffff', '#9d8ad8', 1.6);
+          ell(ctx, -6, -15, 3.5, 2); fs(ctx, 'rgba(255,130,170,0.6)'); ell(ctx, 13, -15, 3.5, 2); fs(ctx, 'rgba(255,130,170,0.6)');
+        } else {
+          eyes(-4, -23, 0.75);
+          ell(ctx, 4, -12, 4, 3 + Math.abs(b)); fs(ctx, '#5a3a8a');
+        }
+        ctx.globalAlpha = 1;
+        break;
+      }
+      case 'balloon': {
+        // a balloon with a face on a wiggly string
+        const col = e.col || '#ff6fae', sw = Math.sin(tt * 4) * 3;
+        ctx.beginPath(); ctx.moveTo(0, -14); ctx.quadraticCurveTo(sw, -7, -sw * 0.5, 0); ctx.strokeStyle = '#8a7a9a'; ctx.lineWidth = 1.6; ctx.stroke();
+        tri(ctx, -3, -13, 3, -13, 0, -18); fs(ctx, U.shade(col, -0.25));
+        ell(ctx, 0, -31, 16, 18); fs(ctx, col, U.shade(col, -0.4), 2);
+        ell(ctx, -6, -39, 4, 6, -0.4); fs(ctx, 'rgba(255,255,255,0.6)');
+        eyes(-5, -33, 0.7);
+        ctx.strokeStyle = U.shade(col, -0.5); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(3, -27, 3.5, 0.3, Math.PI - 0.3); ctx.stroke();
+        break;
+      }
+      case 'wisp': {
+        // a spiky spark: spikes turn around a glowing core
+        const col = e.col || '#ffb347', r = 9 + Math.sin(tt * 8) * 1.2;
+        const gl = ctx.createRadialGradient(0, -15, 2, 0, -15, 20); gl.addColorStop(0, U.rgba(col, 0.7)); gl.addColorStop(1, U.rgba(col, 0));
+        ctx.fillStyle = gl; ctx.fillRect(-20, -35, 40, 40);
+        ctx.beginPath();
+        for (let i = 0; i < 16; i++) { const a = i * TAU / 16 + tt * 3, rr = i % 2 ? r : r + 7; ctx.lineTo(Math.cos(a) * rr, -15 + Math.sin(a) * rr); }
+        ctx.closePath(); fs(ctx, col, U.shade(col, -0.45), 1.8);
+        ell(ctx, 0, -15, 7, 7); fs(ctx, '#fffbe8');
+        ell(ctx, -2.5, -16, 1.6, 2.2); fs(ctx, '#3a2a1a'); ell(ctx, 2.5, -16, 1.6, 2.2); fs(ctx, '#3a2a1a');
+        ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-4.5, -19.5); ctx.lineTo(-1, -18.5); ctx.moveTo(4.5, -19.5); ctx.lineTo(1, -18.5); ctx.stroke();
+        break;
+      }
       case 'plant': {
         // "Kłapacz": a snapping flower on a stem, with friendly eyes
         const hh = e.h, bite = Math.abs(Math.sin(tt * 7)) * 0.5;

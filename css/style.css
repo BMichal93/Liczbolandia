@@ -423,3 +423,14 @@ body.decorating #controls, body.decorating #sbbar, body.decorating #btn-pause { 
 .arcmodal h2 { margin: 0 0 2px; }
 .arcmodal .arcinfo { font-size: 16px; gap: 10px; }
 .arcmodal .arcinfo span:first-child { color: #c4456a; }
+.twmodal { max-width: 720px; }
+.twgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 6px 0; }
+.twcard { border: 0; border-radius: 16px; padding: 8px 10px; display: flex; flex-direction: column; align-items: flex-start; text-align: left; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.45); position: relative; cursor: pointer; box-shadow: 0 4px 0 rgba(40,20,60,.35); min-height: 66px; }
+.twcard .ti { font-size: 26px; line-height: 1; text-shadow: none; }
+.twcard b { font: 800 16px "Baloo 2", sans-serif; }
+.twcard small { font: 700 12px "Baloo 2", sans-serif; opacity: .95; }
+.twcard .twst { position: absolute; top: 6px; right: 10px; color: #ffe066; font-size: 15px; letter-spacing: 1px; }
+.twcard.lock { filter: grayscale(.7) brightness(.85); }
+.twcard:active { transform: translateY(2px); }
+.towerstars { display: flex; justify-content: center; gap: 6px; font-size: 38px; color: #d9d2e8; line-height: 1; }
+.towerstars .on { color: #ffc81f; text-shadow: 0 2px 0 #b8861c; }

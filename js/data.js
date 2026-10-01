@@ -332,6 +332,8 @@
     // challenges: tower, week, quest board, arcade
     { id: 'tower25', name: 'Wspinaczka', desc: 'Wejdź na 25. piętro Wieży', check: p => ((p.fun && p.fun.towerBest) || 0) >= 25 },
     { id: 'tower100', name: 'Na szczycie', desc: 'Zdobądź szczyt Wieży (100. piętro)', check: p => ((p.fun && p.fun.towerBest) || 0) >= 100 },
+    { id: 'towers3', name: 'Zdobywczyni wież', desc: 'Zdobądź szczyt 3 wież tematycznych', check: p => ['candy', 'ice', 'mush', 'storm', 'volcano', 'space'].filter(id => p.fun && p.fun.towers && p.fun.towers[id] && p.fun.towers[id].top).length >= 3 },
+    { id: 'towers6', name: 'Królowa wież', desc: 'Zdobądź szczyt wszystkich 6 wież tematycznych', check: p => ['candy', 'ice', 'mush', 'storm', 'volcano', 'space'].every(id => p.fun && p.fun.towers && p.fun.towers[id] && p.fun.towers[id].top) },
     { id: 'weekcup', name: 'Mistrzyni tygodnia', desc: 'Przejdź cały Świat tygodnia', check: p => ((p.fun && p.fun.cups) || 0) >= 1 },
     { id: 'quests20', name: 'Pracowita', desc: 'Wykonaj 20 zadań z tablicy', check: p => ((p.fun && p.fun.questsDone) || 0) >= 20 },
     { id: 'arcade10', name: 'Mistrzyni automatu', desc: 'Zagraj 10 razy na automacie', check: p => ((p.fun && p.fun.cnt && p.fun.cnt.arcade) || 0) >= 10 },

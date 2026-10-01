@@ -50,7 +50,7 @@
       : kind === 'wboss' ? Object.assign(LZ.Gen.bossArena(mode.world), { noStars: true })   // a boss from the open world (bosses.js): statue or the crystal lair
       : kind === 'temple' ? LZ.Temples.level(mode)   // a temple dungeon entered from the open world (temples.js)
       : kind === 'weekly' ? LZ.Weekly.level(mode)    // World of the week (weekly.js)
-      : kind === 'tower' ? LZ.Tower.buildLevel(prof) // the endless tower (tower.js)
+      : kind === 'tower' ? LZ.Tower.buildLevel(prof, mode) // the endless tower (tower.js)
       : LZ.Gen.generate(wi, li, kind === 'hard' ? { hard: true } : kind === 'daily' ? { daily: mode.info.day } : null);
     if (sb) { wi = lvl.wi; li = lvl.li; }
     if (kind === 'hard') lvl.world = Art.nightWorld(lvl.world);
@@ -165,7 +165,7 @@
           break;
         }
         case 'challenge': G.ents.push({ k: 'challenge', zone: [e.zone[0] * T, e.zone[1] * T], spots: e.spots.map(s => [s[0] * T + T / 2, s[1] * T + T / 2]), chest: { x: e.chest[0] * T, y: e.chest[1] * T - 34, w: 44, h: 34, open: 0 }, c: null, state: 'idle', bubbles: [] }); break;
-        case 'enemy': { const en = spawnEnemy(e.type, px, py); if (e.wid) en.wid = e.wid; if (e.giant) makeGiant(en, e); break; }
+        case 'enemy': { const en = spawnEnemy(e.type, px, py); if (e.wid) en.wid = e.wid; if (e.col) en.col = e.col; if (e.giant) makeGiant(en, e); break; }
         default: if (G.sb && G.sb.buildEnt) G.sb.buildEnt(G, e, px, py);
       }
     }
@@ -183,11 +183,11 @@
     en.giant = k; en.hp = en.maxHp = d.hp || 4; en.gid = d.gid; en.gname = d.gname; en.stompable = true; en.hitT = 0;
   }
   function spawnEnemy(type, px, py) {
-    const size = { slime: [36, 26], bee: [32, 30], hedgehog: [36, 26], snowball: [34, 34], fish: [36, 26], jelly: [30, 34], urchin: [30, 30], shroom: [36, 34], bat: [34, 28], cloudy: [40, 30], firejelly: [30, 34], plant: [34, 46], ball: [30, 30], robot: [34, 38], alien: [34, 32], ufo: [46, 30], scorpion: [40, 28], cactus: [32, 40], vulture: [46, 32] }[type] || [32, 30];
+    const size = { slime: [36, 26], bee: [32, 30], hedgehog: [36, 26], snowball: [34, 34], fish: [36, 26], jelly: [30, 34], urchin: [30, 30], shroom: [36, 34], bat: [34, 28], cloudy: [40, 30], firejelly: [30, 34], plant: [34, 46], ball: [30, 30], robot: [34, 38], alien: [34, 32], ufo: [46, 30], scorpion: [40, 28], cactus: [32, 40], vulture: [46, 32], ghost: [36, 38], balloon: [34, 46], wisp: [30, 30] }[type] || [32, 30];
     const e = {
       type, x: px + (T - size[0]) / 2, y: py - size[1], w: size[0], h: size[1], vx: 0, vy: 0, dir: -1,
       ox: px, oy: py - size[1], dead: false, deadT: 0, seed: Math.random() * 10, grounded: false, t: 0, roll: 0,
-      stompable: !['hedgehog', 'urchin', 'firejelly', 'plant', 'cactus'].includes(type),   // spiky ones hurt from above too
+      stompable: !['hedgehog', 'urchin', 'firejelly', 'plant', 'cactus', 'wisp'].includes(type),   // spiky ones hurt from above too
       col: null,
     };
     if (type === 'firejelly') { e.restY = py - size[1] + T; e.y = e.restY; e.jt = 1 + Math.random() * 2; }
@@ -800,6 +800,31 @@
           break;
         }
         case 'jelly': e.y = e.oy - 30 + Math.sin(e.t * 1.5) * 50; break;
+        // floating creatures (tower.js uses them most)
+        case 'ghost': {
+          /*
+           * Drifts back and forth; when she's on its level it floats towards her,
+           * but like a shy ghost it freezes and hides its eyes while she looks at it.
+           * So the trick is to face it - or hop on its head.
+           */
+          const near = Math.abs(p.y + PH / 2 - (e.y + e.h / 2)) < 2.5 * T && Math.abs(p.x - e.x) < 7 * T;
+          const looking = (p.facing > 0) === (e.x + e.w / 2 > p.x + PW / 2);
+          e.shy = near && looking;
+          if (near && !e.shy) e.dir = p.x < e.x ? -1 : 1;
+          if (!e.shy) e.x += e.dir * (near ? 50 : 60) * spd * dt;
+          if (e.x > e.ox + 4 * T) { e.x = e.ox + 4 * T; e.dir = -1; }
+          if (e.x < e.ox - 4 * T) { e.x = e.ox - 4 * T; e.dir = 1; }
+          e.y = e.oy + Math.sin(e.t * 1.6) * 16;
+          break;
+        }
+        // a balloon creature bobbing up and down: popping it throws her high, so it doubles as a step up
+        case 'balloon': e.y = e.oy - 50 + Math.sin(e.t * 1.1) * 55; e.x = e.ox + Math.sin(e.t * 0.7) * 14; break;
+        // a spiky spark circling a point: it can't be stomped, only avoided
+        case 'wisp': {
+          const a = e.t * 1.7 * (e.seed > 5 ? 1 : -1);
+          e.x = e.ox + Math.cos(a) * 1.4 * T; e.y = e.oy + Math.sin(a) * 1.1 * T; e.dir = Math.sin(a) * (e.seed > 5 ? -1 : 1) > 0 ? 1 : -1;
+          break;
+        }
         case 'plant': {
           /*
            * Snapping plant in a stump: hides, rises 0.5s, stays up 1.4s, sinks
@@ -850,6 +875,7 @@
         } else if (fromAbove && e.stompable) {
           killEnemy(e, false, true);
           p.vy = (LZ.In.jump ? -P.stomp * 1.35 : -P.stomp) * (G.ab.stomp || 1); p.jumps = 1; if (G.ab.stomp) p.padLaunch = true;
+          if (e.type === 'balloon') { p.vy = -P.mushroom * (G.lowgrav ? 0.74 : 1); p.padLaunch = true; A.play('spring'); }   // pop! about two floors up
         } else if (p.invuln <= 0) {
           hurt(e.x + e.w / 2, e.type);
         }

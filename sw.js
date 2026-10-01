@@ -6,7 +6,7 @@
  * cache when there is no internet.
  * Bump VERSION whenever files change so old caches get cleaned up.
  */
-const VERSION = 'lz-v20';
+const VERSION = 'lz-v21';
 const FILES = [
   './', 'index.html', 'install.html', 'qr.png', 'manifest.webmanifest', 'css/style.css',
   'js/util.js', 'js/data.js', 'js/mathgen.js', 'js/save.js', 'js/audio.js', 'js/art.js',

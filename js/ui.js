@@ -282,7 +282,7 @@
     document.getElementById('hud').classList.remove('hidden');
     LZ.In.reset();
     const kind = mode ? mode.kind : 'normal';
-    exitTo = kind === 'weekly' ? () => LZ.Weekly.screen() : kind === 'tower' ? () => challenges() : kind === 'wboss' || kind === 'temple' ? () => play(0, 0, { kind: 'world', at: mode.back }) : kind === 'daily' || kind === 'home' || kind === 'world' ? hub : kind === 'custom' ? () => (mode.test ? LZ.Editor.open(mode.id) : workshop()) : kind === 'hard' ? () => levels(wi, true) : () => levels(wi);
+    exitTo = kind === 'weekly' ? () => LZ.Weekly.screen() : kind === 'tower' ? () => LZ.Tower.menu() : kind === 'wboss' || kind === 'temple' ? () => play(0, 0, { kind: 'world', at: mode.back }) : kind === 'daily' || kind === 'home' || kind === 'world' ? hub : kind === 'custom' ? () => (mode.test ? LZ.Editor.open(mode.id) : workshop()) : kind === 'hard' ? () => levels(wi, true) : () => levels(wi);
     LZ.Game.start(wi, li, mode);
     tryFullscreen();
   }
@@ -413,14 +413,14 @@
   // World of the week (weekly.js), the endless tower (tower.js) and the level of the day
   function challenges() {
     if (!document.querySelector('.screen.hub')) hub();   // the menu stays behind the window
-    const p = S.active(), wk = LZ.Weekly.info(), ws = LZ.Weekly.progress(p), tw = LZ.Tower.best(p);
+    const p = S.active(), wk = LZ.Weekly.info(), ws = LZ.Weekly.progress(p), tw = LZ.Tower.summary(p);
     const doneToday = p.daily && p.daily.last === LZ.X.dateKey();
     const card = (cls, icon, title, sub, tag, fn) => h('button.chcard.' + cls, { onclick: () => { m.close(); fn(); } }, [h('span.ti', null, icon), h('div', null, [h('b', null, title), h('small', null, sub)]), tag ? h('span.tag', null, tag) : null]);
     const m = modal([
       h('h2', null, '🏆 Wyzwania'),
       h('div.chlist', null, [
         card('week', '🗓️', 'Świat tygodnia', wk.name + ' · ' + wk.twist.name, ws.done + ' / 6', () => LZ.Weekly.screen()),
-        card('tower', '🗼', 'Wieża', tw ? 'Rekord: ' + tw + '. piętro' : 'Wspinaj się jak najwyżej!', null, () => play(0, 0, { kind: 'tower' })),
+        card('tower', '🗼', 'Wieże', tw, null, () => LZ.Tower.menu()),
         card('day', '📅', 'Poziom dnia', doneToday ? 'Dziś już zrobione!' : 'Nowy poziom z celem', doneToday ? '✓' : null, () => dailyScreen()),
       ]),
       h('button.btn.mid', { onclick: () => m.close() }, 'Wróć'),
